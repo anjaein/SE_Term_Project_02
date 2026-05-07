@@ -43,6 +43,10 @@ public class AccountService {
         accountRepository.save(newAccount);
     }
 
+    public Long getAccountIdByUsername(String username) {
+        return accountRepository.getAccountIdByUsername(username);
+    }
+
     public List<Account> getAllAccounts() {
         return accountRepository.findAll();
     }

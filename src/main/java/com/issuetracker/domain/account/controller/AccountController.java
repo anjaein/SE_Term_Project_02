@@ -40,6 +40,10 @@ public class AccountController {
         notifySuccess("Your account has been created.");
     }
 
+    public Long getAccountIdByUsername(String username){
+        return accountService.getAccountIdByUsername(username);
+    }
+
     private void notifySuccess(String message) {
         System.out.println("[SUCCESS] " + message);
     }
