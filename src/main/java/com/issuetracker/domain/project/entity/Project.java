@@ -1,7 +1,5 @@
 package com.issuetracker.domain.project.entity;
 
-import com.issuetracker.domain.issue.entity.Issue;
-
 import java.time.LocalDateTime;
 
 public class Project {

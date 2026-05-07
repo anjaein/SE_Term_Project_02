@@ -14,12 +14,28 @@ public class Issue {
     private String description;
     private Priority priority;
     private Status status;
-    private Account reporter;
-    private Account assignee;
-    private Account fixer;
+    private Long reporterId;
+    private Long assigneeId;
+    private Long fixerId;
     private LocalDateTime reportedDate;
     private LocalDateTime fixedDate;
     private LocalDateTime resolvedDate;
     private LocalDateTime closedDate;
 
+    public Issue(Long projectId, String title, String description, Long reporterId){
+        this.projectId = projectId;
+        this.title = title;
+        this.description = description;
+        this.priority = Priority.MAJOR;
+        this.status = Status.NEW;
+        this.reporterId = reporterId;
+        this.reportedDate = LocalDateTime.now();
+    }
+
+    public Long getIssueId(){
+        return issueId;
+    }
+    public void setIssueId(Long issueId){
+        this.issueId = issueId;
+    }
 }

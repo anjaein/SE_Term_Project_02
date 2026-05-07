@@ -2,6 +2,7 @@ package com.issuetracker;
 
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.project.controller.ProjectController;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -63,5 +64,29 @@ public class Main {
         // 9. 로그인 안 한 상태로 멤버 추가 시도 (실패해야 함)
         System.out.println("\n--- 9. Not Logged In Add Member Test (should fail) ---");
         projectController.addProjectMember(1L, "dev1", Role.DEV);
+
+        IssueController issueController = new IssueController(controller);
+
+        // 10. 로그인 안 한 상태로 이슈 생성 시도 (실패해야 함)
+        System.out.println("\n--- 10. Not Logged In Create Issue Test (should fail) ---");
+        issueController.createIssue(1L, "Bug-1", "something is broken", 2L);
+
+        // 11. 프로젝트 멤버인 dev1으로 이슈 생성 (성공해야 함)
+        System.out.println("\n--- 11. Member Create Issue Test ---");
+        controller.login("dev1", "1234");
+        Long dev1Id = controller.getAccountIdByUsername("dev1");
+        issueController.createIssue(1L, "Bug-1", "something is broken", dev1Id);
+
+        // 12. reporterId를 다른 유저 ID로 전달 (실패해야 함 - not authorized)
+        System.out.println("\n--- 12. Wrong reporterId Test (should fail) ---");
+        issueController.createIssue(1L, "Bug-2", "another bug", dev1Id + 999L);
+
+        // 13. 프로젝트 멤버가 아닌 유저(tester1)로 이슈 생성 시도 (실패해야 함)
+        System.out.println("\n--- 13. Non-Member Create Issue Test (should fail) ---");
+        controller.logout();
+        controller.login("tester1", "1234");
+        Long tester1Id = controller.getAccountIdByUsername("tester1");
+        issueController.createIssue(1L, "Bug-3", "tester bug", tester1Id);
+        controller.logout();
     }
 }

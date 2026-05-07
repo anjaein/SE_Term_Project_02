@@ -57,6 +57,7 @@ public class ProjectController {
         }
     }
 
+    // 메인 함수 테스트용 임시 출력 함수
     public void printProjectMembers(Long projectId) {
         List<ProjectMember> members = projectService.getProjectMembers(projectId);
         System.out.println("[INFO] Members of project " + projectId + ": " + members.size() + " member(s)");
