@@ -6,6 +6,7 @@ import com.issuetracker.global.common.JsonFileManager;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Optional;
 
 public class AccountRepository {
     private static final String FILE_PATH = "data/accounts.json";
@@ -38,5 +39,11 @@ public class AccountRepository {
         account.setAccountId(newId);
         accounts.add(account);
         JsonFileManager.writeList(FILE_PATH, accounts);
+    }
+
+    public Long getAccountIdByUsername(String username){
+        return Optional.ofNullable(findByUsername(username))
+                .map(Account::getAccountId)
+                .orElse(null);
     }
 }

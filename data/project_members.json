@@ -1,0 +1,12 @@
+[
+  {
+    "projectId": 1,
+    "accountId": 1,
+    "role": "ADMIN"
+  },
+  {
+    "projectId": 1,
+    "accountId": 3,
+    "role": "DEV"
+  }
+]
