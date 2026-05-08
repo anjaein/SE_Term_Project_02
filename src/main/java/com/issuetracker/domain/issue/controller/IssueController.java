@@ -1,19 +1,17 @@
 package com.issuetracker.domain.issue.controller;
 
-import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.issue.service.IssueService;
+import com.issuetracker.global.common.SessionManager;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class IssueController {
-    private IssueService issueService = new IssueService();
-    private AccountController accountController;
-
-    public IssueController(AccountController accountController){
-        this.accountController = accountController;
-    }
+    private final IssueService issueService;
+    private final SessionManager sessionManager;
 
     public void createIssue(Long projectId, String title, String description, Long reporterId){
-        Account currentUser = accountController.getLoggedInAccount();
+        Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
             notifyError("You are not logged in.");
             return;

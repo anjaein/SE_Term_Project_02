@@ -5,12 +5,14 @@ import com.issuetracker.domain.project.entity.Project;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 public class ProjectService {
-    private ProjectRepository projectRepository = new ProjectRepository();
-    private ProjectMemberRepository projectMemberRepository = new ProjectMemberRepository();
+    private final ProjectRepository projectRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     public boolean createProject(String name, Long accountId, Role role){
         Project project = new Project(name, accountId);

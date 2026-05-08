@@ -5,19 +5,19 @@ import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.service.ProjectService;
+import com.issuetracker.global.common.SessionManager;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 public class ProjectController {
-    private ProjectService projectService = new ProjectService();
-    private AccountController accountController;
-
-    public ProjectController(AccountController accountController) {
-        this.accountController = accountController;
-    }
+    private final ProjectService projectService;
+    private final AccountController accountController;
+    private final SessionManager sessionManager;
 
     public void createProject(String name){
-        Account currentUser = accountController.getLoggedInAccount();
+        Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
             notifyError("You are not logged in.");
             return;
@@ -35,7 +35,7 @@ public class ProjectController {
     }
 
     public void addProjectMember(Long projectId, String username, Role role){
-        Account currentUser = accountController.getLoggedInAccount();
+        Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
             notifyError("You are not logged in.");
             return;

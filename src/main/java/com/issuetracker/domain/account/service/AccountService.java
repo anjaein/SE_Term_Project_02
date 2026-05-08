@@ -8,9 +8,10 @@ import java.util.List;
 
 public class AccountService {
 
-    private final AccountRepository accountRepository = new AccountRepository();
+    private final AccountRepository accountRepository;
 
-    public AccountService() {
+    public AccountService(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
         if (accountRepository.findAll().isEmpty()) {
             createAccount("admin", "admin123", Role.ADMIN);
             System.out.println("An initial administrator account has been created.");

@@ -3,12 +3,15 @@ package com.issuetracker.domain.issue.service;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class IssueService {
-    private IssueRepository issueRepository = new IssueRepository();
-    private ProjectMemberRepository projectMemberRepository  = new ProjectMemberRepository();
+    private final IssueRepository issueRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     public boolean createIssue(Long projectId, String title, String description, Long reporterId){
+        // Issue 생성을 요청한 reporterId가 project의 member인지 확인
         if(projectMemberRepository.findByProjectIdAndAccountId(projectId, reporterId) == null){
             return false;
         }
