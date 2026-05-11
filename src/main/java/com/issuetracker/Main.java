@@ -4,6 +4,7 @@ import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
+import com.issuetracker.domain.comment.controller.CommentController;
 import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.service.IssueService;
@@ -30,6 +31,9 @@ public class Main {
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
         IssueController issueController = new IssueController(issueService, sessionManager);
+
+        // CommentController Singleton 인스턴스 획득
+        CommentController commentController = new CommentController();
 
         // 1. 초기화된 admin으로 로그인 시도
         System.out.println("--- 1. login test ---");
@@ -104,5 +108,18 @@ public class Main {
         Long tester1Id = accountController.getAccountIdByUsername("tester1");
         issueController.createIssue(1L, "Bug-3", "tester bug", tester1Id);
         accountController.logout();
+
+        // 14. 포르젝트 name, 이슈 title이 null이면 생성 못함
+        System.out.println("\n--- 14. project name, issue title null test (should fail) ---");
+        issueController.createIssue(1L, "", "another bug", dev1Id + 999L);
+        accountController.logout();
+        accountController.login("admin", "admin123");
+        projectController.createProject("");
+        accountController.logout();
+
+
+
+
     }
+
 }

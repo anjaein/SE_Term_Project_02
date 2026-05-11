@@ -1,26 +1,8 @@
 [
   {
     "accountId": 1,
-    "username": "admin",
-    "password": "admin123",
-    "role": "ADMIN"
-  },
-  {
-    "accountId": 2,
-    "username": "pl1",
-    "password": "1234",
-    "role": "PL"
-  },
-  {
-    "accountId": 3,
-    "username": "dev1",
-    "password": "1234",
+    "username": "testUser",
+    "password": "pw",
     "role": "DEV"
-  },
-  {
-    "accountId": 4,
-    "username": "tester1",
-    "password": "1234",
-    "role": "TESTER"
   }
 ]
