@@ -20,7 +20,7 @@ public class Comment {
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate; //코멘트 수정 날짜
 
-    // 생성자 (댓글 생성 ��)
+    // 생성자 (댓글 생성)
     public Comment(Long issueId, Long authorId, String content) {
         this.issueId = issueId;
         this.authorId = authorId;

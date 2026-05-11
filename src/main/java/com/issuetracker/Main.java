@@ -115,11 +115,28 @@ public class Main {
         accountController.logout();
         accountController.login("admin", "admin123");
         projectController.createProject("");
+
+
+        // 14. 댓글 작성 테스트
+        System.out.println("\n--- 14. Create Comment Test ---");
+        commentController.createComment(1L, "This is a test comment");
+
+    // 15. 댓글 조회 테스트
+        System.out.println("\n--- 15. List Comments Test ---");
+        commentController.listComments(1L);
+
+    // 16. 댓글 수정 테스트
+        System.out.println("\n--- 16. Update Comment Test ---");
+        commentController.updateComment(1L, "Updated comment content");
+
+    // 17. 댓글 삭제 테스트
+        System.out.println("\n--- 17. Delete Comment Test ---");
+        commentController.deleteComment(1L);
+
+        // 15. 댓글 조회 테스트
+        System.out.println("\n--- 15. List Comments Test ---");
+        commentController.listComments(1L);
         accountController.logout();
-
-
-
-
     }
 
 }
