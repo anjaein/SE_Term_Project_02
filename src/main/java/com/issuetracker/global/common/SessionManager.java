@@ -1,9 +1,9 @@
 package com.issuetracker.global.common;
 
 import com.issuetracker.domain.account.entity.Account;
-import lombok.Getter;
 
-@Getter
+
+
 public class SessionManager {
     private Account loggedInAccount = null;
 

@@ -7,56 +7,6 @@
     "priority": "MAJOR",
     "status": "NEW",
     "reporterId": 3,
-    "reportedDate": "2026-05-08T00:25:28.663581500"
-  },
-  {
-    "issueId": 2,
-    "projectId": 1,
-    "title": "Bug-1",
-    "description": "something is broken",
-    "priority": "MAJOR",
-    "status": "NEW",
-    "reporterId": 3,
-    "reportedDate": "2026-05-11T23:58:17.256724200"
-  },
-  {
-    "issueId": 3,
-    "projectId": 1,
-    "title": "Bug-1",
-    "description": "something is broken",
-    "priority": "MAJOR",
-    "status": "NEW",
-    "reporterId": 3,
-    "reportedDate": "2026-05-11T23:59:00.542076200"
-  },
-  {
-    "issueId": 4,
-    "projectId": 1,
-    "title": "Bug-1",
-    "description": "something is broken",
-    "priority": "MAJOR",
-    "status": "NEW",
-    "reporterId": 3,
-    "reportedDate": "2026-05-11T23:59:28.256190700"
-  },
-  {
-    "issueId": 5,
-    "projectId": 1,
-    "title": "Bug-1",
-    "description": "something is broken",
-    "priority": "MAJOR",
-    "status": "NEW",
-    "reporterId": 3,
-    "reportedDate": "2026-05-12T00:09:38.963065100"
-  },
-  {
-    "issueId": 6,
-    "projectId": 1,
-    "title": "Bug-1",
-    "description": "something is broken",
-    "priority": "MAJOR",
-    "status": "NEW",
-    "reporterId": 3,
-    "reportedDate": "2026-05-12T00:13:39.414944200"
+    "reportedDate": "2026-05-12T01:15:56.022946700"
   }
 ]

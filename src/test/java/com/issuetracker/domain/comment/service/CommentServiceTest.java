@@ -4,6 +4,8 @@ import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.comment.repository.CommentRepository;
+import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.global.common.JsonFileManager;
 import org.junit.jupiter.api.AfterEach;
@@ -25,8 +27,10 @@ class CommentServiceTest {
     private static final Path COMMENTS_FILE = Path.of("data", "comments.json");
     private static final Path ISSUES_FILE = Path.of("data", "issues.json");
 
-    private final CommentService commentService = new CommentService();
+    private CommentService commentService;
     private final CommentRepository commentRepository = CommentRepository.getInstance();
+    private AccountRepository accountRepository;
+    private IssueRepository issueRepository;
 
     private String originalAccountsJson;
     private String originalCommentsJson;
@@ -37,6 +41,11 @@ class CommentServiceTest {
         originalAccountsJson = readOriginal(ACCOUNTS_FILE);
         originalCommentsJson = readOriginal(COMMENTS_FILE);
         originalIssuesJson = readOriginal(ISSUES_FILE);
+        // 1. 매번 새로운 레포지토리를 생성 (데이터 0개인 상태)
+        accountRepository = new AccountRepository();
+        issueRepository = new IssueRepository();
+        // 2. 이 레포지토리들을 주입해서 서비스를 생성
+        commentService = new CommentService(commentRepository, accountRepository, issueRepository);
 
         resetJsonFile(ACCOUNTS_FILE);
         resetJsonFile(COMMENTS_FILE);

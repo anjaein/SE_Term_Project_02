@@ -15,15 +15,10 @@ public class CommentService {
     private final IssueRepository issueRepository;
     private static CommentService instance;
 
-    public CommentService(CommentRepository commentRepository,
-                          AccountRepository accountRepository,
-                          IssueRepository issueRepository) {
+    public CommentService(CommentRepository commentRepository, AccountRepository accountRepository, IssueRepository issueRepository) {
         this.commentRepository = commentRepository;
         this.accountRepository = accountRepository;
         this.issueRepository = issueRepository;
-    }
-    public CommentService() {
-        this(CommentRepository.getInstance(), new AccountRepository(), new IssueRepository());
     }
 
     public boolean createComment(Long issueId, Long authorId, String content) {

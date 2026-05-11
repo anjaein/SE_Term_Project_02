@@ -8,30 +8,5 @@
     "projectId": 1,
     "accountId": 3,
     "role": "DEV"
-  },
-  {
-    "projectId": 2,
-    "accountId": 1,
-    "role": "ADMIN"
-  },
-  {
-    "projectId": 3,
-    "accountId": 1,
-    "role": "ADMIN"
-  },
-  {
-    "projectId": 4,
-    "accountId": 1,
-    "role": "ADMIN"
-  },
-  {
-    "projectId": 5,
-    "accountId": 1,
-    "role": "ADMIN"
-  },
-  {
-    "projectId": 6,
-    "accountId": 1,
-    "role": "ADMIN"
   }
 ]

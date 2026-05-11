@@ -5,22 +5,19 @@ import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.global.common.SessionManager;
+import lombok.RequiredArgsConstructor;
+
+
 
 
 import java.util.List;
 
-
+@RequiredArgsConstructor
 public class CommentController {
     private final CommentService commentService;
     private final SessionManager sessionManager;
 
-    public CommentController(CommentService commentService, SessionManager sessionManager) {
-        this.commentService = commentService;
-        this.sessionManager = sessionManager;
-    }
-    public CommentController() {
-        this(new CommentService(), new SessionManager());
-    }
+
     // 댓글 작성
     public void createComment(Long issueId, String content) {
         Account currentUser = sessionManager.getLoggedInAccount();
