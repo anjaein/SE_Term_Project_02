@@ -100,4 +100,59 @@ public class IssueService {
         issue.assignTo(assigneeId);
         return issueRepository.update(issue);
     }
+
+    public boolean fixIssue(Long issueId, Long requesterId){
+        if(issueId == null || requesterId == null){
+            return false;
+        }
+
+        Issue issue = issueRepository.findByIssueId(issueId);
+        if(issue == null || issue.getStatus() != Status.ASSIGNED){
+            return false;
+        }
+
+        if(!requesterId.equals(issue.getAssigneeId())){
+            return false;
+        }
+
+        issue.markAsFixed(requesterId);
+        return issueRepository.update(issue);
+    }
+
+    public boolean resolveIssue(Long issueId, Long requesterId){
+        if(issueId == null || requesterId == null){
+            return false;
+        }
+
+        Issue issue = issueRepository.findByIssueId(issueId);
+        if(issue == null || issue.getStatus() != Status.FIXED){
+            return false;
+        }
+
+        if(!requesterId.equals(issue.getReporterId())){
+            return false;
+        }
+
+        issue.markAsResolved();
+        return issueRepository.update(issue);
+    }
+
+    public boolean closeIssue(Long issueId, Long requesterId){
+        if(issueId == null || requesterId == null){
+            return false;
+        }
+
+        Issue issue = issueRepository.findByIssueId(issueId);
+        if(issue == null || issue.getStatus() != Status.RESOLVED){
+            return false;
+        }
+
+        ProjectMember requester = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), requesterId);
+        if(requester == null || requester.getRole() != Role.PL){
+            return false;
+        }
+
+        issue.markAsClosed();
+        return issueRepository.update(issue);
+    }
 }

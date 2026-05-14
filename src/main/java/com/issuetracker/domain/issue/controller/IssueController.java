@@ -57,6 +57,48 @@ public class IssueController {
         }
     }
 
+    public void fixIssue(Long issueId){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            notifyError("You are not logged in.");
+            return;
+        }
+
+        if(issueService.fixIssue(issueId, currentUser.getAccountId())){
+            notifySuccess("Issue fixed.");
+        } else {
+            notifyError("Failed to fix the Issue.");
+        }
+    }
+
+    public void resolveIssue(Long issueId){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            notifyError("You are not logged in.");
+            return;
+        }
+
+        if(issueService.resolveIssue(issueId, currentUser.getAccountId())){
+            notifySuccess("Issue resolved.");
+        } else {
+            notifyError("Failed to resolve the Issue.");
+        }
+    }
+
+    public void closeIssue(Long issueId){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            notifyError("You are not logged in.");
+            return;
+        }
+
+        if(issueService.closeIssue(issueId, currentUser.getAccountId())){
+            notifySuccess("Issue closed.");
+        } else {
+            notifyError("Failed to close the Issue.");
+        }
+    }
+
     private void printIssueInfo(Issue issue){
         System.out.println("[INFO] Issue detail");
         System.out.println("  - issueId: " + issue.getIssueId());
