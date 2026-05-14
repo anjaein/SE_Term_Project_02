@@ -73,4 +73,21 @@ public class IssueRepository {
             return false;
         }
     }
+    
+
+    public boolean update(Issue updatedIssue){
+        try{
+            List<Issue> issues = findAll();
+            for(int i = 0; i < issues.size(); i++){
+                if(issues.get(i).getIssueId().equals(updatedIssue.getIssueId())){
+                    issues.set(i, updatedIssue);
+                    JsonFileManager.writeList(FILE_PATH, issues);
+                    return true;
+                }
+            }
+            return false;
+        } catch(Exception e){
+            return false;
+        }
+    }
 }

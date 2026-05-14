@@ -1,12 +1,12 @@
 package com.issuetracker.domain.issue.service;
 
+import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.issue.entity.Issue;
-import com.issuetracker.domain.issue.repository.IssueRepository;
-import com.issuetracker.domain.project.repository.ProjectMemberRepository;
-import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.enums.Priority;
-
-
+import com.issuetracker.domain.issue.enums.Status;
+import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.domain.project.entity.ProjectMember;
+import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -77,6 +77,27 @@ public class IssueService {
         return issueRepository.findByIssueId(issueId);
     }
 
+    public boolean assignIssue(Long issueId, Long assigneeId, Long requesterId){
+        if(issueId == null || assigneeId == null || requesterId == null){
+            return false;
+        }
 
+        Issue issue = issueRepository.findByIssueId(issueId);
+        if(issue == null || issue.getStatus() != Status.NEW){
+            return false;
+        }
 
+        ProjectMember requester = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), requesterId);
+        if(requester == null || requester.getRole() != Role.PL){
+            return false;
+        }
+
+        ProjectMember assignee = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), assigneeId);
+        if(assignee == null || assignee.getRole() != Role.DEV){
+            return false;
+        }
+
+        issue.assignTo(assigneeId);
+        return issueRepository.update(issue);
+    }
 }

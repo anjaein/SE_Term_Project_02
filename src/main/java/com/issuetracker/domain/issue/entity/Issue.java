@@ -38,8 +38,12 @@ public class Issue {
         this.reportedDate = LocalDateTime.now();
     }
 
-    // 아래 코드는 상태 변경 시 자동 기록하는 코드
-    // markAsFixed, markAsResolved, markAsClosed
+    public void assignTo(Long assigneeId) {
+        this.assigneeId = assigneeId;
+        this.status = Status.ASSIGNED;
+    }
+
+
     public void markAsFixed(Long fixerId) {
         this.status = Status.FIXED;
         this.fixerId = fixerId;

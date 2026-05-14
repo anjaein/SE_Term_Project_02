@@ -43,6 +43,20 @@ public class IssueController {
         printIssueInfo(issue);
     }
 
+    public void assignIssue(Long issueId, Long assigneeId){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            notifyError("You are not logged in.");
+            return;
+        }
+
+        if(issueService.assignIssue(issueId, assigneeId, currentUser.getAccountId())){
+            notifySuccess("Issue assigned.");
+        } else {
+            notifyError("Failed to assign the Issue.");
+        }
+    }
+
     private void printIssueInfo(Issue issue){
         System.out.println("[INFO] Issue detail");
         System.out.println("  - issueId: " + issue.getIssueId());
