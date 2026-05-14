@@ -49,8 +49,12 @@ public class IssueRepository {
                 .collect(Collectors.toList());
     }
 
-
-
+    public Issue findByIssueId(Long issueId){
+        return findAll().stream()
+                .filter(issue -> issue.getIssueId().equals(issueId))
+                .findFirst()
+                .orElse(null);
+    }
 
 
 

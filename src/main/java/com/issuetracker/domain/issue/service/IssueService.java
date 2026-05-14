@@ -72,5 +72,11 @@ public class IssueService {
         return issueRepository.findByPriority(priority);
     }
 
+    public Issue getIssueById(Long issueId){
+        if(issueId == null) return null;
+        return issueRepository.findByIssueId(issueId);
+    }
+
+
 
 }
