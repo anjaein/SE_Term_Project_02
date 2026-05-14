@@ -1,20 +1,26 @@
 package com.issuetracker.domain.issue.entity;
 
-import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
-import com.issuetracker.domain.project.entity.Project;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+@Getter
 public class Issue {
+    @Setter
     private Long issueId;
     private Long projectId;
+    @Setter
     private String title;
+    @Setter
     private String description;
+    @Setter
     private Priority priority;
     private Status status;
     private Long reporterId;
+    @Setter
     private Long assigneeId;
     private Long fixerId;
     private LocalDateTime reportedDate;
@@ -30,13 +36,6 @@ public class Issue {
         this.status = Status.NEW;
         this.reporterId = reporterId;
         this.reportedDate = LocalDateTime.now();
-    }
-
-    public Long getIssueId(){
-        return issueId;
-    }
-    public void setIssueId(Long issueId){
-        this.issueId = issueId;
     }
 
     // 아래 코드는 상태 변경 시 자동 기록하는 코드

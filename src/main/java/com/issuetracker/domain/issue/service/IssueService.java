@@ -14,17 +14,17 @@ public class IssueService {
 
         // 요청에 누락은 없는지
         if(projectId == null || title == null || description == null || reporterId == null){
-            return false
+            return false;
         }
 
         // title 필수값 검증
         if(title.trim().isEmpty()){
-            return false
+            return false;
         }
 
         // description 필수값 검증
         if(description.trim().isEmpty()){
-            return false
+            return false;
         }
 
         // Issue 생성을 요청한 reporterId가 project의 member인지 확인
