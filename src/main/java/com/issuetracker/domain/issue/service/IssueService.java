@@ -3,7 +3,14 @@ package com.issuetracker.domain.issue.service;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
+import com.issuetracker.domain.issue.enums.Status;
+import com.issuetracker.domain.issue.enums.Priority;
+
+
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 
 @RequiredArgsConstructor
 public class IssueService {
@@ -35,4 +42,35 @@ public class IssueService {
         Issue issue = new Issue(projectId, title, description, reporterId);
         return issueRepository.save(issue);
     }
+
+    public List<Issue> getAllIssues(){
+        return issueRepository.findAll();
+    }
+
+    public List<Issue> getIssuesByProjectId(Long projectId){
+        if(projectId == null) return List.of();
+        return issueRepository.findByProjectId(projectId);
+    }
+
+    public List<Issue> getIssuesByAssigneeId(Long assigneeId){
+        if(assigneeId == null) return List.of();
+        return issueRepository.findByAssigneeId(assigneeId);
+    }
+
+    public List<Issue> getIssuesByReporterId(Long reporterId){
+        if(reporterId == null) return List.of();
+        return issueRepository.findByReporterId(reporterId);
+    }
+
+    public List<Issue> getIssuesByStatus(Status status){
+        if(status == null) return List.of();
+        return issueRepository.findByStatus(status);
+    }
+
+    public List<Issue> getIssuesByPriority(Priority priority){
+        if(priority == null) return List.of();
+        return issueRepository.findByPriority(priority);
+    }
+
+
 }
