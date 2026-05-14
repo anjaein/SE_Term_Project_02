@@ -11,6 +11,22 @@ public class IssueService {
     private final ProjectMemberRepository projectMemberRepository;
 
     public boolean createIssue(Long projectId, String title, String description, Long reporterId){
+
+        // 요청에 누락은 없는지
+        if(projectId == null || title == null || description == null || reporterId == null){
+            return false
+        }
+
+        // title 필수값 검증
+        if(title.trim().isEmpty()){
+            return false
+        }
+
+        // description 필수값 검증
+        if(description.trim().isEmpty()){
+            return false
+        }
+
         // Issue 생성을 요청한 reporterId가 project의 member인지 확인
         if(projectMemberRepository.findByProjectIdAndAccountId(projectId, reporterId) == null){
             return false;

@@ -38,4 +38,23 @@ public class Issue {
     public void setIssueId(Long issueId){
         this.issueId = issueId;
     }
+
+    // 아래 코드는 상태 변경 시 자동 기록하는 코드
+    // markAsFixed, markAsResolved, markAsClosed
+    public void markAsFixed(Long fixerId) {
+        this.status = Status.FIXED;
+        this.fixerId = fixerId;
+        this.fixedDate = LocalDateTime.now();
+    }
+
+    public void markAsResolved() {
+        this.status = Status.RESOLVED;
+        this.resolvedDate = LocalDateTime.now();
+    }
+
+    public void markAsClosed() {
+        this.status = Status.CLOSED;
+        this.closedDate = LocalDateTime.now();
+    }
+
 }
