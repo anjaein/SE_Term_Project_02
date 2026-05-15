@@ -5,6 +5,7 @@ import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
 import com.issuetracker.domain.issue.controller.IssueController;
+import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.service.IssueService;
 import com.issuetracker.domain.project.controller.ProjectController;
@@ -12,6 +13,8 @@ import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
 import com.issuetracker.global.common.SessionManager;
+
+import java.util.Comparator;
 
 public class Main {
     public static void main(String[] args) {
@@ -104,5 +107,53 @@ public class Main {
         Long tester1Id = accountController.getAccountIdByUsername("tester1");
         issueController.createIssue(1L, "Bug-3", "tester bug", tester1Id);
         accountController.logout();
+
+        // 14. PDF 예제 시나리오: issue 등록 -> assign -> fixed -> resolved -> closed
+        System.out.println("\n--- 14. PDF Issue Scenario Test ---");
+
+        // 14.1 admin이 PL과 tester를 프로젝트 멤버로 추가
+        accountController.login("admin", "admin123");
+        projectController.addProjectMember(1L, "pl1", Role.PL);
+        projectController.addProjectMember(1L, "tester1", Role.TESTER);
+        projectController.printProjectMembers(1L);
+        accountController.logout();
+
+        // 14.2 tester1이 이슈 등록
+        accountController.login("tester1", "1234");
+        issueController.createIssue(1L, "Login button error", "The login button does not respond.", tester1Id);
+        Issue scenarioIssue = getLatestIssue(issueRepository);
+        Long scenarioIssueId = scenarioIssue.getIssueId();
+        issueController.printIssueDetail(scenarioIssueId);
+        accountController.logout();
+
+        // 14.3 PL이 NEW 이슈를 dev1에게 배정
+        accountController.login("pl1", "1234");
+        issueController.assignIssue(scenarioIssueId, dev1Id);
+        issueController.printIssueDetail(scenarioIssueId);
+        accountController.logout();
+
+        // 14.4 dev1이 수정 완료 처리
+        accountController.login("dev1", "1234");
+        issueController.fixIssue(scenarioIssueId);
+        issueController.printIssueDetail(scenarioIssueId);
+        accountController.logout();
+
+        // 14.5 reporter인 tester1이 수정 확인 후 resolved 처리
+        accountController.login("tester1", "1234");
+        issueController.resolveIssue(scenarioIssueId);
+        issueController.printIssueDetail(scenarioIssueId);
+        accountController.logout();
+
+        // 14.6 PL이 resolved 이슈를 closed 처리
+        accountController.login("pl1", "1234");
+        issueController.closeIssue(scenarioIssueId);
+        issueController.printIssueDetail(scenarioIssueId);
+        accountController.logout();
+    }
+
+    private static Issue getLatestIssue(IssueRepository issueRepository) {
+        return issueRepository.findAll().stream()
+                .max(Comparator.comparing(Issue::getIssueId))
+                .orElseThrow();
     }
 }
