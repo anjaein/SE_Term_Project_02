@@ -76,17 +76,17 @@ class CommentControllerTest {
     @Test
     @DisplayName("성공: 로그인한 사용자가 유효한 이슈에 댓글을 작성한다")
     void createComment_Success() {
-        // Given
+        // given
         Long userId = 1L;
         Long issueId = 10L;
         seedAccount(userId, Role.DEV);
         seedIssue(issueId);
         loginAs(userId, Role.DEV);
 
-        // When
+        // when
         commentController.createComment(issueId, "Hello World");
 
-        // Then
+        // then
         assertTrue(outputText().contains("[SUCCESS]"));
         List<Comment> all = commentRepository.findAll();
         assertEquals(1, all.size());
@@ -96,10 +96,10 @@ class CommentControllerTest {
     @Test
     @DisplayName("실패: 로그인하지 않은 경우 댓글 작성이 거부된다")
     void createComment_Fail_NotLoggedIn() {
-        // When
+        // when
         commentController.createComment(10L, "Not logged in");
 
-        // Then
+        // then
         assertTrue(outputText().contains("[ERROR] You are not logged in."));
         assertTrue(commentRepository.findAll().isEmpty());
     }
@@ -107,31 +107,31 @@ class CommentControllerTest {
     @Test
     @DisplayName("실패: 존재하지 않는 이슈에 댓글을 달 수 없다")
     void createComment_Fail_InvalidIssue() {
-        // Given
+        // given
         loginAs(1L, Role.DEV);
         seedAccount(1L, Role.DEV);
         // Issue를 seed하지 않음
 
-        // When
+        // when
         commentController.createComment(999L, "Ghost issue");
 
-        // Then
+        // then
         assertTrue(outputText().contains("[ERROR] Failed to create the comment."));
     }
 
     @Test
     @DisplayName("성공: 본인이 작성한 댓글을 수정한다")
     void updateComment_Success() {
-        // Given
+        // given
         Long userId = 1L;
         loginAs(userId, Role.DEV);
         Comment existing = new Comment(10L, userId, "Old Content");
         commentRepository.save(existing); // ID가 1로 할당됨
 
-        // When
+        // when
         commentController.updateComment(1L, "New Content");
 
-        // Then
+        // then
         assertTrue(outputText().contains("[SUCCESS]"));
         assertEquals("New Content", commentRepository.findByCommentId(1L).getContent());
     }
@@ -139,15 +139,15 @@ class CommentControllerTest {
     @Test
     @DisplayName("실패: 다른 사람의 댓글은 수정할 수 없다")
     void updateComment_Fail_Forbidden() {
-        // Given
+        // given
         loginAs(2L, Role.DEV); // 2번 유저로 로그인
         Comment othersComment = new Comment(10L, 1L, "Author is User 1");
         commentRepository.save(othersComment);
 
-        // When
+        // when
         commentController.updateComment(1L, "Hacked!");
 
-        // Then
+        // then
         assertTrue(outputText().contains("[ERROR]"));
         assertEquals("Author is User 1", commentRepository.findByCommentId(1L).getContent());
     }
@@ -155,15 +155,15 @@ class CommentControllerTest {
     @Test
     @DisplayName("성공: 관리자는 다른 사람의 댓글을 삭제할 수 있다")
     void deleteComment_Admin_Success() {
-        // Given
+        // given
         loginAs(99L, Role.ADMIN); // 관리자 로그인
         Comment userComment = new Comment(10L, 1L, "User's comment");
         commentRepository.save(userComment);
 
-        // When
+        // when
         commentController.deleteComment(1L);
 
-        // Then
+        // then
         assertTrue(outputText().contains("[SUCCESS]"));
         assertTrue(commentRepository.findAll().isEmpty());
     }

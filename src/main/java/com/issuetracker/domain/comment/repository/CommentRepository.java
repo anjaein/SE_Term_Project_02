@@ -52,7 +52,7 @@ public class CommentRepository {
                     .mapToLong(Comment::getCommentId)
                     .max()
                     .orElse(0L) + 1L;
-            comment.assignId(newId);
+            comment.setCommentId(newId);
             comments.add(comment);
             JsonFileManager.writeList(FILE_PATH, comments);
             return true;

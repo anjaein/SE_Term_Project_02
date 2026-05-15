@@ -2,17 +2,15 @@ package com.issuetracker.domain.comment.entity;
 
 
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
 public class Comment {
 
+    @Setter
     private Long commentId;
     private Long issueId;          // 어느 이슈에 달린 댓글인지
     private Long authorId;         // 누가 작성했는지
@@ -28,10 +26,7 @@ public class Comment {
         this.createdDate = LocalDateTime.now();
         this.updatedDate = LocalDateTime.now();
     }
-    // 다른 레이어에서 ID를 할당해야 할 경우 사용, 사용 이유를 명확히 하기 위해 setter 대신 별도의 메서드로 구현
-    public void assignId(Long id) {
-        this.commentId = id;
-    }
+
 
     // content 수정 시 updatedDate 자동 업데이트
     public void updateContent(String newContent) {

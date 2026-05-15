@@ -11,12 +11,12 @@ import com.issuetracker.global.common.JsonFileManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,42 +59,61 @@ class CommentServiceTest {
         restoreJsonFile(ISSUES_FILE, originalIssuesJson);
     }
 
-    // 댓글 생성에 필요한 issueId, authorId, content가 유효하지 않으면 생성을 거부하는지 검증한다.
     @Test
+    @DisplayName("댓글 생성 시 필수 입력값(이슈 ID, 작성자 ID, 내용)이 누락되거나 공백이면 생성이 거부된다")
     void createCommentRejectsInvalidInput() {
+        //when
         assertFalse(commentService.createComment(null, 1L, "content"));
         assertFalse(commentService.createComment(10L, null, "content"));
         assertFalse(commentService.createComment(10L, 1L, null));
         assertFalse(commentService.createComment(10L, 1L, "   "));
+
+        //then
         assertTrue(commentRepository.findAll().isEmpty());
     }
 
-    //  댓글 작성자(accountId)가 존재하지 않으면 댓글 생성을 거부하는지 검증한다.
+
     @Test
+    @DisplayName("존재하지 않는 이슈 ID로 댓글 생성을 시도하면 거부된다")
     void createCommentRejectsMissingAuthor() {
-        seedIssue(10L);
+        //given
+        seedAccount(1L, Role.DEV);
 
-        assertFalse(commentService.createComment(10L, 1L, "content"));
+        // when
+        boolean result = commentService.createComment(10L, 1L, "content");
+
+        // then
+        assertFalse(result);
         assertTrue(commentRepository.findAll().isEmpty());
     }
 
-    // 댓글이 달릴 이슈(issueId)가 존재하지 않으면 댓글 생성을 거부하는지 검증한다.
     @Test
+    @DisplayName("존재하지 않는 작성자 ID로 댓글 생성을 시도하면 거부된다")
     void createCommentRejectsMissingIssue() {
-        seedAccount(1L, Role.DEV);
+        //given
+        seedIssue(10L);
 
-        assertFalse(commentService.createComment(10L, 1L, "content"));
+        // when
+        boolean result = commentService.createComment(10L, 1L, "content");
+
+        // then
+        assertFalse(result);
         assertTrue(commentRepository.findAll().isEmpty());
     }
 
 
-    // 유효한 댓글 생성 요청이 저장소에 실제 댓글로 저장되는지 검증한다.
     @Test
+    @DisplayName("유효한 댓글 생성 요청이 들어오면 저장소에 댓글이 정상적으로 저장된다")
     void createCommentSavesValidComment() {
+        //given
         seedAccount(1L, Role.DEV);
         seedIssue(10L);
 
-        assertTrue(commentService.createComment(10L, 1L, "content"));
+        // when
+        boolean isCreated = commentService.createComment(10L, 1L, "content");
+
+        // then
+        assertTrue(isCreated);
 
         Comment saved = commentRepository.findByCommentId(1L);
         assertNotNull(saved);
@@ -104,49 +123,79 @@ class CommentServiceTest {
     }
 
 
-    // 댓글 작성자만 댓글을 수정할 수 있고 다른 사용자의 수정 요청은 거부되는지 검증한다.
     @Test
+    @DisplayName("댓글 작성자만 내용을 수정할 수 있으며, 타인의 수정 요청은 거부된다")
     void updateCommentSucceedsOnlyForAuthor() {
-        assertTrue(commentRepository.save(comment(1L, 10L, 1L, "old content")));
+        //given
+        Comment new_comment = new Comment(10L, 1L, "old content");
+        assertTrue(commentRepository.save(new_comment));
 
-        assertTrue(commentService.updateComment(1L, 1L, "new content"));
-        assertFalse(commentService.updateComment(1L, 2L, "hacked content"));
+        //when
+        assertTrue(commentService.updateComment(new_comment.getCommentId(), 1L, "new content"));
+        assertFalse(commentService.updateComment(new_comment.getCommentId(), 2L, "hacked content"));
 
-        assertEquals("new content", commentRepository.findByCommentId(1L).getContent());
+        //then
+        assertEquals("new content", commentRepository.findByCommentId(new_comment.getCommentId()).getContent());
     }
 
-    // 존재하지 않는 댓글을 수정하려고 하면 false를 반환하는지 검증한다.
     @Test
+    @DisplayName("존재하지 않는 댓글 ID로 수정을 시도하면 false를 반환한다")
     void updateCommentReturnsFalseWhenCommentDoesNotExist() {
-        assertFalse(commentService.updateComment(99L, 1L, "new content"));
+        // given
+        Long nonExistentCommentId = 99L;
+        Long authorId = 1L;
+        String content = "new content";
+
+        // when
+        boolean result = commentService.updateComment(nonExistentCommentId, authorId, content);
+
+        // then
+        assertFalse(result);
     }
 
-    // 댓글 작성자 또는 관리자는 댓글을 삭제할 수 있는지 검증한다.
     @Test
+    @DisplayName("댓글 작성자 본인 또는 관리자는 댓글을 삭제할 수 있다")
     void deleteCommentSucceedsForAuthorOrAdmin() {
-        assertTrue(commentRepository.save(comment(1L, 10L, 1L, "author comment")));
-        assertTrue(commentRepository.save(comment(2L, 10L, 1L, "admin deletable comment")));
+        //given
+        Comment author_comment = new Comment(10L, 1L, "author comment");
+        assertTrue(commentRepository.save(author_comment));
+        Comment admin_comment = new Comment(10L, 2L, "admin deletable comment");
+        assertTrue(commentRepository.save(admin_comment));
 
+        //when
         assertTrue(commentService.deleteComment(1L, 1L, false));
         assertTrue(commentService.deleteComment(2L, 99L, true));
 
+        //then
         assertTrue(commentRepository.findAll().isEmpty());
     }
 
-    // 작성자도 관리자도 아닌 사용자의 댓글 삭제 요청은 거부되고 댓글이 유지되는지 검증한다.
     @Test
+    @DisplayName("작성자도 관리자도 아닌 사용자의 댓글 삭제 요청은 거부되고 댓글이 유지된다")
     void deleteCommentFailsForDifferentNonAdminUser() {
-        assertTrue(commentRepository.save(comment(1L, 10L, 1L, "content")));
+        //given
+        Comment new_comment = new Comment(10L, 1L, "content");
+        assertTrue(commentRepository.save(new_comment));
 
-        assertFalse(commentService.deleteComment(1L, 2L, false));
+        // when
+        boolean result = commentService.deleteComment(new_comment.getCommentId(), 2L, false);
 
+        // then
+        assertFalse(result);
         assertNotNull(commentRepository.findByCommentId(1L));
     }
 
-    // 존재하지 않는 댓글을 삭제하려고 하면 false를 반환하는지 검증한다.
     @Test
+    @DisplayName("존재하지 않는 댓글 ID로 삭제를 시도하면 false를 반환한다")
     void deleteCommentReturnsFalseWhenCommentDoesNotExist() {
-        assertFalse(commentService.deleteComment(99L, 1L, true));
+        // given
+        Long nonExistentCommentId = 99L;
+
+        // when
+        boolean result = commentService.deleteComment(nonExistentCommentId, 1L, true);
+
+        // then
+        assertFalse(result);
     }
 
     private String readOriginal(Path path) throws IOException {
@@ -178,7 +227,4 @@ class CommentServiceTest {
         JsonFileManager.writeList(ISSUES_FILE.toString(), List.of(issue));
     }
 
-    private Comment comment(Long commentId, Long issueId, Long authorId, String content) {
-        return new Comment(commentId, issueId, authorId, content, LocalDateTime.now(), LocalDateTime.now());
-    }
 }
