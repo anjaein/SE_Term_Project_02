@@ -12,6 +12,10 @@ public class IssueController {
 
     public void createIssue(Long projectId, String title, String description, Long reporterId){
         Account currentUser = sessionManager.getLoggedInAccount();
+        if (title == null || title.trim().isEmpty()) {  //issue title이 null이거나 공백이면 예외처리
+            notifyError("Issue title cannot be empty.");
+            return;
+        }
         if(currentUser == null){
             notifyError("You are not logged in.");
             return;

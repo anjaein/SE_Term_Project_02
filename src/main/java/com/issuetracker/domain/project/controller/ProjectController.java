@@ -18,6 +18,10 @@ public class ProjectController {
 
     public void createProject(String name){
         Account currentUser = sessionManager.getLoggedInAccount();
+        if (name == null || name.trim().isEmpty()) {  //project name이 null이거나 공백이면 예외처리
+            notifyError("Project name cannot be empty.");
+            return;
+        }
         if(currentUser == null){
             notifyError("You are not logged in.");
             return;
