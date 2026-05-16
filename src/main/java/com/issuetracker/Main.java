@@ -4,6 +4,9 @@ import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
+import com.issuetracker.domain.comment.controller.CommentController;
+import com.issuetracker.domain.comment.repository.CommentRepository;
+import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
@@ -23,16 +26,19 @@ public class Main {
         ProjectRepository projectRepository = new ProjectRepository();
         ProjectMemberRepository projectMemberRepository = new ProjectMemberRepository();
         IssueRepository issueRepository = new IssueRepository();
+        CommentRepository commentRepository = new CommentRepository();
 
         SessionManager sessionManager = new SessionManager();
 
         AccountService accountService = new AccountService(accountRepository);
         ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository);
         IssueService issueService = new IssueService(issueRepository, projectMemberRepository);
+        CommentService commentService = new CommentService(commentRepository, accountRepository, issueRepository);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
         IssueController issueController = new IssueController(issueService, sessionManager);
+        CommentController commentController = new CommentController(commentService, sessionManager);
 
         // 1. 초기화된 admin으로 로그인 시도
         System.out.println("--- 1. login test ---");
@@ -148,6 +154,63 @@ public class Main {
         accountController.login("pl1", "1234");
         issueController.closeIssue(scenarioIssueId);
         issueController.printIssueDetail(scenarioIssueId);
+        accountController.logout();
+
+        // 15. 프로젝트 name, 이슈 title이 null이면 생성 못함 (실패해야 함)
+        System.out.println("\n--- 15. project name, issue title null test (should fail) ---");
+        issueController.createIssue(1L, "", "another bug", dev1Id + 999L);
+        accountController.logout();
+        accountController.login("admin", "admin123");
+        projectController.createProject("");
+        accountController.logout();
+
+        // 16. 댓글 작성 테스트
+        System.out.println("\n--- 16. Create Comment Test ---");
+        accountController.login("dev1", "1234");
+        commentController.createComment(1L, "This is a test comment from dev1");
+
+        // 17. 동일 사용자가 다시 댓글 작성
+        System.out.println("\n--- 17. Create Another Comment Test ---");
+        commentController.createComment(1L, "This is another comment from dev1");
+
+        // 18. 댓글 조회 테스트
+        System.out.println("\n--- 18. List Comments Test ---");
+        commentController.listComments(1L);
+
+        // 19. 댓글 수정 테스트 (자신의 댓글만 가능)
+        System.out.println("\n--- 19. Update Comment Test ---");
+        commentController.updateComment(1L, "Updated comment content from dev1");
+
+        // 20. 댓글 조회 (수정 확인)
+        System.out.println("\n--- 20. List Comments After Update ---");
+        commentController.listComments(1L);
+
+        // 21. 다른 사용자가 댓글 수정 시도 (실패)
+        System.out.println("\n--- 21. Update Other's Comment Test (should fail) ---");
+        accountController.logout();
+        accountController.login("tester1", "1234");
+        commentController.updateComment(1L, "Hacked comment");
+
+        // 22. 댓글 삭제 테스트 (자신의 댓글만 가능)
+        System.out.println("\n--- 22. Delete Comment Test ---");
+        accountController.logout();
+        accountController.login("dev1", "1234");
+        commentController.deleteComment(1L);
+
+        // 23. 삭제 후 댓글 조회
+        System.out.println("\n--- 23. List Comments After Delete ---");
+        commentController.listComments(1L);
+
+        // 24. admin이 다른 사용자의 댓글 삭제 (성공)
+        System.out.println("\n--- 24. Admin Delete Other's Comment Test ---");
+        accountController.logout();
+        accountController.login("admin", "admin123");
+        commentController.deleteComment(2L);
+
+        // 25. 최종 댓글 조회
+        System.out.println("\n--- 25. Final List Comments ---");
+        commentController.listComments(1L);
+
         accountController.logout();
     }
 

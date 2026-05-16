@@ -2,6 +2,8 @@ package com.issuetracker.global.common;
 
 import com.issuetracker.domain.account.entity.Account;
 
+
+
 public class SessionManager {
     private Account loggedInAccount = null;
 
