@@ -7,6 +7,31 @@
     "priority": "MAJOR",
     "status": "NEW",
     "reporterId": 3,
-    "reportedDate": "2026-05-12T01:15:56.022946700"
+    "reportedDate": "2026-05-08T00:25:28.663581500"
+  },
+  {
+    "issueId": 2,
+    "projectId": 1,
+    "title": "Bug-1",
+    "description": "something is broken",
+    "priority": "MAJOR",
+    "status": "NEW",
+    "reporterId": 3,
+    "reportedDate": "2026-05-15T15:20:49.604841"
+  },
+  {
+    "issueId": 3,
+    "projectId": 1,
+    "title": "Login button error",
+    "description": "The login button does not respond.",
+    "priority": "MAJOR",
+    "status": "CLOSED",
+    "reporterId": 4,
+    "assigneeId": 3,
+    "fixerId": 3,
+    "reportedDate": "2026-05-15T15:20:49.608930",
+    "fixedDate": "2026-05-15T15:20:49.612724",
+    "resolvedDate": "2026-05-15T15:20:49.613723",
+    "closedDate": "2026-05-15T15:20:49.615542"
   }
 ]
