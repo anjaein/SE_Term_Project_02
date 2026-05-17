@@ -217,6 +217,14 @@ public class Main {
         commentController.listComments(1L);
 
         accountController.logout();
+
+        // 26. Assignee 추천 테스트: 기존 closed 이슈와 유사한 새 이슈 등록 시 추천 자동 표시
+        System.out.println("\n--- 26. Assignee Recommend Test ---");
+        accountController.login("tester1", "1234");
+        issueController.createIssue(1L, "Login page error", "The login button is not working.", tester1Id);
+        Issue recommendTestIssue = getLatestIssue(issueRepository);
+        issueController.printIssueDetail(recommendTestIssue.getIssueId()); // NEW 상태 → 추천 자동 표시
+        accountController.logout();
     }
 
     private static Issue getLatestIssue(IssueRepository issueRepository) {
