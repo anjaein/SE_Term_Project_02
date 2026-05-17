@@ -2,14 +2,19 @@ package com.issuetracker.domain.issue.controller;
 
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.service.IssueService;
+import com.issuetracker.domain.recommend.service.RecommendService;
 import com.issuetracker.global.common.SessionManager;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 public class IssueController {
     private final IssueService issueService;
     private final SessionManager sessionManager;
+    private final RecommendService recommendService;
 
     public void createIssue(Long projectId, String title, String description, Long reporterId){
         Account currentUser = sessionManager.getLoggedInAccount();
@@ -45,6 +50,9 @@ public class IssueController {
         }
 
         printIssueInfo(issue);
+        if (issue.getStatus() == Status.NEW) {
+            printRecommendedAssignees(issue.getProjectId(), issue.getTitle(), issue.getDescription());
+        }
     }
 
     public void assignIssue(Long issueId, Long assigneeId){
@@ -118,6 +126,18 @@ public class IssueController {
         System.out.println("  - fixedDate: " + issue.getFixedDate());
         System.out.println("  - resolvedDate: " + issue.getResolvedDate());
         System.out.println("  - closedDate: " + issue.getClosedDate());
+    }
+
+    private void printRecommendedAssignees(Long projectId, String title, String description) {
+        List<Long> recommendations = recommendService.recommendAssignees(projectId, title, description);
+        if (recommendations.isEmpty()) {
+            System.out.println("[INFO] No assignee recommendations available.");
+            return;
+        }
+        System.out.println("[INFO] Recommended assignees:");
+        for (int i = 0; i < recommendations.size(); i++) {
+            System.out.println("  " + (i + 1) + ". accountId: " + recommendations.get(i));
+        }
     }
 
     private void notifySuccess(String message) {
