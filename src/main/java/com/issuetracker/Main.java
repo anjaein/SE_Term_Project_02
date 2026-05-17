@@ -15,6 +15,8 @@ import com.issuetracker.domain.project.controller.ProjectController;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
+import com.issuetracker.domain.recommend.controller.RecommendController;
+import com.issuetracker.domain.recommend.service.RecommendService;
 import com.issuetracker.global.common.SessionManager;
 
 import java.util.Comparator;
@@ -35,9 +37,12 @@ public class Main {
         IssueService issueService = new IssueService(issueRepository, projectMemberRepository);
         CommentService commentService = new CommentService(commentRepository, accountRepository, issueRepository);
 
+        RecommendService recommendService = new RecommendService(issueRepository);
+        RecommendController recommendController = new RecommendController(recommendService, accountRepository);
+
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
-        IssueController issueController = new IssueController(issueService, sessionManager);
+        IssueController issueController = new IssueController(issueService, sessionManager, recommendService);
         CommentController commentController = new CommentController(commentService, sessionManager);
 
         // 1. 초기화된 admin으로 로그인 시도
@@ -211,6 +216,14 @@ public class Main {
         System.out.println("\n--- 25. Final List Comments ---");
         commentController.listComments(1L);
 
+        accountController.logout();
+
+        // 26. Assignee 추천 테스트: 기존 closed 이슈와 유사한 새 이슈 등록 시 추천 자동 표시
+        System.out.println("\n--- 26. Assignee Recommend Test ---");
+        accountController.login("tester1", "1234");
+        issueController.createIssue(1L, "Login page error", "The login button is not working.", tester1Id);
+        Issue recommendTestIssue = getLatestIssue(issueRepository);
+        issueController.printIssueDetail(recommendTestIssue.getIssueId()); // NEW 상태 → 추천 자동 표시
         accountController.logout();
     }
 
