@@ -1,6 +1,7 @@
 package com.issuetracker;
 
 import com.issuetracker.domain.account.controller.AccountController;
+import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
@@ -20,6 +21,7 @@ import com.issuetracker.domain.recommend.service.RecommendService;
 import com.issuetracker.global.common.SessionManager;
 
 import java.util.Comparator;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -42,7 +44,7 @@ public class Main {
 
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
-        IssueController issueController = new IssueController(issueService, sessionManager, recommendService);
+        IssueController issueController = new IssueController(issueService, sessionManager);
         CommentController commentController = new CommentController(commentService, sessionManager);
 
         // 1. 초기화된 admin으로 로그인 시도
@@ -223,7 +225,20 @@ public class Main {
         accountController.login("tester1", "1234");
         issueController.createIssue(1L, "Login page error", "The login button is not working.", tester1Id);
         Issue recommendTestIssue = getLatestIssue(issueRepository);
-        issueController.printIssueDetail(recommendTestIssue.getIssueId()); // NEW 상태 → 추천 자동 표시
+        issueController.printIssueDetail(recommendTestIssue.getIssueId());
+        List<Account> recommended = recommendController.getRecommendedAssignees(
+                recommendTestIssue.getProjectId(),
+                recommendTestIssue.getTitle(),
+                recommendTestIssue.getDescription()
+        );
+        if (recommended.isEmpty()) {
+            System.out.println("[INFO] No assignee recommendations available.");
+        } else {
+            System.out.println("[INFO] Recommended assignees:");
+            for (int i = 0; i < recommended.size(); i++) {
+                System.out.println("  " + (i + 1) + ". " + recommended.get(i).getUsername() + " (id: " + recommended.get(i).getAccountId() + ")");
+            }
+        }
         accountController.logout();
     }
 

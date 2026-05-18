@@ -33,5 +33,50 @@
     "fixedDate": "2026-05-15T15:20:49.612724",
     "resolvedDate": "2026-05-15T15:20:49.613723",
     "closedDate": "2026-05-15T15:20:49.615542"
+  },
+  {
+    "issueId": 4,
+    "projectId": 1,
+    "title": "Bug-1",
+    "description": "something is broken",
+    "priority": "MAJOR",
+    "status": "NEW",
+    "reporterId": 3,
+    "reportedDate": "2026-05-19T01:45:01.571255500"
+  },
+  {
+    "issueId": 5,
+    "projectId": 1,
+    "title": "Bug-3",
+    "description": "tester bug",
+    "priority": "MAJOR",
+    "status": "NEW",
+    "reporterId": 4,
+    "reportedDate": "2026-05-19T01:45:01.575255900"
+  },
+  {
+    "issueId": 6,
+    "projectId": 1,
+    "title": "Login button error",
+    "description": "The login button does not respond.",
+    "priority": "MAJOR",
+    "status": "CLOSED",
+    "reporterId": 4,
+    "assigneeId": 3,
+    "fixerId": 3,
+    "reportedDate": "2026-05-19T01:45:01.579253900",
+    "fixedDate": "2026-05-19T01:45:01.588483600",
+    "resolvedDate": "2026-05-19T01:45:01.591483900",
+    "closedDate": "2026-05-19T01:45:01.594484400"
+  },
+  {
+    "issueId": 7,
+    "projectId": 1,
+    "title": "Login page error",
+    "description": "The login button is not working.",
+    "priority": "MAJOR",
+    "status": "NEW",
+    "reporterId": 4,
+    "reportedDate": "2026-05-19T01:45:01.613485"
   }
 ]
