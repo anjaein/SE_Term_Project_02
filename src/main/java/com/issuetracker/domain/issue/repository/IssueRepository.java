@@ -27,7 +27,7 @@ public class IssueRepository {
 
     public List<Issue> findByAssigneeId(Long assigneeId){
         return findAll().stream()
-                .filter(issue -> issue.getAssigneeId().equals(assigneeId))
+                .filter(issue -> assigneeId.equals(issue.getAssigneeId()))
                 .collect(Collectors.toList());
     }
 

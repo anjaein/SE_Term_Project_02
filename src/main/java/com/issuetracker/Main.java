@@ -8,9 +8,11 @@ import com.issuetracker.domain.comment.controller.CommentController;
 import com.issuetracker.domain.comment.repository.CommentRepository;
 import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.issue.controller.IssueController;
+import com.issuetracker.domain.issue.controller.IssueStatisticsController;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.service.IssueService;
+import com.issuetracker.domain.issue.service.IssueStatisticsService;
 import com.issuetracker.domain.project.controller.ProjectController;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
@@ -34,11 +36,14 @@ public class Main {
         ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository);
         IssueService issueService = new IssueService(issueRepository, projectMemberRepository);
         CommentService commentService = new CommentService(commentRepository, accountRepository, issueRepository);
+        IssueStatisticsService issueStatisticsService = new IssueStatisticsService(issueRepository);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
         IssueController issueController = new IssueController(issueService, sessionManager);
         CommentController commentController = new CommentController(commentService, sessionManager);
+        IssueStatisticsController issueStatisticsController =
+                new IssueStatisticsController(issueStatisticsService, sessionManager);
 
         // 1. 초기화된 admin으로 로그인 시도
         System.out.println("--- 1. login test ---");
