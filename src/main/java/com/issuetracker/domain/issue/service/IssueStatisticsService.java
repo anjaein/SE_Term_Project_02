@@ -160,7 +160,7 @@ public class IssueStatisticsService {
         List<Issue> issues = issueRepository.findByProjectId(projectId);
 
         Map<YearMonth, long[]> statistics = new HashMap<>();
-        long sum = 0L, count = 0L;
+
         for(Issue issue : issues){
             if(issue.getStatus() != Status.CLOSED) continue;
             if(issue.getClosedDate() == null || issue.getReportedDate() == null) continue;
