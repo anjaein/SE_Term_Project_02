@@ -8,6 +8,7 @@ import com.issuetracker.global.common.JsonFileManager;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -27,7 +28,7 @@ public class IssueRepository {
 
     public List<Issue> findByAssigneeId(Long assigneeId){
         return findAll().stream()
-                .filter(issue -> issue.getAssigneeId().equals(assigneeId))
+                .filter(issue -> Objects.equals(issue.getAssigneeId(), assigneeId))
                 .collect(Collectors.toList());
     }
 

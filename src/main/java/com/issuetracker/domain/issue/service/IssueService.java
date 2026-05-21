@@ -72,6 +72,16 @@ public class IssueService {
         return issueRepository.findByPriority(priority);
     }
 
+    public List<Issue> getIssuesByStatusAndPriority(Status status, Priority priority){
+        if(status == null && priority == null) return getAllIssues();
+        if(status == null) return getIssuesByPriority(priority);
+        if(priority == null) return getIssuesByStatus(status);
+
+        return issueRepository.findByStatus(status).stream()
+                .filter(issue -> issue.getPriority() == priority)
+                .toList();
+    }
+
     public Issue getIssueById(Long issueId){
         if(issueId == null) return null;
         return issueRepository.findByIssueId(issueId);
