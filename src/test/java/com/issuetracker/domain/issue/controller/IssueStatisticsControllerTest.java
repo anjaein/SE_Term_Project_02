@@ -182,7 +182,7 @@ class IssueStatisticsControllerTest {
         }
     }
 
-    private static class FakeIssueRepository extends IssueRepository {
+    private static class FakeIssueRepository implements IssueRepository {
         private final List<Issue> issues = new ArrayList<>();
         private long nextId = 1L;
 
@@ -243,5 +243,20 @@ class IssueStatisticsControllerTest {
             }
             return false;
         }
+
+        @Override
+        public List<Issue> findByAssigneeId(Long assigneeId) { return List.of(); }
+
+        @Override
+        public List<Issue> findByReporterId(Long reporterId) { return List.of(); }
+
+        @Override
+        public List<Issue> findByStatus(com.issuetracker.domain.issue.enums.Status status) { return List.of(); }
+
+        @Override
+        public List<Issue> findByPriority(com.issuetracker.domain.issue.enums.Priority priority) { return List.of(); }
+
+        @Override
+        public Issue findByIssueId(Long issueId) { return null; }
     }
 }

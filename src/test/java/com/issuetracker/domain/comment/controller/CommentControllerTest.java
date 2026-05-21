@@ -3,11 +3,14 @@ package com.issuetracker.domain.comment.controller;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
+import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.comment.repository.CommentRepository;
+import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.global.common.JsonFileManager;
 import com.issuetracker.global.common.SessionManager;
 import org.junit.jupiter.api.AfterEach;
@@ -48,13 +51,13 @@ class CommentControllerTest {
 
         // 2. 의존성 객체 생성 및 주입 (핵심!)
         this.sessionManager = new SessionManager(); // 테스트용 세션 생성
-        this.commentRepository = CommentRepository.getInstance();
+        this.commentRepository = new JsonCommentRepository();
 
         // 서비스 생성 시 필요한 레포지토리 주입
         CommentService commentService = new CommentService(
                 commentRepository,
-                new AccountRepository(),
-                new IssueRepository()
+                new JsonAccountRepository(),
+                new JsonIssueRepository()
         );
 
         // 컨트롤러에 테스트에서 관리하는 sessionManager를 직접 주입

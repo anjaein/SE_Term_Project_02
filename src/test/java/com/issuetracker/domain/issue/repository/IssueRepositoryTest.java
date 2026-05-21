@@ -37,7 +37,7 @@ class IssueRepositoryTest {
     private static final Long REPORTER_ID = 10L;
     private static final Long ASSIGNEE_ID = 20L;
 
-    private final IssueRepository issueRepository = new IssueRepository();
+    private final IssueRepository issueRepository = new JsonIssueRepository();
 
     private String originalJson;
 

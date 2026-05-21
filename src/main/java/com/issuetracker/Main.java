@@ -3,17 +3,22 @@ package com.issuetracker;
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
+import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
 import com.issuetracker.domain.comment.controller.CommentController;
 import com.issuetracker.domain.comment.repository.CommentRepository;
+import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.issue.controller.IssueStatisticsController;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.issue.service.IssueService;
 import com.issuetracker.domain.issue.service.IssueStatisticsService;
 import com.issuetracker.domain.project.controller.ProjectController;
+import com.issuetracker.domain.project.repository.JsonProjectMemberRepository;
+import com.issuetracker.domain.project.repository.JsonProjectRepository;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
@@ -24,11 +29,11 @@ import java.util.Comparator;
 public class Main {
     public static void main(String[] args) {
 
-        AccountRepository accountRepository = new AccountRepository();
-        ProjectRepository projectRepository = new ProjectRepository();
-        ProjectMemberRepository projectMemberRepository = new ProjectMemberRepository();
-        IssueRepository issueRepository = new IssueRepository();
-        CommentRepository commentRepository = new CommentRepository();
+        AccountRepository accountRepository = new JsonAccountRepository();
+        ProjectRepository projectRepository = new JsonProjectRepository();
+        ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
+        IssueRepository issueRepository = new JsonIssueRepository();
+        CommentRepository commentRepository = new JsonCommentRepository();
 
         SessionManager sessionManager = new SessionManager();
 
