@@ -16,7 +16,9 @@ import com.issuetracker.domain.project.controller.ProjectController;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
+import com.issuetracker.domain.recommend.controller.IRecommendController;
 import com.issuetracker.domain.recommend.controller.RecommendController;
+import com.issuetracker.domain.recommend.service.IRecommendService;
 import com.issuetracker.domain.recommend.service.RecommendService;
 import com.issuetracker.global.common.SessionManager;
 
@@ -39,8 +41,8 @@ public class Main {
         IssueService issueService = new IssueService(issueRepository, projectMemberRepository);
         CommentService commentService = new CommentService(commentRepository, accountRepository, issueRepository);
 
-        RecommendService recommendService = new RecommendService(issueRepository);
-        RecommendController recommendController = new RecommendController(recommendService, accountRepository);
+        IRecommendService recommendService = new RecommendService(issueRepository);
+        IRecommendController recommendController = new RecommendController(recommendService, accountRepository);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);

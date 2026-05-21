@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-public class RecommendService {
+public class RecommendService implements IRecommendService {
     private final IssueRepository issueRepository;
 
     // 추천 Assignees ID 반환
