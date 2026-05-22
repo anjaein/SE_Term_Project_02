@@ -1,6 +1,7 @@
 package com.issuetracker;
 
 import com.issuetracker.domain.account.controller.AccountController;
+import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
@@ -15,9 +16,14 @@ import com.issuetracker.domain.project.controller.ProjectController;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
+import com.issuetracker.domain.recommend.controller.IRecommendController;
+import com.issuetracker.domain.recommend.controller.RecommendController;
+import com.issuetracker.domain.recommend.service.IRecommendService;
+import com.issuetracker.domain.recommend.service.RecommendService;
 import com.issuetracker.global.common.SessionManager;
 
 import java.util.Comparator;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -34,6 +40,9 @@ public class Main {
         ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository);
         IssueService issueService = new IssueService(issueRepository, projectMemberRepository);
         CommentService commentService = new CommentService(commentRepository, accountRepository, issueRepository);
+
+        IRecommendService recommendService = new RecommendService(issueRepository);
+        IRecommendController recommendController = new RecommendController(recommendService, accountRepository);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
@@ -211,6 +220,27 @@ public class Main {
         System.out.println("\n--- 25. Final List Comments ---");
         commentController.listComments(1L);
 
+        accountController.logout();
+
+        // 26. Assignee 추천 테스트: 기존 closed 이슈와 유사한 새 이슈 등록 시 추천 자동 표시
+        System.out.println("\n--- 26. Assignee Recommend Test ---");
+        accountController.login("tester1", "1234");
+        issueController.createIssue(1L, "Login page error", "The login button is not working.", tester1Id);
+        Issue recommendTestIssue = getLatestIssue(issueRepository);
+        issueController.printIssueDetail(recommendTestIssue.getIssueId());
+        List<Account> recommended = recommendController.getRecommendedAssignees(
+                recommendTestIssue.getProjectId(),
+                recommendTestIssue.getTitle(),
+                recommendTestIssue.getDescription()
+        );
+        if (recommended.isEmpty()) {
+            System.out.println("[INFO] No assignee recommendations available.");
+        } else {
+            System.out.println("[INFO] Recommended assignees:");
+            for (int i = 0; i < recommended.size(); i++) {
+                System.out.println("  " + (i + 1) + ". " + recommended.get(i).getUsername() + " (id: " + recommended.get(i).getAccountId() + ")");
+            }
+        }
         accountController.logout();
     }
 
