@@ -3,6 +3,7 @@ package com.issuetracker.domain.issue.controller;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.service.IssueService;
+import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 import lombok.RequiredArgsConstructor;
 
@@ -11,120 +12,52 @@ public class IssueController {
     private final IssueService issueService;
     private final SessionManager sessionManager;
 
-    public void createIssue(Long projectId, String title, String description, Long reporterId){
-        Account currentUser = sessionManager.getLoggedInAccount();
-        if (title == null || title.trim().isEmpty()) {  //issue title이 null이거나 공백이면 예외처리
-            notifyError("Issue title cannot be empty.");
-            return;
-        }
-        if(currentUser == null){
-            notifyError("You are not logged in.");
-            return;
-        } else if(!currentUser.getAccountId().equals(reporterId)){
-            notifyError("You are not authorized to perform this action.");
-            return;
-        }
-        if(issueService.createIssue(projectId, title, description, reporterId)){
-            notifySuccess("Issue created.");
-        } else {
-            notifyError("Failed to create the Issue.");
-        }
-    }
-
-    public void printIssueDetail(Long issueId){
+    public Response<Issue> createIssue(Long projectId, String title, String description){
         Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
-            notifyError("You are not logged in.");
-            return;
+            return Response.fail("You are not logged in.");
         }
-
-        Issue issue = issueService.getIssueById(issueId);
-        if(issue == null){
-            notifyError("Issue does not exist.");
-            return;
-        }
-
-        printIssueInfo(issue);
+        // reporter는 항상 로그인한 사용자 본인
+        return issueService.createIssue(projectId, title, description, currentUser.getAccountId());
     }
 
-    public void assignIssue(Long issueId, Long assigneeId){
+    public Response<Issue> getIssueDetail(Long issueId){
         Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
-            notifyError("You are not logged in.");
-            return;
+            return Response.fail("You are not logged in.");
         }
-
-        if(issueService.assignIssue(issueId, assigneeId, currentUser.getAccountId())){
-            notifySuccess("Issue assigned.");
-        } else {
-            notifyError("Failed to assign the Issue.");
-        }
+        return issueService.getIssueById(issueId);
     }
 
-    public void fixIssue(Long issueId){
+    public Response<Issue> assignIssue(Long issueId, Long assigneeId){
         Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
-            notifyError("You are not logged in.");
-            return;
+            return Response.fail("You are not logged in.");
         }
-
-        if(issueService.fixIssue(issueId, currentUser.getAccountId())){
-            notifySuccess("Issue fixed.");
-        } else {
-            notifyError("Failed to fix the Issue.");
-        }
+        return issueService.assignIssue(issueId, assigneeId, currentUser.getAccountId());
     }
 
-    public void resolveIssue(Long issueId){
+    public Response<Issue> fixIssue(Long issueId){
         Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
-            notifyError("You are not logged in.");
-            return;
+            return Response.fail("You are not logged in.");
         }
-
-        if(issueService.resolveIssue(issueId, currentUser.getAccountId())){
-            notifySuccess("Issue resolved.");
-        } else {
-            notifyError("Failed to resolve the Issue.");
-        }
+        return issueService.fixIssue(issueId, currentUser.getAccountId());
     }
 
-    public void closeIssue(Long issueId){
+    public Response<Issue> resolveIssue(Long issueId){
         Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
-            notifyError("You are not logged in.");
-            return;
+            return Response.fail("You are not logged in.");
         }
+        return issueService.resolveIssue(issueId, currentUser.getAccountId());
+    }
 
-        if(issueService.closeIssue(issueId, currentUser.getAccountId())){
-            notifySuccess("Issue closed.");
-        } else {
-            notifyError("Failed to close the Issue.");
+    public Response<Issue> closeIssue(Long issueId){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            return Response.fail("You are not logged in.");
         }
-    }
-
-    private void printIssueInfo(Issue issue){
-        System.out.println("[INFO] Issue detail");
-        System.out.println("  - issueId: " + issue.getIssueId());
-        System.out.println("  - projectId: " + issue.getProjectId());
-        System.out.println("  - title: " + issue.getTitle());
-        System.out.println("  - description: " + issue.getDescription());
-        System.out.println("  - reporterId: " + issue.getReporterId());
-        System.out.println("  - assigneeId: " + issue.getAssigneeId());
-        System.out.println("  - fixerId: " + issue.getFixerId());
-        System.out.println("  - priority: " + issue.getPriority());
-        System.out.println("  - status: " + issue.getStatus());
-        System.out.println("  - reportedDate: " + issue.getReportedDate());
-        System.out.println("  - fixedDate: " + issue.getFixedDate());
-        System.out.println("  - resolvedDate: " + issue.getResolvedDate());
-        System.out.println("  - closedDate: " + issue.getClosedDate());
-    }
-
-    private void notifySuccess(String message) {
-        System.out.println("[SUCCESS] " + message);
-    }
-
-    private void notifyError(String message) {
-        System.out.println("[ERROR] " + message);
+        return issueService.closeIssue(issueId, currentUser.getAccountId());
     }
 }

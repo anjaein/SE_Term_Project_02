@@ -29,12 +29,14 @@ public class JsonFileManager {
         }
     }
 
-    // 객체 리스트 → 파일
-    public static <T> void writeList(String filePath, List<T> list) {
+    // 객체 리스트 → 파일. 성공 시 true, I/O 실패 시 false.
+    public static <T> boolean writeList(String filePath, List<T> list) {
         try (Writer writer = new FileWriter(filePath)) {
             gson.toJson(list, writer);
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
 }

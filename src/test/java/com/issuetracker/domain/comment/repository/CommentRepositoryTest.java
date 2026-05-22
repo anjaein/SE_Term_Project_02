@@ -18,7 +18,7 @@ class CommentRepositoryTest {
 
     private static final Path COMMENTS_FILE = Path.of("data", "comments.json");
 
-    private final CommentRepository commentRepository = CommentRepository.getInstance();
+    private final CommentRepository commentRepository = new JsonCommentRepository();
 
     private String originalCommentsJson;
 

@@ -260,7 +260,7 @@ class IssueServiceTest {
     }
 
     //테스트 더블
-    private static class FakeIssueRepository extends IssueRepository {
+    private static class FakeIssueRepository implements IssueRepository {
         private final List<Issue> issues = new ArrayList<>();
         private long nextId = 1L;
 
@@ -285,6 +285,21 @@ class IssueServiceTest {
         }
 
         @Override
+        public List<Issue> findByProjectId(Long projectId) { return List.of(); }
+
+        @Override
+        public List<Issue> findByAssigneeId(Long assigneeId) { return List.of(); }
+
+        @Override
+        public List<Issue> findByReporterId(Long reporterId) { return List.of(); }
+
+        @Override
+        public List<Issue> findByStatus(com.issuetracker.domain.issue.enums.Status status) { return List.of(); }
+
+        @Override
+        public List<Issue> findByPriority(com.issuetracker.domain.issue.enums.Priority priority) { return List.of(); }
+
+        @Override
         public boolean update(Issue updatedIssue) {
             for(int i = 0; i < issues.size(); i++){
                 if(issues.get(i).getIssueId().equals(updatedIssue.getIssueId())){
@@ -297,12 +312,18 @@ class IssueServiceTest {
     }
 
     //테스트 더블
-    private static class FakeProjectMemberRepository extends ProjectMemberRepository {
+    private static class FakeProjectMemberRepository implements ProjectMemberRepository {
         private final List<ProjectMember> members = new ArrayList<>();
 
         void addMember(Long projectId, Long accountId, Role role) {
             members.add(new ProjectMember(projectId, accountId, role));
         }
+
+        @Override
+        public List<ProjectMember> findAll() { return members; }
+
+        @Override
+        public List<ProjectMember> findByProjectId(Long projectId) { return List.of(); }
 
         @Override
         public ProjectMember findByProjectIdAndAccountId(Long projectId, Long accountId) {
@@ -312,5 +333,8 @@ class IssueServiceTest {
                     .findFirst()
                     .orElse(null);
         }
+
+        @Override
+        public boolean save(ProjectMember projectMember) { return true; }
     }
 }

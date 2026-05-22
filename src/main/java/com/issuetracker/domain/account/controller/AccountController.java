@@ -3,6 +3,7 @@ package com.issuetracker.domain.account.controller;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.service.AccountService;
+import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 import lombok.RequiredArgsConstructor;
 
@@ -12,41 +13,34 @@ public class AccountController {
     private final SessionManager sessionManager;
 
     // 로그인
-    public boolean login(String username, String password) {
-        Account account = accountService.login(username, password);
-        if (account != null) {
-            sessionManager.login(account);
-            notifySuccess(account.getUsername() + "login successfully");
-            return true;
+    public Response<Account> login(String username, String password) {
+        Response<Account> result = accountService.login(username, password);
+        if (!result.isSuccess()) {
+            return Response.fail(result.getMessage());
         }
-        notifyError("The ID or password is invalid.");
-        return false;
+        sessionManager.login(result.getData());
+        return Response.success(result.getData().getUsername() + " logged in successfully.", result.getData());
     }
 
     // 로그아웃
-    public void logout() {
+    public Response<Void> logout() {
         sessionManager.logout();
+        return Response.success("Logged out.");
     }
 
     // 계정 생성 (admin만 가능)
-    public void createAccount(String username, String password, Role role) {
-        if (sessionManager.getLoggedInAccount().getRole() != Role.ADMIN) {
-            notifyError("Only admin can create an account.");
-            return;
+    public Response<Account> createAccount(String username, String password, Role role) {
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if (currentUser == null) {
+            return Response.fail("You are not logged in.");
         }
-        accountService.createAccount(username, password, role);
-        notifySuccess("Your account has been created.");
+        if (currentUser.getRole() != Role.ADMIN) {
+            return Response.fail("Only admin can create an account.");
+        }
+        return accountService.createAccount(username, password, role);
     }
 
-    public Long getAccountIdByUsername(String username){
+    public Response<Long> getAccountIdByUsername(String username) {
         return accountService.getAccountIdByUsername(username);
-    }
-
-    private void notifySuccess(String message) {
-        System.out.println("[SUCCESS] " + message);
-    }
-
-    private void notifyError(String message) {
-        System.out.println("[ERROR] " + message);
     }
 }
