@@ -263,7 +263,10 @@ public class MainFrame extends JFrame {
                 if (i.getStatus() == Status.RESOLVED) model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
         });
 
+        JPanel bottom = new JPanel(new BorderLayout());
+        JPanel leftBtns = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton statistics = new JButton("Issue Statistics");
         JButton create = new JButton("New Issue");
         JButton detail = new JButton("View Detail & Actions");
         create.addActionListener(e -> {
@@ -281,8 +284,11 @@ public class MainFrame extends JFrame {
         if (sessionManager.getLoggedInAccount().getRole() == Role.TESTER) {
             btns.add(create);
         }
+        leftBtns.add(statistics);
         btns.add(detail);
-        p.add(btns, BorderLayout.SOUTH);
+        bottom.add(leftBtns, BorderLayout.WEST);
+        bottom.add(btns, BorderLayout.EAST);
+        p.add(bottom, BorderLayout.SOUTH);
 
         return p;
     }
@@ -369,7 +375,7 @@ public class MainFrame extends JFrame {
             JButton resolve = new JButton("Resolve");
             resolve.addActionListener(e -> { issueController.resolveIssue(issueId); d.dispose(); refreshTable.run(); });
             actions.add(resolve);
-        } else if (issue.getStatus() == Status.RESOLVED) {
+        } else if (issue.getStatus() == Status.RESOLVED && cur.getRole() == Role.PL) {
             JButton close = new JButton("Close (PL)");
             close.addActionListener(e -> { issueController.closeIssue(issueId); d.dispose(); refreshTable.run(); });
             actions.add(close);
