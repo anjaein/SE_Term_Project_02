@@ -39,7 +39,6 @@ public class JsonProjectMemberRepository implements ProjectMemberRepository {
         }
         List<ProjectMember> projectMembers = findAll();
         projectMembers.add(projectMember);
-        JsonFileManager.writeList(FILE_PATH, projectMembers);
-        return true;
+        return JsonFileManager.writeList(FILE_PATH, projectMembers);
     }
 }

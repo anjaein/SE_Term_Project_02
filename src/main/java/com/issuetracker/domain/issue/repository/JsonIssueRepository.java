@@ -64,35 +64,25 @@ public class JsonIssueRepository implements IssueRepository {
 
     @Override
     public boolean save(Issue issue) {
-        try {
-            List<Issue> issues = findAll();
-            Long newId = issues.stream()
-                    .mapToLong(Issue::getIssueId)
-                    .max()
-                    .orElse(0L) + 1L;
-            issue.setIssueId(newId);
-            issues.add(issue);
-            JsonFileManager.writeList(FILE_PATH, issues);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        List<Issue> issues = findAll();
+        Long newId = issues.stream()
+                .mapToLong(Issue::getIssueId)
+                .max()
+                .orElse(0L) + 1L;
+        issue.setIssueId(newId);
+        issues.add(issue);
+        return JsonFileManager.writeList(FILE_PATH, issues);
     }
 
     @Override
     public boolean update(Issue updatedIssue) {
-        try {
-            List<Issue> issues = findAll();
-            for (int i = 0; i < issues.size(); i++) {
-                if (issues.get(i).getIssueId().equals(updatedIssue.getIssueId())) {
-                    issues.set(i, updatedIssue);
-                    JsonFileManager.writeList(FILE_PATH, issues);
-                    return true;
-                }
+        List<Issue> issues = findAll();
+        for (int i = 0; i < issues.size(); i++) {
+            if (issues.get(i).getIssueId().equals(updatedIssue.getIssueId())) {
+                issues.set(i, updatedIssue);
+                return JsonFileManager.writeList(FILE_PATH, issues);
             }
-            return false;
-        } catch (Exception e) {
-            return false;
         }
+        return false;
     }
 }

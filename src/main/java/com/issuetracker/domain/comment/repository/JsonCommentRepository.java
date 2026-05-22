@@ -34,49 +34,35 @@ public class JsonCommentRepository implements CommentRepository {
 
     @Override
     public boolean save(Comment comment) {
-        try {
-            List<Comment> comments = findAll();
-            Long newId = comments.stream()
-                    .mapToLong(Comment::getCommentId)
-                    .max()
-                    .orElse(0L) + 1L;
-            comment.setCommentId(newId);
-            comments.add(comment);
-            JsonFileManager.writeList(FILE_PATH, comments);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        List<Comment> comments = findAll();
+        Long newId = comments.stream()
+                .mapToLong(Comment::getCommentId)
+                .max()
+                .orElse(0L) + 1L;
+        comment.setCommentId(newId);
+        comments.add(comment);
+        return JsonFileManager.writeList(FILE_PATH, comments);
     }
 
     @Override
     public boolean update(Comment comment) {
-        try {
-            List<Comment> comments = findAll();
-            for (int i = 0; i < comments.size(); i++) {
-                if (comments.get(i).getCommentId().equals(comment.getCommentId())) {
-                    comments.set(i, comment);
-                    JsonFileManager.writeList(FILE_PATH, comments);
-                    return true;
-                }
+        List<Comment> comments = findAll();
+        for (int i = 0; i < comments.size(); i++) {
+            if (comments.get(i).getCommentId().equals(comment.getCommentId())) {
+                comments.set(i, comment);
+                return JsonFileManager.writeList(FILE_PATH, comments);
             }
-            return false;
-        } catch (Exception e) {
-            return false;
         }
+        return false;
     }
 
     @Override
     public boolean delete(Long commentId) {
-        try {
-            List<Comment> comments = findAll();
-            boolean removed = comments.removeIf(c -> c.getCommentId().equals(commentId));
-            if (removed) {
-                JsonFileManager.writeList(FILE_PATH, comments);
-            }
-            return removed;
-        } catch (Exception e) {
+        List<Comment> comments = findAll();
+        boolean removed = comments.removeIf(c -> c.getCommentId().equals(commentId));
+        if (!removed) {
             return false;
         }
+        return JsonFileManager.writeList(FILE_PATH, comments);
     }
 }

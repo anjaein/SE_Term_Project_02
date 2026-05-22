@@ -4,6 +4,7 @@ import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.global.common.Response;
 import lombok.RequiredArgsConstructor;
 
 import java.time.temporal.ChronoUnit;
@@ -16,8 +17,18 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class IssueStatisticsService {
     private final IssueRepository issueRepository;
+    private final IssueStatisticsValidator statisticsValidator;
 
-    public Map<YearMonth, Long> getMonthlyReportedTrend(Long projectId, int months) {
+    public Response<Map<YearMonth, Long>> getMonthlyReportedTrend(Long projectId, int months) {
+        String missingParams = statisticsValidator.checkNonNull(projectId);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
+        }
+        String invalidMonths = statisticsValidator.checkMonths(months);
+        if (invalidMonths != null) {
+            return Response.fail(invalidMonths);
+        }
+
         YearMonth end = YearMonth.now();
         YearMonth start = end.minusMonths(months - 1);
 
@@ -35,10 +46,15 @@ public class IssueStatisticsService {
                 result.merge(ym, 1L, Long::sum);
             }
         }
-        return result;
+        return Response.success("Monthly reported trend retrieved.", result);
     }
 
-    public Map<LocalDate, Long> getDailyReportedTrend(Long projectId) {
+    public Response<Map<LocalDate, Long>> getDailyReportedTrend(Long projectId) {
+        String missingParams = statisticsValidator.checkNonNull(projectId);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
+        }
+
         LocalDate end = LocalDate.now();
         LocalDate start = end.minusDays(6);
 
@@ -56,11 +72,16 @@ public class IssueStatisticsService {
                 result.merge(day, 1L, Long::sum);
             }
         }
-        return result;
+        return Response.success("Daily reported trend retrieved.", result);
     }
 
     // 일별 이슈 해결 트랜드 (최근 7일, resolvedDate 기준)
-    public Map<LocalDate, Long> getDailyResolvedTrend(Long projectId) {
+    public Response<Map<LocalDate, Long>> getDailyResolvedTrend(Long projectId) {
+        String missingParams = statisticsValidator.checkNonNull(projectId);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
+        }
+
         LocalDate end = LocalDate.now();
         LocalDate start = end.minusDays(6);
 
@@ -78,10 +99,19 @@ public class IssueStatisticsService {
                 result.merge(day, 1L, Long::sum);
             }
         }
-        return result;
+        return Response.success("Daily resolved trend retrieved.", result);
     }
 
-    public Map<YearMonth, Long> getMonthlyResolvedTrend(Long projectId, int months) {
+    public Response<Map<YearMonth, Long>> getMonthlyResolvedTrend(Long projectId, int months) {
+        String missingParams = statisticsValidator.checkNonNull(projectId);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
+        }
+        String invalidMonths = statisticsValidator.checkMonths(months);
+        if (invalidMonths != null) {
+            return Response.fail(invalidMonths);
+        }
+
         YearMonth end = YearMonth.now();
         YearMonth start = end.minusMonths(months - 1);
 
@@ -99,10 +129,15 @@ public class IssueStatisticsService {
                 result.merge(ym, 1L, Long::sum);
             }
         }
-        return result;
+        return Response.success("Monthly resolved trend retrieved.", result);
     }
 
-    public Map<LocalDate, Map<Priority, Long>> getDailyPriorityDistribution(Long projectId) {
+    public Response<Map<LocalDate, Map<Priority, Long>>> getDailyPriorityDistribution(Long projectId) {
+        String missingParams = statisticsValidator.checkNonNull(projectId);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
+        }
+
         LocalDate end = LocalDate.now();
         LocalDate start = end.minusDays(6);
 
@@ -121,10 +156,19 @@ public class IssueStatisticsService {
                 counts.merge(issue.getPriority(), 1L, Long::sum);
             }
         }
-        return distribution;
+        return Response.success("Daily priority distribution retrieved.", distribution);
     }
 
-    public Map<YearMonth, Map<Priority, Long>> getMonthlyPriorityDistribution(Long projectId, int months) {
+    public Response<Map<YearMonth, Map<Priority, Long>>> getMonthlyPriorityDistribution(Long projectId, int months) {
+        String missingParams = statisticsValidator.checkNonNull(projectId);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
+        }
+        String invalidMonths = statisticsValidator.checkMonths(months);
+        if (invalidMonths != null) {
+            return Response.fail(invalidMonths);
+        }
+
         YearMonth end = YearMonth.now();
         YearMonth start = end.minusMonths(months - 1);
 
@@ -143,7 +187,7 @@ public class IssueStatisticsService {
                 counts.merge(issue.getPriority(), 1L, Long::sum);
             }
         }
-        return distribution;
+        return Response.success("Monthly priority distribution retrieved.", distribution);
     }
 
     private Map<Priority, Long> newPriorityCounts() {
@@ -154,7 +198,16 @@ public class IssueStatisticsService {
         return counts;
     }
 
-    public Map<YearMonth, Double> getMonthlyAverageClosedDays(Long projectId, int months){
+    public Response<Map<YearMonth, Double>> getMonthlyAverageClosedDays(Long projectId, int months){
+        String missingParams = statisticsValidator.checkNonNull(projectId);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
+        }
+        String invalidMonths = statisticsValidator.checkMonths(months);
+        if (invalidMonths != null) {
+            return Response.fail(invalidMonths);
+        }
+
         YearMonth end = YearMonth.now();
         YearMonth start = end.minusMonths(months - 1);
         List<Issue> issues = issueRepository.findByProjectId(projectId);
@@ -179,6 +232,6 @@ public class IssueStatisticsService {
             double average = (double) stats[0] / stats[1];
             result.put(entry.getKey(), average);
         }
-        return result;
+        return Response.success("Monthly average closed days retrieved.", result);
     }
 }

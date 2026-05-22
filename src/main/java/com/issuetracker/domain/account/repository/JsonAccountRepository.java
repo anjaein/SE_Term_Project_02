@@ -34,7 +34,7 @@ public class JsonAccountRepository implements AccountRepository {
     }
 
     @Override
-    public void save(Account account) {
+    public boolean save(Account account) {
         List<Account> accounts = findAll();
         Long newId = accounts.stream()
                 .mapToLong(Account::getAccountId)
@@ -42,7 +42,7 @@ public class JsonAccountRepository implements AccountRepository {
                 .orElse(0L) + 1L;
         account.setAccountId(newId);
         accounts.add(account);
-        JsonFileManager.writeList(FILE_PATH, accounts);
+        return JsonFileManager.writeList(FILE_PATH, accounts);
     }
 
     @Override

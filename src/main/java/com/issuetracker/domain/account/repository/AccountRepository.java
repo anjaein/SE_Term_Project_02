@@ -8,6 +8,6 @@ public interface AccountRepository {
     List<Account> findAll();
     Account findByUsername(String username);
     Account findById(Long accountId);
-    void save(Account account);
+    boolean save(Account account);
     Long getAccountIdByUsername(String username);
 }

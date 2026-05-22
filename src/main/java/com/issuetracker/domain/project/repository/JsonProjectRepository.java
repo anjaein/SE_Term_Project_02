@@ -36,7 +36,6 @@ public class JsonProjectRepository implements ProjectRepository {
                 .orElse(0L) + 1L;
         project.setProjectId(newId);
         projects.add(project);
-        JsonFileManager.writeList(FILE_PATH, projects);
-        return true;
+        return JsonFileManager.writeList(FILE_PATH, projects);
     }
 }
