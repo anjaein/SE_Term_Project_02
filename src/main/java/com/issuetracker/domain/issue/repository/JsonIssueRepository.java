@@ -1,0 +1,88 @@
+package com.issuetracker.domain.issue.repository;
+
+import com.google.gson.reflect.TypeToken;
+import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
+import com.issuetracker.domain.issue.enums.Status;
+import com.issuetracker.global.common.JsonFileManager;
+
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class JsonIssueRepository implements IssueRepository {
+    private static final String FILE_PATH = "data/issues.json";
+    private static final Type TYPE = new TypeToken<List<Issue>>(){}.getType();
+
+    @Override
+    public List<Issue> findAll() {
+        return JsonFileManager.readList(FILE_PATH, TYPE);
+    }
+
+    @Override
+    public List<Issue> findByProjectId(Long projectId) {
+        return findAll().stream()
+                .filter(issue -> issue.getProjectId().equals(projectId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Issue> findByAssigneeId(Long assigneeId) {
+        return findAll().stream()
+                .filter(issue -> assigneeId.equals(issue.getAssigneeId()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Issue> findByReporterId(Long reporterId) {
+        return findAll().stream()
+                .filter(issue -> issue.getReporterId().equals(reporterId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Issue> findByStatus(Status status) {
+        return findAll().stream()
+                .filter(issue -> issue.getStatus().equals(status))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Issue> findByPriority(Priority priority) {
+        return findAll().stream()
+                .filter(issue -> issue.getPriority().equals(priority))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Issue findByIssueId(Long issueId) {
+        return findAll().stream()
+                .filter(issue -> issue.getIssueId().equals(issueId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public boolean save(Issue issue) {
+        List<Issue> issues = findAll();
+        Long newId = issues.stream()
+                .mapToLong(Issue::getIssueId)
+                .max()
+                .orElse(0L) + 1L;
+        issue.setIssueId(newId);
+        issues.add(issue);
+        return JsonFileManager.writeList(FILE_PATH, issues);
+    }
+
+    @Override
+    public boolean update(Issue updatedIssue) {
+        List<Issue> issues = findAll();
+        for (int i = 0; i < issues.size(); i++) {
+            if (issues.get(i).getIssueId().equals(updatedIssue.getIssueId())) {
+                issues.set(i, updatedIssue);
+                return JsonFileManager.writeList(FILE_PATH, issues);
+            }
+        }
+        return false;
+    }
+}

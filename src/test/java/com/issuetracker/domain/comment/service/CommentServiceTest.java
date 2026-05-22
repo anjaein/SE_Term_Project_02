@@ -3,8 +3,11 @@ package com.issuetracker.domain.comment.service;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.comment.entity.Comment;
+import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.comment.repository.CommentRepository;
+import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.global.common.JsonFileManager;
@@ -28,7 +31,7 @@ class CommentServiceTest {
     private static final Path ISSUES_FILE = Path.of("data", "issues.json");
 
     private CommentService commentService;
-    private final CommentRepository commentRepository = CommentRepository.getInstance();
+    private final CommentRepository commentRepository = new JsonCommentRepository();
     private AccountRepository accountRepository;
     private IssueRepository issueRepository;
 
@@ -42,8 +45,8 @@ class CommentServiceTest {
         originalCommentsJson = readOriginal(COMMENTS_FILE);
         originalIssuesJson = readOriginal(ISSUES_FILE);
         // 1. 매번 새로운 레포지토리를 생성 (데이터 0개인 상태)
-        accountRepository = new AccountRepository();
-        issueRepository = new IssueRepository();
+        accountRepository = new JsonAccountRepository();
+        issueRepository = new JsonIssueRepository();
         // 2. 이 레포지토리들을 주입해서 서비스를 생성
         commentService = new CommentService(commentRepository, accountRepository, issueRepository);
 
