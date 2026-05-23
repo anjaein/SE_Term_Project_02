@@ -1,75 +1,104 @@
 package com.issuetracker.domain.comment.service;
 
-import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.comment.repository.CommentRepository;
-import com.issuetracker.domain.issue.repository.IssueRepository;
-import lombok.NoArgsConstructor;
+import com.issuetracker.global.common.Response;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 
+@RequiredArgsConstructor
 public class CommentService {
     private final CommentRepository commentRepository;
-    private final AccountRepository accountRepository ;
-    private final IssueRepository issueRepository;
-    private static CommentService instance;
+    private final CommentValidator commentValidator;
 
-    public CommentService(CommentRepository commentRepository, AccountRepository accountRepository, IssueRepository issueRepository) {
-        this.commentRepository = commentRepository;
-        this.accountRepository = accountRepository;
-        this.issueRepository = issueRepository;
-    }
-
-    public boolean createComment(Long issueId, Long authorId, String content) {
-        if (issueId == null || authorId == null || content == null || content.trim().isEmpty()) {
-            return false;
+    public Response<Comment> createComment(Long issueId, Long authorId, String content) {
+        String missingParams = commentValidator.checkNonNull(issueId, authorId, content);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
         }
 
-        if (accountRepository.findById(authorId) == null) {
-            return false;
+        String blankContent = commentValidator.checkNonBlank(content, "Comment content");
+        if (blankContent != null) {
+            return Response.fail(blankContent);
         }
 
-        boolean issueExists = issueRepository.findAll().stream()
-                .anyMatch(issue -> issueId.equals(issue.getIssueId()));
-        if (!issueExists) {
-            return false;
+        String missingIssue = commentValidator.checkIssueExists(issueId);
+        if (missingIssue != null) {
+            return Response.fail(missingIssue);
+        }
+
+        String notMember = commentValidator.checkProjectMember(issueId, authorId);
+        if (notMember != null) {
+            return Response.fail(notMember);
         }
 
         Comment comment = new Comment(issueId, authorId, content);
-        return commentRepository.save(comment);
+        if (!commentRepository.save(comment)) {
+            return Response.fail("Failed to save the comment.");
+        }
+        return Response.success("Comment created.", comment);
     }
 
-    public List<Comment> getCommentsByIssueId(Long issueId) {
-        return commentRepository.findByIssueId(issueId);
+    public Response<List<Comment>> getCommentsByIssueId(Long issueId) {
+        return Response.success("Comments retrieved.", commentRepository.findByIssueId(issueId));
     }
 
-    public Comment getCommentById(Long commentId) {
-        return commentRepository.findByCommentId(commentId);
-    }
-
-    public boolean updateComment(Long commentId, Long userId, String newContent) {
+    public Response<Comment> getCommentById(Long commentId) {
         Comment comment = commentRepository.findByCommentId(commentId);
+        if (comment == null) {
+            return Response.fail("Comment not found.");
+        }
+        return Response.success("Comment retrieved.", comment);
+    }
 
-        if (comment == null || !comment.getAuthorId().equals(userId)) {
-            return false;
+    public Response<Comment> updateComment(Long commentId, Long userId, String newContent) {
+        String missingParams = commentValidator.checkNonNull(commentId, userId, newContent);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
         }
 
-        comment.updateContent(newContent);
-        return commentRepository.update(comment);
-    }
+        String blankContent = commentValidator.checkNonBlank(newContent, "Comment content");
+        if (blankContent != null) {
+            return Response.fail(blankContent);
+        }
 
-    public boolean deleteComment(Long commentId, Long userId, boolean isAdmin) {
         Comment comment = commentRepository.findByCommentId(commentId);
 
         if (comment == null) {
-            return false;
+            return Response.fail("Comment not found.");
+        }
+        if (!comment.getAuthorId().equals(userId)) {
+            return Response.fail("You can only update your own comments.");
+        }
+
+        comment.updateContent(newContent);
+        if (!commentRepository.update(comment)) {
+            return Response.fail("Failed to update the comment.");
+        }
+        return Response.success("Comment updated.", comment);
+    }
+
+    public Response<Comment> deleteComment(Long commentId, Long userId, boolean isAdmin) {
+        String missingParams = commentValidator.checkNonNull(commentId, userId);
+        if (missingParams != null) {
+            return Response.fail(missingParams);
+        }
+
+        Comment comment = commentRepository.findByCommentId(commentId);
+
+        if (comment == null) {
+            return Response.fail("Comment not found.");
         }
 
         if (!comment.getAuthorId().equals(userId) && !isAdmin) {
-            return false;
+            return Response.fail("You can only delete your own comments.");
         }
 
-        return commentRepository.delete(commentId);
+        if (!commentRepository.delete(commentId)) {
+            return Response.fail("Failed to delete the comment.");
+        }
+        return Response.success("Comment deleted.", comment);
     }
 }

@@ -7,6 +7,7 @@ import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
+import com.issuetracker.global.common.Response;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -16,153 +17,193 @@ import java.util.List;
 public class IssueService {
     private final IssueRepository issueRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final IssueValidator issueValidator;
 
-    public boolean createIssue(Long projectId, String title, String description, Long reporterId){
+    public Response<Issue> createIssue(Long projectId, String title, String description, Long reporterId){
 
         // 요청에 누락은 없는지
-        if(projectId == null || title == null || description == null || reporterId == null){
-            return false;
+        String missingParams = issueValidator.checkNonNull(projectId, title, description, reporterId);
+        if(missingParams != null){
+            return Response.fail(missingParams);
         }
 
         // title 필수값 검증
-        if(title.trim().isEmpty()){
-            return false;
+        String blankTitle = issueValidator.checkNonBlank(title, "Issue title");
+        if(blankTitle != null){
+            return Response.fail(blankTitle);
         }
 
         // description 필수값 검증
-        if(description.trim().isEmpty()){
-            return false;
+        String blankDescription = issueValidator.checkNonBlank(description, "Issue description");
+        if(blankDescription != null){
+            return Response.fail(blankDescription);
+        }
+
+        // Issue가 속할 project가 존재하는지 확인
+        String missingProject = issueValidator.checkProjectExists(projectId);
+        if(missingProject != null){
+            return Response.fail(missingProject);
         }
 
         // Issue 생성을 요청한 reporterId가 project의 member인지 확인
-        if(projectMemberRepository.findByProjectIdAndAccountId(projectId, reporterId) == null){
-            return false;
+        String notMember = issueValidator.checkProjectMember(projectId, reporterId);
+        if(notMember != null){
+            return Response.fail(notMember);
         }
 
         Issue issue = new Issue(projectId, title, description, reporterId);
-        return issueRepository.save(issue);
+        if(!issueRepository.save(issue)){
+            return Response.fail("Failed to save the issue.");
+        }
+        return Response.success("Issue created.", issue);
     }
 
-    public List<Issue> getAllIssues(){
-        return issueRepository.findAll();
+    public Response<List<Issue>> getAllIssues(){
+        return Response.success("Issues retrieved.", issueRepository.findAll());
     }
 
-    public List<Issue> getIssuesByProjectId(Long projectId){
-        if(projectId == null) return List.of();
-        return issueRepository.findByProjectId(projectId);
+    public Response<List<Issue>> getIssuesByProjectId(Long projectId){
+        if(projectId == null) return Response.success("Issues retrieved.", List.of());
+        return Response.success("Issues retrieved.", issueRepository.findByProjectId(projectId));
     }
 
-    public List<Issue> getIssuesByAssigneeId(Long assigneeId){
-        if(assigneeId == null) return List.of();
-        return issueRepository.findByAssigneeId(assigneeId);
+    public Response<List<Issue>> getIssuesByAssigneeId(Long assigneeId){
+        if(assigneeId == null) return Response.success("Issues retrieved.", List.of());
+        return Response.success("Issues retrieved.", issueRepository.findByAssigneeId(assigneeId));
     }
 
-    public List<Issue> getIssuesByReporterId(Long reporterId){
-        if(reporterId == null) return List.of();
-        return issueRepository.findByReporterId(reporterId);
+    public Response<List<Issue>> getIssuesByReporterId(Long reporterId){
+        if(reporterId == null) return Response.success("Issues retrieved.", List.of());
+        return Response.success("Issues retrieved.", issueRepository.findByReporterId(reporterId));
     }
 
-    public List<Issue> getIssuesByStatus(Status status){
-        if(status == null) return List.of();
-        return issueRepository.findByStatus(status);
+    public Response<List<Issue>> getIssuesByStatus(Status status){
+        if(status == null) return Response.success("Issues retrieved.", List.of());
+        return Response.success("Issues retrieved.", issueRepository.findByStatus(status));
     }
 
-    public List<Issue> getIssuesByPriority(Priority priority){
-        if(priority == null) return List.of();
-        return issueRepository.findByPriority(priority);
+    public Response<List<Issue>> getIssuesByPriority(Priority priority){
+        if(priority == null) return Response.success("Issues retrieved.", List.of());
+        return Response.success("Issues retrieved.", issueRepository.findByPriority(priority));
     }
 
-    public List<Issue> getIssuesByStatusAndPriority(Status status, Priority priority){
-        if(status == null && priority == null) return getAllIssues();
-        if(status == null) return getIssuesByPriority(priority);
-        if(priority == null) return getIssuesByStatus(status);
-
-        return issueRepository.findByStatus(status).stream()
-                .filter(issue -> issue.getPriority() == priority)
-                .toList();
-    }
-
-    public Issue getIssueById(Long issueId){
-        if(issueId == null) return null;
-        return issueRepository.findByIssueId(issueId);
-    }
-
-    public boolean assignIssue(Long issueId, Long assigneeId, Long requesterId){
-        if(issueId == null || assigneeId == null || requesterId == null){
-            return false;
+    public Response<Issue> getIssueById(Long issueId){
+        String missingParams = issueValidator.checkNonNull(issueId);
+        if(missingParams != null){
+            return Response.fail(missingParams);
         }
 
         Issue issue = issueRepository.findByIssueId(issueId);
-        if(issue == null || issue.getStatus() != Status.NEW){
-            return false;
+        if(issue == null){
+            return Response.fail("Issue not found.");
+        }
+        return Response.success("Issue retrieved.", issue);
+    }
+
+    public Response<Issue> assignIssue(Long issueId, Long assigneeId, Long requesterId){
+        String missingParams = issueValidator.checkNonNull(issueId, assigneeId, requesterId);
+        if(missingParams != null){
+            return Response.fail(missingParams);
+        }
+
+        Issue issue = issueRepository.findByIssueId(issueId);
+        if(issue == null){
+            return Response.fail("Issue not found.");
+        }
+        if(issue.getStatus() != Status.NEW){
+            return Response.fail("Issue is not in NEW status.");
         }
 
         ProjectMember requester = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), requesterId);
         if(requester == null || requester.getRole() != Role.PL){
-            return false;
+            return Response.fail("Only a PL can assign issues.");
         }
 
         ProjectMember assignee = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), assigneeId);
         if(assignee == null || assignee.getRole() != Role.DEV){
-            return false;
+            return Response.fail("Assignee must be a DEV of the project.");
         }
 
         issue.assignTo(assigneeId);
-        return issueRepository.update(issue);
+        if(!issueRepository.update(issue)){
+            return Response.fail("Failed to update the issue.");
+        }
+        return Response.success("Issue assigned.", issue);
     }
 
-    public boolean fixIssue(Long issueId, Long requesterId){
-        if(issueId == null || requesterId == null){
-            return false;
+    public Response<Issue> fixIssue(Long issueId, Long requesterId){
+        String missingParams = issueValidator.checkNonNull(issueId, requesterId);
+        if(missingParams != null){
+            return Response.fail(missingParams);
         }
 
         Issue issue = issueRepository.findByIssueId(issueId);
-        if(issue == null || issue.getStatus() != Status.ASSIGNED){
-            return false;
+        if(issue == null){
+            return Response.fail("Issue not found.");
+        }
+        if(issue.getStatus() != Status.ASSIGNED){
+            return Response.fail("Issue is not in ASSIGNED status.");
         }
 
         if(!requesterId.equals(issue.getAssigneeId())){
-            return false;
+            return Response.fail("Only the assignee can fix the issue.");
         }
 
         issue.markAsFixed(requesterId);
-        return issueRepository.update(issue);
+        if(!issueRepository.update(issue)){
+            return Response.fail("Failed to update the issue.");
+        }
+        return Response.success("Issue fixed.", issue);
     }
 
-    public boolean resolveIssue(Long issueId, Long requesterId){
-        if(issueId == null || requesterId == null){
-            return false;
+    public Response<Issue> resolveIssue(Long issueId, Long requesterId){
+        String missingParams = issueValidator.checkNonNull(issueId, requesterId);
+        if(missingParams != null){
+            return Response.fail(missingParams);
         }
 
         Issue issue = issueRepository.findByIssueId(issueId);
-        if(issue == null || issue.getStatus() != Status.FIXED){
-            return false;
+        if(issue == null){
+            return Response.fail("Issue not found.");
+        }
+        if(issue.getStatus() != Status.FIXED){
+            return Response.fail("Issue is not in FIXED status.");
         }
 
         if(!requesterId.equals(issue.getReporterId())){
-            return false;
+            return Response.fail("Only the reporter can resolve the issue.");
         }
 
         issue.markAsResolved();
-        return issueRepository.update(issue);
+        if(!issueRepository.update(issue)){
+            return Response.fail("Failed to update the issue.");
+        }
+        return Response.success("Issue resolved.", issue);
     }
 
-    public boolean closeIssue(Long issueId, Long requesterId){
-        if(issueId == null || requesterId == null){
-            return false;
+    public Response<Issue> closeIssue(Long issueId, Long requesterId){
+        String missingParams = issueValidator.checkNonNull(issueId, requesterId);
+        if(missingParams != null){
+            return Response.fail(missingParams);
         }
 
         Issue issue = issueRepository.findByIssueId(issueId);
-        if(issue == null || issue.getStatus() != Status.RESOLVED){
-            return false;
+        if(issue == null){
+            return Response.fail("Issue not found.");
+        }
+        if(issue.getStatus() != Status.RESOLVED){
+            return Response.fail("Issue is not in RESOLVED status.");
         }
 
         ProjectMember requester = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), requesterId);
         if(requester == null || requester.getRole() != Role.PL){
-            return false;
+            return Response.fail("Only a PL can close issues.");
         }
 
         issue.markAsClosed();
-        return issueRepository.update(issue);
+        if(!issueRepository.update(issue)){
+            return Response.fail("Failed to update the issue.");
+        }
+        return Response.success("Issue closed.", issue);
     }
 }
