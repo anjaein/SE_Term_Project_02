@@ -2,6 +2,7 @@ package com.issuetracker.domain.recommend.service;
 
 import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.global.common.Response;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;
@@ -12,12 +13,17 @@ public class RecommendService implements IRecommendService {
     private final IssueRepository issueRepository;
 
     // 추천 Assignees ID 반환
-    public List<Long> recommendAssignees(Long projectId, String title, String description) {
-        if (projectId == null || title == null || description == null) return List.of();
+    @Override
+    public Response<List<Long>> recommendAssignees(Long projectId, String title, String description) {
+        if (projectId == null || title == null || description == null) {
+            return Response.success("Insufficient data for recommendation.", List.of());
+        }
 
         // 새로운 Issue 토큰화 (Set 중복 제거)
         Set<String> newTokens = tokenize(title + " " + description);
-        if (newTokens.isEmpty()) return List.of();
+        if (newTokens.isEmpty()) {
+            return Response.success("No keywords found for recommendation.", List.of());
+        }
 
         // 점수 저장 Map
         Map<Long, Double> scores = new HashMap<>();
@@ -32,11 +38,13 @@ public class RecommendService implements IRecommendService {
                     }
                 });
 
-        return scores.entrySet().stream()
+        List<Long> result = scores.entrySet().stream()
                 .sorted(Map.Entry.<Long, Double>comparingByValue().reversed()) //점수 높은 순으로 정렬
                 .limit(3) // 상위 3명
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
+
+        return Response.success("Recommendations generated.", result);
     }
 
     Set<String> tokenize(String text) {

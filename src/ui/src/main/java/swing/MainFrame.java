@@ -17,11 +17,13 @@ import com.issuetracker.domain.project.entity.Project;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
+import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class MainFrame extends JFrame {
     private final AccountController accountController;
@@ -86,10 +88,11 @@ public class MainFrame extends JFrame {
         loginBtn.addActionListener(e -> {
             String username = userField.getText();
             String password = new String(passField.getPassword());
-            if (accountController.login(username, password)) {
+            Response<Account> response = accountController.login(username, password);
+            if (response.isSuccess()) {
                 showDashboard();
             } else {
-                JOptionPane.showMessageDialog(this, "Login failed!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -130,7 +133,14 @@ public class MainFrame extends JFrame {
         JTextField u = new JTextField(10); JTextField pw = new JTextField(10);
         JComboBox<Role> r = new JComboBox<>(Role.values());
         JButton b = new JButton("Create Account");
-        b.addActionListener(e -> accountController.createAccount(u.getText(), pw.getText(), (Role)r.getSelectedItem()));
+        b.addActionListener(e -> {
+            Response<Account> resp = accountController.createAccount(u.getText(), pw.getText(), (Role)r.getSelectedItem());
+            if (resp.isSuccess()) {
+                JOptionPane.showMessageDialog(this, resp.getMessage());
+            } else {
+                JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
         acc.add(new JLabel("User:")); acc.add(u); acc.add(new JLabel("Pass:")); acc.add(pw);
         acc.add(new JLabel("Role:")); acc.add(r); acc.add(b);
 
@@ -138,7 +148,14 @@ public class MainFrame extends JFrame {
         proj.setBorder(BorderFactory.createTitledBorder("Add Project"));
         JTextField pn = new JTextField(20);
         JButton pb = new JButton("Create Project");
-        pb.addActionListener(e -> projectController.createProject(pn.getText()));
+        pb.addActionListener(e -> {
+            Response<Project> resp = projectController.createProject(pn.getText());
+            if (resp.isSuccess()) {
+                JOptionPane.showMessageDialog(this, resp.getMessage());
+            } else {
+                JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
         proj.add(new JLabel("Name:")); proj.add(pn); proj.add(pb);
 
         p.add(acc); p.add(proj);
@@ -170,8 +187,13 @@ public class MainFrame extends JFrame {
             if (row >= 0) {
                 mModel.setRowCount(0);
                 Long pid = (Long) pTable.getValueAt(row, 0);
-                for (ProjectMember m : projectService.getProjectMembers(pid)) {
-                    mModel.addRow(new Object[]{m.getAccountId(), m.getRole()});
+                Response<List<ProjectMember>> resp = projectService.getProjectMembers(pid);
+                if (resp.isSuccess()) {
+                    for (ProjectMember m : resp.getData()) {
+                        mModel.addRow(new Object[]{m.getAccountId(), m.getRole()});
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -187,7 +209,14 @@ public class MainFrame extends JFrame {
             JButton b = new JButton("Add Member");
             b.addActionListener(e -> {
                 int row = pTable.getSelectedRow();
-                if (row >= 0) projectController.addProjectMember((Long)pTable.getValueAt(row, 0), un.getText(), (Role)r.getSelectedItem());
+                if (row >= 0) {
+                    Response<ProjectMember> resp = projectController.addProjectMember((Long)pTable.getValueAt(row, 0), un.getText(), (Role)r.getSelectedItem());
+                    if (resp.isSuccess()) {
+                        JOptionPane.showMessageDialog(this, resp.getMessage());
+                    } else {
+                        JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
                 else JOptionPane.showMessageDialog(this, "Please select a project first.");
             });
             addM.add(new JLabel("User:")); addM.add(un); addM.add(new JLabel("Role:")); addM.add(r); addM.add(b);
@@ -230,8 +259,13 @@ public class MainFrame extends JFrame {
 
         Runnable refreshAll = () -> {
             model.setRowCount(0);
-            for (Issue i : issueService.getAllIssues()) {
-                model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+            Response<List<Issue>> resp = issueService.getAllIssues();
+            if (resp.isSuccess()) {
+                for (Issue i : resp.getData()) {
+                    model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         };
 
@@ -239,8 +273,18 @@ public class MainFrame extends JFrame {
             model.setRowCount(0);
             Status status = (Status) sf.getSelectedItem();
             Priority priority = (Priority) pf.getSelectedItem();
-            for (Issue i : issueService.getIssuesByStatusAndPriority(status, priority))
-                model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+            Response<List<Issue>> resp = issueService.getAllIssues();
+            if (resp.isSuccess()) {
+                for (Issue i : resp.getData()) {
+                    boolean statusMatch = (status == null || i.getStatus() == status);
+                    boolean priorityMatch = (priority == null || i.getPriority() == priority);
+                    if (statusMatch && priorityMatch) {
+                        model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+                    }
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
         all.addActionListener(e -> {
             sf.setSelectedIndex(0);
@@ -249,18 +293,36 @@ public class MainFrame extends JFrame {
         });
         mine.addActionListener(e -> {
             model.setRowCount(0);
-            for (Issue i : issueService.getIssuesByAssigneeId(sessionManager.getLoggedInAccount().getAccountId()))
-                if (i.getStatus() == Status.ASSIGNED) model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+            Response<List<Issue>> resp = issueService.getIssuesByAssigneeId(sessionManager.getLoggedInAccount().getAccountId());
+            if (resp.isSuccess()) {
+                for (Issue i : resp.getData()) {
+                    if (i.getStatus() == Status.ASSIGNED) model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
         reported.addActionListener(e -> {
             model.setRowCount(0);
-            for (Issue i : issueService.getIssuesByReporterId(sessionManager.getLoggedInAccount().getAccountId()))
-                if (i.getStatus() == Status.FIXED) model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+            Response<List<Issue>> resp = issueService.getIssuesByReporterId(sessionManager.getLoggedInAccount().getAccountId());
+            if (resp.isSuccess()) {
+                for (Issue i : resp.getData()) {
+                    if (i.getStatus() == Status.FIXED) model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
         resolved.addActionListener(e -> {
             model.setRowCount(0);
-            for (Issue i : issueService.getAllIssues())
-                if (i.getStatus() == Status.RESOLVED) model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+            Response<List<Issue>> resp = issueService.getAllIssues();
+            if (resp.isSuccess()) {
+                for (Issue i : resp.getData()) {
+                    if (i.getStatus() == Status.RESOLVED) model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), i.getReporterId(), i.getAssigneeId()});
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         JPanel bottom = new JPanel(new BorderLayout());
@@ -273,8 +335,13 @@ public class MainFrame extends JFrame {
             JTextField pid = new JTextField(); JTextField title = new JTextField(); JTextArea desc = new JTextArea(5, 20);
             Object[] msg = {"Project ID:", pid, "Title:", title, "Description:", new JScrollPane(desc)};
             if (JOptionPane.showConfirmDialog(this, msg, "Create Issue", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-                issueController.createIssue(Long.parseLong(pid.getText()), title.getText(), desc.getText(), sessionManager.getLoggedInAccount().getAccountId());
-                refreshAll.run();
+                Response<Issue> resp = issueController.createIssue(Long.parseLong(pid.getText()), title.getText(), desc.getText());
+                if (resp.isSuccess()) {
+                    JOptionPane.showMessageDialog(this, resp.getMessage());
+                    refreshAll.run();
+                } else {
+                    JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         detail.addActionListener(e -> {
@@ -294,8 +361,12 @@ public class MainFrame extends JFrame {
     }
 
     private void showIssueDetail(Long issueId, Runnable refreshTable) {
-        Issue issue = issueService.getIssueById(issueId);
-        if (issue == null) return;
+        Response<Issue> issueResp = issueService.getIssueById(issueId);
+        if (!issueResp.isSuccess()) {
+            JOptionPane.showMessageDialog(this, issueResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        Issue issue = issueResp.getData();
 
         JDialog d = new JDialog(this, "Issue Detail #" + issueId, true);
         d.setSize(700, 600); d.setLayout(new BorderLayout(10, 10));
@@ -320,7 +391,12 @@ public class MainFrame extends JFrame {
         });
         Runnable refreshC = () -> {
             cm.clear();
-            for (Comment c : commentService.getCommentsByIssueId(issueId)) cm.addElement(c);
+            Response<List<Comment>> resp = commentService.getCommentsByIssueId(issueId);
+            if (resp.isSuccess()) {
+                for (Comment c : resp.getData()) cm.addElement(c);
+            } else {
+                JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         };
         refreshC.run();
         d.add(new JScrollPane(cl), BorderLayout.CENTER);
@@ -329,7 +405,14 @@ public class MainFrame extends JFrame {
         JButton addC = new JButton("Add Comment");
         addC.addActionListener(e -> {
             String c = JOptionPane.showInputDialog("Comment content:");
-            if (c != null && !c.trim().isEmpty()) { commentController.createComment(issueId, c); refreshC.run(); }
+            if (c != null && !c.trim().isEmpty()) {
+                Response<Comment> resp = commentController.createComment(issueId, c);
+                if (resp.isSuccess()) {
+                    refreshC.run();
+                } else {
+                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         });
         actions.add(addC);
 
@@ -341,14 +424,14 @@ public class MainFrame extends JFrame {
                 JOptionPane.showMessageDialog(d, "Please select a comment first.");
                 return;
             }
-            if (!cur.getAccountId().equals(selected.getAuthorId())) {
-                JOptionPane.showMessageDialog(d, "You can only update your own comments.");
-                return;
-            }
             String updated = JOptionPane.showInputDialog(d, "Update comment:", selected.getContent());
             if (updated != null && !updated.trim().isEmpty()) {
-                commentController.updateComment(selected.getCommentId(), updated);
-                refreshC.run();
+                Response<Comment> resp = commentController.updateComment(selected.getCommentId(), updated);
+                if (resp.isSuccess()) {
+                    refreshC.run();
+                } else {
+                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         actions.add(updateC);
@@ -358,7 +441,16 @@ public class MainFrame extends JFrame {
             JButton recommend = new JButton("Recommend");
             assign.addActionListener(e -> {
                 String tid = JOptionPane.showInputDialog("Target Dev ID:"); String msg = JOptionPane.showInputDialog("Assignment Message:");
-                if (tid != null && msg != null) { commentController.createComment(issueId, msg); issueController.assignIssue(issueId, Long.parseLong(tid)); d.dispose(); refreshTable.run(); }
+                if (tid != null && msg != null) {
+                    commentController.createComment(issueId, msg);
+                    Response<Issue> resp = issueController.assignIssue(issueId, Long.parseLong(tid));
+                    if (resp.isSuccess()) {
+                        d.dispose();
+                        refreshTable.run();
+                    } else {
+                        JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
             });
             if (cur.getRole() == Role.PL) {
                 actions.add(assign);
@@ -368,16 +460,41 @@ public class MainFrame extends JFrame {
             JButton fix = new JButton("Fix (Dev)");
             fix.addActionListener(e -> {
                 String msg = JOptionPane.showInputDialog("Fixing Message:");
-                if (msg != null) { commentController.createComment(issueId, msg); issueController.fixIssue(issueId); d.dispose(); refreshTable.run(); }
+                if (msg != null) {
+                    commentController.createComment(issueId, msg);
+                    Response<Issue> resp = issueController.fixIssue(issueId);
+                    if (resp.isSuccess()) {
+                        d.dispose();
+                        refreshTable.run();
+                    } else {
+                        JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
             });
             actions.add(fix);
         } else if (issue.getStatus() == Status.FIXED && cur.getAccountId().equals(issue.getReporterId())) {
             JButton resolve = new JButton("Resolve");
-            resolve.addActionListener(e -> { issueController.resolveIssue(issueId); d.dispose(); refreshTable.run(); });
+            resolve.addActionListener(e -> {
+                Response<Issue> resp = issueController.resolveIssue(issueId);
+                if (resp.isSuccess()) {
+                    d.dispose();
+                    refreshTable.run();
+                } else {
+                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
             actions.add(resolve);
         } else if (issue.getStatus() == Status.RESOLVED && cur.getRole() == Role.PL) {
             JButton close = new JButton("Close (PL)");
-            close.addActionListener(e -> { issueController.closeIssue(issueId); d.dispose(); refreshTable.run(); });
+            close.addActionListener(e -> {
+                Response<Issue> resp = issueController.closeIssue(issueId);
+                if (resp.isSuccess()) {
+                    d.dispose();
+                    refreshTable.run();
+                } else {
+                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
             actions.add(close);
         }
 

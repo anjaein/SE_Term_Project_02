@@ -1,8 +1,6 @@
-package com.issuetracker;
+package ui.swing;
 
 import com.issuetracker.domain.account.controller.AccountController;
-import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
@@ -27,21 +25,17 @@ import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
 import com.issuetracker.domain.project.service.ProjectValidator;
-import com.issuetracker.global.common.SessionManager;
 
+import com.issuetracker.global.common.SessionManager;
 import com.issuetracker.domain.recommend.controller.IRecommendController;
 import com.issuetracker.domain.recommend.controller.RecommendController;
 import com.issuetracker.domain.recommend.service.IRecommendService;
 import com.issuetracker.domain.recommend.service.RecommendService;
-import com.issuetracker.global.common.SessionManager;
 
-import java.util.Comparator;
-import java.util.List;
+import javax.swing.*;
 
-public class Main {
+public class SwingMain {
     public static void main(String[] args) {
-
-        // Repository
         AccountRepository accountRepository = new JsonAccountRepository();
         ProjectRepository projectRepository = new JsonProjectRepository();
         ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
@@ -50,28 +44,39 @@ public class Main {
 
         SessionManager sessionManager = new SessionManager();
 
-        // Validator
         AccountValidator accountValidator = new AccountValidator(accountRepository);
         ProjectValidator projectValidator = new ProjectValidator(projectRepository);
         IssueValidator issueValidator = new IssueValidator(projectMemberRepository, projectRepository);
-        IssueStatisticsValidator issueStatisticsValidator = new IssueStatisticsValidator();
-        CommentValidator commentValidator =
-                new CommentValidator(issueRepository, projectMemberRepository);
+        CommentValidator commentValidator = new CommentValidator(issueRepository, projectMemberRepository);
 
-        // Service
         AccountService accountService = new AccountService(accountRepository, accountValidator);
         ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository, projectValidator);
         IssueService issueService = new IssueService(issueRepository, projectMemberRepository, issueValidator);
         CommentService commentService = new CommentService(commentRepository, commentValidator);
-        IssueStatisticsService issueStatisticsService = new IssueStatisticsService(issueRepository, issueStatisticsValidator);
-
-        IRecommendService recommendService = new RecommendService(issueRepository);
-        IRecommendController recommendController = new RecommendController(recommendService, accountRepository);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
         IssueController issueController = new IssueController(issueService, sessionManager);
         CommentController commentController = new CommentController(commentService, sessionManager);
 
+        IRecommendService recommendService = new RecommendService(issueRepository);
+        IRecommendController recommendController = new RecommendController(recommendService, accountRepository);
+
+        IssueStatisticsValidator issueStatisticsValidator = new IssueStatisticsValidator();
+        IssueStatisticsService issueStatisticsService = new IssueStatisticsService(issueRepository, issueStatisticsValidator);
+        IssueStatisticsController issueStatisticsController =
+                new IssueStatisticsController(issueStatisticsService, sessionManager);
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ignored) {}
+
+            MainFrame mainFrame = new MainFrame(
+                    accountController, projectController, issueController, commentController,
+                    issueStatisticsController, sessionManager, issueService, recommendController
+            );
+            mainFrame.setVisible(true);
+        });
     }
 }

@@ -6,6 +6,7 @@ import com.issuetracker.domain.issue.service.IssueService;
 import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class IssueController {
@@ -59,5 +60,28 @@ public class IssueController {
             return Response.fail("You are not logged in.");
         }
         return issueService.closeIssue(issueId, currentUser.getAccountId());
+    }
+    public Response<List<Issue>> getAllIssues() {
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if (currentUser == null) {
+            return Response.fail("You are not logged in.");
+        }
+        return issueService.getAllIssues();
+    }
+
+    public Response<List<Issue>> getIssuesByAssigneeId(Long assigneeId) {
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if (currentUser == null) {
+            return Response.fail("You are not logged in.");
+        }
+        return issueService.getIssuesByAssigneeId(assigneeId);
+    }
+
+    public Response<List<Issue>> getIssuesByReporterId(Long reporterId) {
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if (currentUser == null) {
+            return Response.fail("You are not logged in.");
+        }
+        return issueService.getIssuesByReporterId(reporterId);
     }
 }

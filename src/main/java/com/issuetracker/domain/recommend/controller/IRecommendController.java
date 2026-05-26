@@ -1,9 +1,10 @@
 package com.issuetracker.domain.recommend.controller;
 
 import com.issuetracker.domain.account.entity.Account;
+import com.issuetracker.global.common.Response;
 
 import java.util.List;
 
 public interface IRecommendController {
-    List<Account> getRecommendedAssignees(Long projectId, String title, String description);
+    Response<List<Account>> getRecommendedAssignees(Long projectId, String title, String description);
 }

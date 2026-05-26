@@ -4,6 +4,8 @@ import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
+import com.issuetracker.domain.account.service.AccountValidator;
+import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,16 +24,17 @@ class AccountControllerTest {
         // 판단근거: Controller의 핵심 책임은 인증 결과를 SessionManager에 반영하는 것이므로 세션 상태 변화를 검증해야 한다.
         // given
         FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountService accountService = new AccountService(accountRepository);
+        AccountValidator accountValidator = new AccountValidator(accountRepository);
+        AccountService accountService = new AccountService(accountRepository, accountValidator);
         SessionManager sessionManager = new SessionManager();
         AccountController accountController = new AccountController(accountService, sessionManager);
         accountService.createAccount("dev1", "1234", Role.DEV);
 
         // when
-        boolean result = accountController.login("dev1", "1234");
+        Response<Account> result = accountController.login("dev1", "1234");
 
         // then
-        assertTrue(result);
+        assertTrue(result.isSuccess());
         assertTrue(sessionManager.isLoggedIn());
         assertEquals("dev1", sessionManager.getLoggedInAccount().getUsername());
     }
@@ -42,16 +45,17 @@ class AccountControllerTest {
         // 판단근거: 실패한 인증 요청이 기존/빈 세션을 로그인 상태로 바꾸지 않는지 확인해야 한다.
         // given
         FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountService accountService = new AccountService(accountRepository);
+        AccountValidator accountValidator = new AccountValidator(accountRepository);
+        AccountService accountService = new AccountService(accountRepository, accountValidator);
         SessionManager sessionManager = new SessionManager();
         AccountController accountController = new AccountController(accountService, sessionManager);
         accountService.createAccount("tester1", "1234", Role.TESTER);
 
         // when
-        boolean result = accountController.login("tester1", "wrong-password");
+        Response<Account> result = accountController.login("tester1", "wrong-password");
 
         // then
-        assertFalse(result);
+        assertFalse(result.isSuccess());
         assertFalse(sessionManager.isLoggedIn());
     }
 
@@ -61,7 +65,8 @@ class AccountControllerTest {
         // 판단근거: 로그아웃 후에도 세션이 남아 있으면 권한이 유지될 수 있으므로 세션 제거를 검증해야 한다.
         // given
         FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountService accountService = new AccountService(accountRepository);
+        AccountValidator accountValidator = new AccountValidator(accountRepository);
+        AccountService accountService = new AccountService(accountRepository, accountValidator);
         SessionManager sessionManager = new SessionManager();
         AccountController accountController = new AccountController(accountService, sessionManager);
         accountController.login("admin", "admin123");
@@ -80,7 +85,8 @@ class AccountControllerTest {
         // 판단근거: 계정 생성은 관리자 전용 기능이므로 ADMIN 권한에서 성공하는 경로를 검증해야 한다.
         // given
         FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountService accountService = new AccountService(accountRepository);
+        AccountValidator accountValidator = new AccountValidator(accountRepository);
+        AccountService accountService = new AccountService(accountRepository, accountValidator);
         SessionManager sessionManager = new SessionManager();
         AccountController accountController = new AccountController(accountService, sessionManager);
         accountController.login("admin", "admin123");
@@ -89,8 +95,9 @@ class AccountControllerTest {
         accountController.createAccount("pl1", "1234", Role.PL);
 
         // then
-        assertNotNull(accountService.login("pl1", "1234"));
-        assertEquals(Role.PL, accountService.login("pl1", "1234").getRole());
+        Response<Account> loginResult = accountService.login("pl1", "1234");
+        assertTrue(loginResult.isSuccess());
+        assertEquals(Role.PL, loginResult.getData().getRole());
     }
 
     @Test
@@ -99,20 +106,22 @@ class AccountControllerTest {
         // 판단근거: 역할 기반 접근 제어가 깨지면 일반 사용자가 임의 계정을 만들 수 있으므로 거부 경로를 검증해야 한다.
         // given
         FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountService accountService = new AccountService(accountRepository);
+        AccountValidator accountValidator = new AccountValidator(accountRepository);
+        AccountService accountService = new AccountService(accountRepository, accountValidator);
         SessionManager sessionManager = new SessionManager();
         AccountController accountController = new AccountController(accountService, sessionManager);
         accountService.createAccount("dev1", "1234", Role.DEV);
         accountController.login("dev1", "1234");
 
         // when
-        accountController.createAccount("hacker", "pw", Role.ADMIN);
+        Response<Account> createResult = accountController.createAccount("hacker", "pw", Role.ADMIN);
 
         // then
-        assertNull(accountService.login("hacker", "pw"));
+        assertFalse(createResult.isSuccess());
+        assertFalse(accountService.login("hacker", "pw").isSuccess());
     }
 
-    private static class FakeAccountRepository extends AccountRepository {
+    private static class FakeAccountRepository implements AccountRepository {
         private final List<Account> accounts = new ArrayList<>();
         private long nextId = 1L;
 
@@ -138,9 +147,10 @@ class AccountControllerTest {
         }
 
         @Override
-        public void save(Account account) {
+        public boolean save(Account account) {
             account.setAccountId(nextId++);
             accounts.add(account);
+            return true;
         }
 
         @Override

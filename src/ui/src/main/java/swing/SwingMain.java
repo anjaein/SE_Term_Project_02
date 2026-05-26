@@ -2,35 +2,49 @@ package ui;
 
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.repository.AccountRepository;
+import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
+import com.issuetracker.domain.account.service.AccountValidator;
 import com.issuetracker.domain.comment.controller.CommentController;
 import com.issuetracker.domain.comment.repository.CommentRepository;
+import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.comment.service.CommentService;
+import com.issuetracker.domain.comment.service.CommentValidator;
 import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.issue.service.IssueService;
+import com.issuetracker.domain.issue.service.IssueValidator;
 import com.issuetracker.domain.project.controller.ProjectController;
+import com.issuetracker.domain.project.repository.JsonProjectMemberRepository;
+import com.issuetracker.domain.project.repository.JsonProjectRepository;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
+import com.issuetracker.domain.project.service.ProjectValidator;
 import com.issuetracker.global.common.SessionManager;
 
 import javax.swing.*;
 
 public class SwingMain {
     public static void main(String[] args) {
-        AccountRepository accountRepository = new AccountRepository();
-        ProjectRepository projectRepository = new ProjectRepository();
-        ProjectMemberRepository projectMemberRepository = new ProjectMemberRepository();
-        IssueRepository issueRepository = new IssueRepository();
-        CommentRepository commentRepository = new CommentRepository();
+        AccountRepository accountRepository = new JsonAccountRepository();
+        ProjectRepository projectRepository = new JsonProjectRepository();
+        ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
+        IssueRepository issueRepository = new JsonIssueRepository();
+        CommentRepository commentRepository = new JsonCommentRepository();
 
         SessionManager sessionManager = new SessionManager();
 
-        AccountService accountService = new AccountService(accountRepository);
-        ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository);
-        IssueService issueService = new IssueService(issueRepository, projectMemberRepository);
-        CommentService commentService = new CommentService(commentRepository, accountRepository, issueRepository);
+        AccountValidator accountValidator = new AccountValidator(accountRepository);
+        ProjectValidator projectValidator = new ProjectValidator(projectRepository);
+        IssueValidator issueValidator = new IssueValidator(projectMemberRepository, projectRepository);
+        CommentValidator commentValidator = new CommentValidator(issueRepository, projectMemberRepository);
+
+        AccountService accountService = new AccountService(accountRepository, accountValidator);
+        ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository, projectValidator);
+        IssueService issueService = new IssueService(issueRepository, projectMemberRepository, issueValidator);
+        CommentService commentService = new CommentService(commentRepository, commentValidator);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);

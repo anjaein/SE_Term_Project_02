@@ -1,0 +1,11 @@
+plugins {
+    id 'java'
+    id 'application' // 💡 Gradle run 태스크를 사용하기 위한 플러그인 추가
+}
+
+application {
+    // 💡 4번에서 맞춘 SwingMain 클래스의 '전체 패키지 경로'를 적어줍니다.
+    mainClass = 'com.issuetracker.ui.swing.SwingMain'
+}
+
+d

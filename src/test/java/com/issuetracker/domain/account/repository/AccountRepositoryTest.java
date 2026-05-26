@@ -19,7 +19,7 @@ class AccountRepositoryTest {
 
     private static final Path ACCOUNTS_FILE = Path.of("data", "accounts.json");
 
-    private final AccountRepository accountRepository = new AccountRepository();
+    private final AccountRepository accountRepository = new JsonAccountRepository();
 
     private String originalAccountsJson;
 

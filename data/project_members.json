@@ -6,8 +6,18 @@
   },
   {
     "projectId": 1,
-    "accountId": 3,
+    "accountId": 2,
     "role": "DEV"
+  },
+  {
+    "projectId": 1,
+    "accountId": 3,
+    "role": "TESTER"
+  },
+  {
+    "projectId": 1,
+    "accountId": 4,
+    "role": "PL"
   },
   {
     "projectId": 2,
@@ -15,33 +25,13 @@
     "role": "ADMIN"
   },
   {
-    "projectId": 1,
-    "accountId": 2,
-    "role": "PL"
-  },
-  {
-    "projectId": 1,
-    "accountId": 4,
-    "role": "TESTER"
-  },
-  {
     "projectId": 3,
     "accountId": 1,
     "role": "ADMIN"
   },
   {
-    "projectId": 4,
-    "accountId": 1,
-    "role": "ADMIN"
-  },
-  {
-    "projectId": 5,
-    "accountId": 1,
-    "role": "ADMIN"
-  },
-  {
-    "projectId": 6,
-    "accountId": 1,
-    "role": "ADMIN"
+    "projectId": 2,
+    "accountId": 2,
+    "role": "DEV"
   }
 ]

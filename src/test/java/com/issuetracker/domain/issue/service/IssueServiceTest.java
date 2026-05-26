@@ -6,6 +6,7 @@ import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
+import com.issuetracker.global.common.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,15 +16,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/*
-테스트 목록 : 
-- 입력 검증
-- 권한 검증
-- 상태 전이 검증
-- 상태 변경 결과
-*/
-
-
 class IssueServiceTest {
     private static final Long PROJECT_ID = 1L;
     private static final Long PL_ID = 10L;
@@ -31,73 +23,53 @@ class IssueServiceTest {
     private static final Long TESTER_ID = 30L;
 
     private FakeIssueRepository issueRepository;
-    private FakeProjectMemberRepository projectMemberRepository;
+    private FakeProjectMemberRepository fakeProjectMemberRepository;
     private IssueService issueService;
 
     @BeforeEach
     void setUp() {
-        //테스트용 가짜 이슈 레포 만들고
         issueRepository = new FakeIssueRepository();
-        //테스트용 가짜 멤버 정보
-        projectMemberRepository = new FakeProjectMemberRepository();
-        // 테스트 대상.
-        issueService = new IssueService(issueRepository, projectMemberRepository);
+        fakeProjectMemberRepository = new FakeProjectMemberRepository();
+        FakeProjectRepository projectRepository = new FakeProjectRepository();
+        
+        IssueValidator validator = new IssueValidator(fakeProjectMemberRepository, projectRepository);
+        issueService = new IssueService(issueRepository, fakeProjectMemberRepository, validator);
     }
 
     @Test
     @DisplayName("이슈 생성 실패: title blank")
     void createIssueWithBlankTitle() {
-        // given
-        projectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
-
-        // when
-        boolean result = issueService.createIssue(PROJECT_ID, " ", "description", TESTER_ID);
-
-        // then
-        assertFalse(result);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
+        Response<Issue> result = issueService.createIssue(PROJECT_ID, " ", "description", TESTER_ID);
+        assertFalse(result.isSuccess());
         assertTrue(issueRepository.findAll().isEmpty());
     }
 
     @Test
     @DisplayName("이슈 생성 실패: description blank")
     void createIssueWithBlankDescription() {
-        // given
-        projectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
-
-        // when
-        boolean result = issueService.createIssue(PROJECT_ID, "title", " ", TESTER_ID);
-
-        // then
-        assertFalse(result);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
+        Response<Issue> result = issueService.createIssue(PROJECT_ID, "title", " ", TESTER_ID);
+        assertFalse(result.isSuccess());
         assertTrue(issueRepository.findAll().isEmpty());
     }
 
     @Test
     @DisplayName("이슈 생성 실패: 프로젝트 멤버 아님")
     void createIssueByNonProjectMember() {
-        // given: reporter가 프로젝트 멤버가 아니라면
-
-        // when
-        boolean result = issueService.createIssue(PROJECT_ID, "title", "description", TESTER_ID);
-
-        // then
-        assertFalse(result);
+        Response<Issue> result = issueService.createIssue(PROJECT_ID, "title", "description", TESTER_ID);
+        assertFalse(result.isSuccess());
         assertTrue(issueRepository.findAll().isEmpty());
     }
 
     @Test
     @DisplayName("ASSIGN 성공: PL이 DEV에게 assign")
     void assignIssueByPL() {
-        // given
-        projectMemberRepository.addMember(PROJECT_ID, PL_ID, Role.PL);
-        projectMemberRepository.addMember(PROJECT_ID, DEV_ID, Role.DEV);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, PL_ID, Role.PL);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, DEV_ID, Role.DEV);
         Issue issue = saveNewIssue();
-
-        // when
-        boolean result = issueService.assignIssue(issue.getIssueId(), DEV_ID, PL_ID);
-
-        // then
-        assertTrue(result);
+        Response<Issue> result = issueService.assignIssue(issue.getIssueId(), DEV_ID, PL_ID);
+        assertTrue(result.isSuccess());
         assertEquals(DEV_ID, issue.getAssigneeId());
         assertEquals(Status.ASSIGNED, issue.getStatus());
     }
@@ -105,16 +77,11 @@ class IssueServiceTest {
     @Test
     @DisplayName("ASSIGN 실패: PL 아님")
     void assignIssueByNonPL() {
-        // given
-        projectMemberRepository.addMember(PROJECT_ID, DEV_ID, Role.DEV);
-        projectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, DEV_ID, Role.DEV);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
         Issue issue = saveNewIssue();
-
-        // when
-        boolean result = issueService.assignIssue(issue.getIssueId(), DEV_ID, TESTER_ID);
-
-        // then
-        assertFalse(result);
+        Response<Issue> result = issueService.assignIssue(issue.getIssueId(), DEV_ID, TESTER_ID);
+        assertFalse(result.isSuccess());
         assertNull(issue.getAssigneeId());
         assertEquals(Status.NEW, issue.getStatus());
     }
@@ -122,16 +89,11 @@ class IssueServiceTest {
     @Test
     @DisplayName("ASSIGN 실패: assignee가 DEV 아님")
     void assignIssueToNonDev() {
-        // given
-        projectMemberRepository.addMember(PROJECT_ID, PL_ID, Role.PL);
-        projectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, PL_ID, Role.PL);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
         Issue issue = saveNewIssue();
-
-        // when
-        boolean result = issueService.assignIssue(issue.getIssueId(), TESTER_ID, PL_ID);
-
-        // then
-        assertFalse(result);
+        Response<Issue> result = issueService.assignIssue(issue.getIssueId(), TESTER_ID, PL_ID);
+        assertFalse(result.isSuccess());
         assertNull(issue.getAssigneeId());
         assertEquals(Status.NEW, issue.getStatus());
     }
@@ -139,14 +101,9 @@ class IssueServiceTest {
     @Test
     @DisplayName("FIXED 성공: assignee가 fixed 처리")
     void fixIssueByAssignee() {
-        // given
         Issue issue = saveAssignedIssue();
-
-        // when
-        boolean result = issueService.fixIssue(issue.getIssueId(), DEV_ID);
-
-        // then
-        assertTrue(result);
+        Response<Issue> result = issueService.fixIssue(issue.getIssueId(), DEV_ID);
+        assertTrue(result.isSuccess());
         assertEquals(Status.FIXED, issue.getStatus());
         assertEquals(DEV_ID, issue.getFixerId());
         assertNotNull(issue.getFixedDate());
@@ -155,14 +112,9 @@ class IssueServiceTest {
     @Test
     @DisplayName("FIXED 실패: assignee 아님")
     void fixIssueByNonAssignee() {
-        // given
         Issue issue = saveAssignedIssue();
-
-        // when
-        boolean result = issueService.fixIssue(issue.getIssueId(), TESTER_ID);
-
-        // then
-        assertFalse(result);
+        Response<Issue> result = issueService.fixIssue(issue.getIssueId(), TESTER_ID);
+        assertFalse(result.isSuccess());
         assertEquals(Status.ASSIGNED, issue.getStatus());
         assertNull(issue.getFixerId());
         assertNull(issue.getFixedDate());
@@ -171,14 +123,9 @@ class IssueServiceTest {
     @Test
     @DisplayName("FIXED 실패: ASSIGNED 상태가 아님")
     void fixIssueWhenStatusIsNotAssigned() {
-        // given
         Issue issue = saveNewIssue();
-
-        // when
-        boolean result = issueService.fixIssue(issue.getIssueId(), DEV_ID);
-
-        // then
-        assertFalse(result);
+        Response<Issue> result = issueService.fixIssue(issue.getIssueId(), DEV_ID);
+        assertFalse(result.isSuccess());
         assertEquals(Status.NEW, issue.getStatus());
         assertNull(issue.getFixerId());
         assertNull(issue.getFixedDate());
@@ -187,15 +134,10 @@ class IssueServiceTest {
     @Test
     @DisplayName("CLOSED 성공: PL이 closed 처리")
     void closeIssueByPL() {
-        // given
-        projectMemberRepository.addMember(PROJECT_ID, PL_ID, Role.PL);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, PL_ID, Role.PL);
         Issue issue = saveResolvedIssue();
-
-        // when
-        boolean result = issueService.closeIssue(issue.getIssueId(), PL_ID);
-
-        // then
-        assertTrue(result);
+        Response<Issue> result = issueService.closeIssue(issue.getIssueId(), PL_ID);
+        assertTrue(result.isSuccess());
         assertEquals(Status.CLOSED, issue.getStatus());
         assertNotNull(issue.getClosedDate());
     }
@@ -203,15 +145,10 @@ class IssueServiceTest {
     @Test
     @DisplayName("CLOSED 실패: PL 아님")
     void closeIssueByNonPL() {
-        // given
-        projectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, TESTER_ID, Role.TESTER);
         Issue issue = saveResolvedIssue();
-
-        // when
-        boolean result = issueService.closeIssue(issue.getIssueId(), TESTER_ID);
-
-        // then
-        assertFalse(result);
+        Response<Issue> result = issueService.closeIssue(issue.getIssueId(), TESTER_ID);
+        assertFalse(result.isSuccess());
         assertEquals(Status.RESOLVED, issue.getStatus());
         assertNull(issue.getClosedDate());
     }
@@ -219,15 +156,10 @@ class IssueServiceTest {
     @Test
     @DisplayName("CLOSED 실패: RESOLVED 상태가 아님")
     void closeIssueWhenStatusIsNotResolved() {
-        // given
-        projectMemberRepository.addMember(PROJECT_ID, PL_ID, Role.PL);
+        fakeProjectMemberRepository.addMember(PROJECT_ID, PL_ID, Role.PL);
         Issue issue = saveFixedIssue();
-
-        // when
-        boolean result = issueService.closeIssue(issue.getIssueId(), PL_ID);
-
-        // then
-        assertFalse(result);
+        Response<Issue> result = issueService.closeIssue(issue.getIssueId(), PL_ID);
+        assertFalse(result.isSuccess());
         assertEquals(Status.FIXED, issue.getStatus());
         assertNull(issue.getClosedDate());
     }
@@ -259,15 +191,12 @@ class IssueServiceTest {
         return issue;
     }
 
-    //테스트 더블
     private static class FakeIssueRepository implements IssueRepository {
         private final List<Issue> issues = new ArrayList<>();
         private long nextId = 1L;
 
         @Override
-        public List<Issue> findAll() {
-            return issues;
-        }
+        public List<Issue> findAll() { return issues; }
 
         @Override
         public boolean save(Issue issue) {
@@ -286,16 +215,12 @@ class IssueServiceTest {
 
         @Override
         public List<Issue> findByProjectId(Long projectId) { return List.of(); }
-
         @Override
         public List<Issue> findByAssigneeId(Long assigneeId) { return List.of(); }
-
         @Override
         public List<Issue> findByReporterId(Long reporterId) { return List.of(); }
-
         @Override
         public List<Issue> findByStatus(com.issuetracker.domain.issue.enums.Status status) { return List.of(); }
-
         @Override
         public List<Issue> findByPriority(com.issuetracker.domain.issue.enums.Priority priority) { return List.of(); }
 
@@ -311,7 +236,6 @@ class IssueServiceTest {
         }
     }
 
-    //테스트 더블
     private static class FakeProjectMemberRepository implements ProjectMemberRepository {
         private final List<ProjectMember> members = new ArrayList<>();
 
@@ -321,10 +245,8 @@ class IssueServiceTest {
 
         @Override
         public List<ProjectMember> findAll() { return members; }
-
         @Override
         public List<ProjectMember> findByProjectId(Long projectId) { return List.of(); }
-
         @Override
         public ProjectMember findByProjectIdAndAccountId(Long projectId, Long accountId) {
             return members.stream()
@@ -333,8 +255,18 @@ class IssueServiceTest {
                     .findFirst()
                     .orElse(null);
         }
-
         @Override
         public boolean save(ProjectMember projectMember) { return true; }
+    }
+
+    private static class FakeProjectRepository implements com.issuetracker.domain.project.repository.ProjectRepository {
+        @Override
+        public List<com.issuetracker.domain.project.entity.Project> findAll() { return List.of(); }
+        @Override
+        public com.issuetracker.domain.project.entity.Project findByProjectId(Long projectId) { 
+            return new com.issuetracker.domain.project.entity.Project("title", 1L);
+        }
+        @Override
+        public boolean save(com.issuetracker.domain.project.entity.Project project) { return true; }
     }
 }

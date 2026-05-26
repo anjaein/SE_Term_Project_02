@@ -4,6 +4,7 @@ import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.global.common.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,8 @@ class IssueStatisticsServiceTest {
     @BeforeEach
     void setUp() {
         issueRepository = new FakeIssueRepository();
-        statisticsService = new IssueStatisticsService(issueRepository);
+        IssueStatisticsValidator validator = new IssueStatisticsValidator();
+        statisticsService = new IssueStatisticsService(issueRepository, validator);
     }
 
     @Test
@@ -54,9 +56,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedDate(PROJECT_ID, lastMonth.atDay(10).atStartOfDay());
 
         // when
-        Map<YearMonth, Long> trend = statisticsService.getMonthlyReportedTrend(PROJECT_ID, 3);
+        Response<Map<YearMonth, Long>> response = statisticsService.getMonthlyReportedTrend(PROJECT_ID, 3);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<YearMonth, Long> trend = response.getData();
         assertEquals(2L, trend.get(thisMonth));
         assertEquals(1L, trend.get(lastMonth));
     }
@@ -70,9 +74,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedDate(OTHER_PROJECT_ID, thisMonth.atDay(1).atStartOfDay());
 
         // when
-        Map<YearMonth, Long> trend = statisticsService.getMonthlyReportedTrend(PROJECT_ID, 1);
+        Response<Map<YearMonth, Long>> response = statisticsService.getMonthlyReportedTrend(PROJECT_ID, 1);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<YearMonth, Long> trend = response.getData();
         assertEquals(1L, trend.get(thisMonth));
     }
 
@@ -87,9 +93,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedDate(PROJECT_ID, veryOldMonth.atDay(1).atStartOfDay());
 
         // when
-        Map<YearMonth, Long> trend = statisticsService.getMonthlyReportedTrend(PROJECT_ID, 3);
+        Response<Map<YearMonth, Long>> response = statisticsService.getMonthlyReportedTrend(PROJECT_ID, 3);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<YearMonth, Long> trend = response.getData();
         assertEquals(1L, trend.get(thisMonth));
         assertFalse(trend.containsKey(veryOldMonth));
     }
@@ -108,9 +116,11 @@ class IssueStatisticsServiceTest {
         setField(issue2, "resolvedDate", thisMonth.atDay(25).atStartOfDay());
 
         // when
-        Map<YearMonth, Long> trend = statisticsService.getMonthlyResolvedTrend(PROJECT_ID, 1);
+        Response<Map<YearMonth, Long>> response = statisticsService.getMonthlyResolvedTrend(PROJECT_ID, 1);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<YearMonth, Long> trend = response.getData();
         assertEquals(2L, trend.get(thisMonth));
     }
 
@@ -126,9 +136,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedDate(PROJECT_ID, yesterday.atTime(10, 0));
 
         // when
-        Map<LocalDate, Long> trend = statisticsService.getDailyReportedTrend(PROJECT_ID);
+        Response<Map<LocalDate, Long>> response = statisticsService.getDailyReportedTrend(PROJECT_ID);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<LocalDate, Long> trend = response.getData();
         assertEquals(2L, trend.get(today));
         assertEquals(1L, trend.get(yesterday));
     }
@@ -144,9 +156,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedDate(PROJECT_ID, longAgo.atTime(9, 0));
 
         // when
-        Map<LocalDate, Long> trend = statisticsService.getDailyReportedTrend(PROJECT_ID);
+        Response<Map<LocalDate, Long>> response = statisticsService.getDailyReportedTrend(PROJECT_ID);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<LocalDate, Long> trend = response.getData();
         assertEquals(1L, trend.get(today));
         assertFalse(trend.containsKey(longAgo));
     }
@@ -165,9 +179,11 @@ class IssueStatisticsServiceTest {
         setField(issue2, "resolvedDate", today.atTime(11, 0));
 
         // when
-        Map<LocalDate, Long> trend = statisticsService.getDailyResolvedTrend(PROJECT_ID);
+        Response<Map<LocalDate, Long>> response = statisticsService.getDailyResolvedTrend(PROJECT_ID);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<LocalDate, Long> trend = response.getData();
         assertEquals(2L, trend.get(today));
     }
 
@@ -184,10 +200,12 @@ class IssueStatisticsServiceTest {
         issue3.setPriority(Priority.MINOR);
 
         // when
-        Map<LocalDate, Map<Priority, Long>> distribution =
+        Response<Map<LocalDate, Map<Priority, Long>>> response =
                 statisticsService.getDailyPriorityDistribution(PROJECT_ID);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<LocalDate, Map<Priority, Long>> distribution = response.getData();
         Map<Priority, Long> todayCounts = distribution.get(today);
         assertEquals(2L, todayCounts.get(Priority.BLOCKER));
         assertEquals(1L, todayCounts.get(Priority.MINOR));
@@ -205,10 +223,12 @@ class IssueStatisticsServiceTest {
         issue2.setPriority(Priority.MINOR);
 
         // when
-        Map<YearMonth, Map<Priority, Long>> distribution =
+        Response<Map<YearMonth, Map<Priority, Long>>> response =
                 statisticsService.getMonthlyPriorityDistribution(PROJECT_ID, 3);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<YearMonth, Map<Priority, Long>> distribution = response.getData();
         Map<Priority, Long> thisMonthCounts = distribution.get(thisMonth);
         assertEquals(1L, thisMonthCounts.get(Priority.BLOCKER));
         assertEquals(1L, thisMonthCounts.get(Priority.MINOR));
@@ -226,11 +246,12 @@ class IssueStatisticsServiceTest {
         other.setPriority(Priority.BLOCKER);
 
         // when
-        Map<YearMonth, Map<Priority, Long>> distribution =
+        Response<Map<YearMonth, Map<Priority, Long>>> response =
                 statisticsService.getMonthlyPriorityDistribution(PROJECT_ID, 1);
 
         // then
-        assertEquals(1L, distribution.get(thisMonth).get(Priority.BLOCKER));
+        assertTrue(response.isSuccess());
+        assertEquals(1L, response.getData().get(thisMonth).get(Priority.BLOCKER));
     }
 
     @Test
@@ -244,10 +265,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedAndClosedDate(PROJECT_ID, base, base.plusDays(20));
 
         // when
-        Map<YearMonth, Double> result = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 1);
+        Response<Map<YearMonth, Double>> response = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 1);
 
         // then
-        assertEquals(15.0, result.get(thisMonth), 0.1);
+        assertTrue(response.isSuccess());
+        assertEquals(15.0, response.getData().get(thisMonth), 0.1);
     }
 
     @Test
@@ -258,10 +280,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(1).atStartOfDay());
 
         // when
-        Map<YearMonth, Double> result = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 1);
+        Response<Map<YearMonth, Double>> response = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 1);
 
         // then
-        assertFalse(result.containsKey(thisMonth));
+        assertTrue(response.isSuccess());
+        assertFalse(response.getData().containsKey(thisMonth));
     }
 
     @Test
@@ -281,9 +304,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedAndClosedDate(PROJECT_ID, reportedLastMonth, closedLastMonth);
 
         // when
-        Map<YearMonth, Double> result = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 2);
+        Response<Map<YearMonth, Double>> response = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 2);
 
         // then
+        assertTrue(response.isSuccess());
+        Map<YearMonth, Double> result = response.getData();
         assertEquals(5.0, result.get(thisMonth), 0.1);
         assertEquals(10.0, result.get(lastMonth), 0.1);
     }
@@ -299,10 +324,11 @@ class IssueStatisticsServiceTest {
         issueRepository.saveWithReportedAndClosedDate(OTHER_PROJECT_ID, base, base.plusDays(40));
 
         // when
-        Map<YearMonth, Double> result = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 1);
+        Response<Map<YearMonth, Double>> response = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 1);
 
         // then
-        assertEquals(10.0, result.get(thisMonth), 0.1);
+        assertTrue(response.isSuccess());
+        assertEquals(10.0, response.getData().get(thisMonth), 0.1);
     }
 
     private void setField(Object target, String fieldName, Object value) {

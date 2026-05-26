@@ -115,7 +115,7 @@ class IssueRepositoryTest {
 
         // then
         assertEquals(1, issues.size());
-        assertEquals(PROJECT_ID, issues.getFirst().getProjectId());
+        assertEquals(PROJECT_ID, issues.get(0).getProjectId());
     }
 
     @Test
@@ -135,7 +135,7 @@ class IssueRepositoryTest {
 
         // then
         assertEquals(1, issues.size());
-        assertEquals(ASSIGNEE_ID, issues.getFirst().getAssigneeId());
+        assertEquals(ASSIGNEE_ID, issues.get(0).getAssigneeId());
     }
 
     @Test
@@ -150,7 +150,7 @@ class IssueRepositoryTest {
 
         // then
         assertEquals(1, issues.size());
-        assertEquals(REPORTER_ID, issues.getFirst().getReporterId());
+        assertEquals(REPORTER_ID, issues.get(0).getReporterId());
     }
 
     @Test

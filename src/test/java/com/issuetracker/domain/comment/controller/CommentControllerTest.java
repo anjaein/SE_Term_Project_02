@@ -2,25 +2,26 @@ package com.issuetracker.domain.comment.controller;
 
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
-import com.issuetracker.domain.account.repository.AccountRepository;
-import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.comment.repository.CommentRepository;
 import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.comment.service.CommentService;
+import com.issuetracker.domain.comment.service.CommentValidator;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
+import com.issuetracker.domain.project.entity.ProjectMember;
+import com.issuetracker.domain.project.repository.JsonProjectMemberRepository;
+import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.global.common.JsonFileManager;
+
+import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,13 +34,11 @@ class CommentControllerTest {
     private static final Path ACCOUNTS_FILE = Path.of("data", "accounts.json");
     private static final Path COMMENTS_FILE = Path.of("data", "comments.json");
     private static final Path ISSUES_FILE = Path.of("data", "issues.json");
+    private static final Path PROJECT_MEMBERS_FILE = Path.of("data", "project_members.json");
 
     private CommentController commentController;
     private CommentRepository commentRepository;
     private SessionManager sessionManager;
-
-    private PrintStream originalOut;
-    private ByteArrayOutputStream output;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -48,32 +47,26 @@ class CommentControllerTest {
         Files.writeString(ACCOUNTS_FILE, "[]", StandardCharsets.UTF_8);
         Files.writeString(COMMENTS_FILE, "[]", StandardCharsets.UTF_8);
         Files.writeString(ISSUES_FILE, "[]", StandardCharsets.UTF_8);
+        Files.writeString(PROJECT_MEMBERS_FILE, "[]", StandardCharsets.UTF_8);
 
-        // 2. 의존성 객체 생성 및 주입 (핵심!)
-        this.sessionManager = new SessionManager(); // 테스트용 세션 생성
+        // 2. 의존성 객체 생성 및 주입
+        this.sessionManager = new SessionManager();
         this.commentRepository = new JsonCommentRepository();
+        IssueRepository issueRepository = new JsonIssueRepository();
+        ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
+
+        CommentValidator commentValidator = new CommentValidator(issueRepository, projectMemberRepository);
 
         // 서비스 생성 시 필요한 레포지토리 주입
         CommentService commentService = new CommentService(
                 commentRepository,
-                new JsonAccountRepository(),
-                new JsonIssueRepository()
+                commentValidator
         );
 
-        // 컨트롤러에 테스트에서 관리하는 sessionManager를 직접 주입
+        // 컨트롤러 주입
         this.commentController = new CommentController(commentService, sessionManager);
 
-        // 3. 콘솔 출력 캡처 설정
-        originalOut = System.out;
-        output = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(output));
-
         sessionManager.logout();
-    }
-
-    @AfterEach
-    void tearDown() {
-        System.setOut(originalOut);
     }
 
     @Test
@@ -84,13 +77,14 @@ class CommentControllerTest {
         Long issueId = 10L;
         seedAccount(userId, Role.DEV);
         seedIssue(issueId);
+        seedProjectMember(1L, userId, Role.DEV);
         loginAs(userId, Role.DEV);
 
         // when
-        commentController.createComment(issueId, "Hello World");
+        Response<Comment> response = commentController.createComment(issueId, "Hello World");
 
         // then
-        assertTrue(outputText().contains("[SUCCESS]"));
+        assertTrue(response.isSuccess());
         List<Comment> all = commentRepository.findAll();
         assertEquals(1, all.size());
         assertEquals("Hello World", all.get(0).getContent());
@@ -100,10 +94,11 @@ class CommentControllerTest {
     @DisplayName("실패: 로그인하지 않은 경우 댓글 작성이 거부된다")
     void createComment_Fail_NotLoggedIn() {
         // when
-        commentController.createComment(10L, "Not logged in");
+        Response<Comment> response = commentController.createComment(10L, "Not logged in");
 
         // then
-        assertTrue(outputText().contains("[ERROR] You are not logged in."));
+        assertFalse(response.isSuccess());
+        assertTrue(response.getMessage().contains("You are not logged in."));
         assertTrue(commentRepository.findAll().isEmpty());
     }
 
@@ -113,13 +108,12 @@ class CommentControllerTest {
         // given
         loginAs(1L, Role.DEV);
         seedAccount(1L, Role.DEV);
-        // Issue를 seed하지 않음
 
         // when
-        commentController.createComment(999L, "Ghost issue");
+        Response<Comment> response = commentController.createComment(999L, "Ghost issue");
 
         // then
-        assertTrue(outputText().contains("[ERROR] Failed to create the comment."));
+        assertFalse(response.isSuccess());
     }
 
     @Test
@@ -129,13 +123,13 @@ class CommentControllerTest {
         Long userId = 1L;
         loginAs(userId, Role.DEV);
         Comment existing = new Comment(10L, userId, "Old Content");
-        commentRepository.save(existing); // ID가 1로 할당됨
+        commentRepository.save(existing);
 
         // when
-        commentController.updateComment(1L, "New Content");
+        Response<Comment> response = commentController.updateComment(1L, "New Content");
 
         // then
-        assertTrue(outputText().contains("[SUCCESS]"));
+        assertTrue(response.isSuccess());
         assertEquals("New Content", commentRepository.findByCommentId(1L).getContent());
     }
 
@@ -143,15 +137,15 @@ class CommentControllerTest {
     @DisplayName("실패: 다른 사람의 댓글은 수정할 수 없다")
     void updateComment_Fail_Forbidden() {
         // given
-        loginAs(2L, Role.DEV); // 2번 유저로 로그인
+        loginAs(2L, Role.DEV);
         Comment othersComment = new Comment(10L, 1L, "Author is User 1");
         commentRepository.save(othersComment);
 
         // when
-        commentController.updateComment(1L, "Hacked!");
+        Response<Comment> response = commentController.updateComment(1L, "Hacked!");
 
         // then
-        assertTrue(outputText().contains("[ERROR]"));
+        assertFalse(response.isSuccess());
         assertEquals("Author is User 1", commentRepository.findByCommentId(1L).getContent());
     }
 
@@ -159,19 +153,17 @@ class CommentControllerTest {
     @DisplayName("성공: 관리자는 다른 사람의 댓글을 삭제할 수 있다")
     void deleteComment_Admin_Success() {
         // given
-        loginAs(99L, Role.ADMIN); // 관리자 로그인
+        loginAs(99L, Role.ADMIN);
         Comment userComment = new Comment(10L, 1L, "User's comment");
         commentRepository.save(userComment);
 
         // when
-        commentController.deleteComment(1L);
+        Response<Comment> response = commentController.deleteComment(1L);
 
         // then
-        assertTrue(outputText().contains("[SUCCESS]"));
+        assertTrue(response.isSuccess());
         assertTrue(commentRepository.findAll().isEmpty());
     }
-
-    // --- Helper Methods ---
 
     private void loginAs(Long id, Role role) {
         Account account = new Account("testUser", "pw", role);
@@ -191,7 +183,8 @@ class CommentControllerTest {
         JsonFileManager.writeList(ISSUES_FILE.toString(), List.of(issue));
     }
 
-    private String outputText() {
-        return output.toString();
+    private void seedProjectMember(Long projectId, Long accountId, Role role) {
+        ProjectMember member = new ProjectMember(projectId, accountId, role);
+        JsonFileManager.writeList(PROJECT_MEMBERS_FILE.toString(), List.of(member));
     }
 }

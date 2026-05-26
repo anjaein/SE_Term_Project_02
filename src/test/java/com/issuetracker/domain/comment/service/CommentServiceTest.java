@@ -8,9 +8,13 @@ import com.issuetracker.domain.comment.repository.CommentRepository;
 import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
+import com.issuetracker.domain.project.repository.JsonProjectMemberRepository;
+import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.global.common.JsonFileManager;
+import com.issuetracker.global.common.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +33,7 @@ class CommentServiceTest {
     private static final Path ACCOUNTS_FILE = Path.of("data", "accounts.json");
     private static final Path COMMENTS_FILE = Path.of("data", "comments.json");
     private static final Path ISSUES_FILE = Path.of("data", "issues.json");
+    private static final Path PROJECT_MEMBERS_FILE = Path.of("data", "project_members.json");
 
     private CommentService commentService;
     private final CommentRepository commentRepository = new JsonCommentRepository();
@@ -38,21 +43,27 @@ class CommentServiceTest {
     private String originalAccountsJson;
     private String originalCommentsJson;
     private String originalIssuesJson;
+    private String originalProjectMembersJson;
 
     @BeforeEach
     void setUp() throws IOException {
         originalAccountsJson = readOriginal(ACCOUNTS_FILE);
         originalCommentsJson = readOriginal(COMMENTS_FILE);
         originalIssuesJson = readOriginal(ISSUES_FILE);
+        originalProjectMembersJson = readOriginal(PROJECT_MEMBERS_FILE);
         // 1. 매번 새로운 레포지토리를 생성 (데이터 0개인 상태)
         accountRepository = new JsonAccountRepository();
         issueRepository = new JsonIssueRepository();
+        ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
+        CommentValidator commentValidator = new CommentValidator(issueRepository, projectMemberRepository);
+
         // 2. 이 레포지토리들을 주입해서 서비스를 생성
-        commentService = new CommentService(commentRepository, accountRepository, issueRepository);
+        commentService = new CommentService(commentRepository, commentValidator);
 
         resetJsonFile(ACCOUNTS_FILE);
         resetJsonFile(COMMENTS_FILE);
         resetJsonFile(ISSUES_FILE);
+        resetJsonFile(PROJECT_MEMBERS_FILE);
     }
 
     @AfterEach
@@ -60,16 +71,17 @@ class CommentServiceTest {
         restoreJsonFile(ACCOUNTS_FILE, originalAccountsJson);
         restoreJsonFile(COMMENTS_FILE, originalCommentsJson);
         restoreJsonFile(ISSUES_FILE, originalIssuesJson);
+        restoreJsonFile(PROJECT_MEMBERS_FILE, originalProjectMembersJson);
     }
 
     @Test
     @DisplayName("댓글 생성 시 필수 입력값(이슈 ID, 작성자 ID, 내용)이 누락되거나 공백이면 생성이 거부된다")
     void createCommentRejectsInvalidInput() {
         //when
-        assertFalse(commentService.createComment(null, 1L, "content"));
-        assertFalse(commentService.createComment(10L, null, "content"));
-        assertFalse(commentService.createComment(10L, 1L, null));
-        assertFalse(commentService.createComment(10L, 1L, "   "));
+        assertFalse(commentService.createComment(null, 1L, "content").isSuccess());
+        assertFalse(commentService.createComment(10L, null, "content").isSuccess());
+        assertFalse(commentService.createComment(10L, 1L, null).isSuccess());
+        assertFalse(commentService.createComment(10L, 1L, "   ").isSuccess());
 
         //then
         assertTrue(commentRepository.findAll().isEmpty());
@@ -83,10 +95,10 @@ class CommentServiceTest {
         seedAccount(1L, Role.DEV);
 
         // when
-        boolean result = commentService.createComment(10L, 1L, "content");
+        Response<Comment> result = commentService.createComment(10L, 1L, "content");
 
         // then
-        assertFalse(result);
+        assertFalse(result.isSuccess());
         assertTrue(commentRepository.findAll().isEmpty());
     }
 
@@ -97,10 +109,10 @@ class CommentServiceTest {
         seedIssue(10L);
 
         // when
-        boolean result = commentService.createComment(10L, 1L, "content");
+        Response<Comment> result = commentService.createComment(10L, 1L, "content");
 
         // then
-        assertFalse(result);
+        assertFalse(result.isSuccess());
         assertTrue(commentRepository.findAll().isEmpty());
     }
 
@@ -111,12 +123,13 @@ class CommentServiceTest {
         //given
         seedAccount(1L, Role.DEV);
         seedIssue(10L);
+        seedProjectMember(1L, 1L, Role.DEV);
 
         // when
-        boolean isCreated = commentService.createComment(10L, 1L, "content");
+        Response<Comment> response = commentService.createComment(10L, 1L, "content");
 
         // then
-        assertTrue(isCreated);
+        assertTrue(response.isSuccess());
 
         Comment saved = commentRepository.findByCommentId(1L);
         assertNotNull(saved);
@@ -134,8 +147,8 @@ class CommentServiceTest {
         assertTrue(commentRepository.save(new_comment));
 
         //when
-        assertTrue(commentService.updateComment(new_comment.getCommentId(), 1L, "new content"));
-        assertFalse(commentService.updateComment(new_comment.getCommentId(), 2L, "hacked content"));
+        assertTrue(commentService.updateComment(new_comment.getCommentId(), 1L, "new content").isSuccess());
+        assertFalse(commentService.updateComment(new_comment.getCommentId(), 2L, "hacked content").isSuccess());
 
         //then
         assertEquals("new content", commentRepository.findByCommentId(new_comment.getCommentId()).getContent());
@@ -150,10 +163,10 @@ class CommentServiceTest {
         String content = "new content";
 
         // when
-        boolean result = commentService.updateComment(nonExistentCommentId, authorId, content);
+        Response<Comment> result = commentService.updateComment(nonExistentCommentId, authorId, content);
 
         // then
-        assertFalse(result);
+        assertFalse(result.isSuccess());
     }
 
     @Test
@@ -166,8 +179,8 @@ class CommentServiceTest {
         assertTrue(commentRepository.save(admin_comment));
 
         //when
-        assertTrue(commentService.deleteComment(1L, 1L, false));
-        assertTrue(commentService.deleteComment(2L, 99L, true));
+        assertTrue(commentService.deleteComment(1L, 1L, false).isSuccess());
+        assertTrue(commentService.deleteComment(2L, 99L, true).isSuccess());
 
         //then
         assertTrue(commentRepository.findAll().isEmpty());
@@ -181,10 +194,10 @@ class CommentServiceTest {
         assertTrue(commentRepository.save(new_comment));
 
         // when
-        boolean result = commentService.deleteComment(new_comment.getCommentId(), 2L, false);
+        Response<Comment> result = commentService.deleteComment(new_comment.getCommentId(), 2L, false);
 
         // then
-        assertFalse(result);
+        assertFalse(result.isSuccess());
         assertNotNull(commentRepository.findByCommentId(1L));
     }
 
@@ -195,10 +208,10 @@ class CommentServiceTest {
         Long nonExistentCommentId = 99L;
 
         // when
-        boolean result = commentService.deleteComment(nonExistentCommentId, 1L, true);
+        Response<Comment> result = commentService.deleteComment(nonExistentCommentId, 1L, true);
 
         // then
-        assertFalse(result);
+        assertFalse(result.isSuccess());
     }
 
     private String readOriginal(Path path) throws IOException {
@@ -230,4 +243,8 @@ class CommentServiceTest {
         JsonFileManager.writeList(ISSUES_FILE.toString(), List.of(issue));
     }
 
+    private void seedProjectMember(Long projectId, Long accountId, Role role) {
+        ProjectMember member = new ProjectMember(projectId, accountId, role);
+        JsonFileManager.writeList(PROJECT_MEMBERS_FILE.toString(), List.of(member));
+    }
 }
