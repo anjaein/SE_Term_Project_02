@@ -2,15 +2,15 @@ package com.issuetracker.domain.recommend.controller;
 
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.repository.AccountRepository;
-import com.issuetracker.domain.recommend.service.IRecommendService;
+import com.issuetracker.domain.recommend.service.RecommendService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-public class RecommendController implements IRecommendController {
-    private final IRecommendService recommendService;
+public class RecommendController {
+    private final RecommendService recommendService;
     private final AccountRepository accountRepository;
 
     // RecommendedAssignees 반환

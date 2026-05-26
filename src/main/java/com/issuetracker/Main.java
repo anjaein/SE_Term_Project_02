@@ -13,7 +13,7 @@ import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.comment.service.CommentValidator;
 import com.issuetracker.domain.issue.controller.IssueController;
-import com.issuetracker.domain.issue.controller.IssueStatisticsController;
+import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.issue.service.IssueService;
@@ -27,12 +27,9 @@ import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
 import com.issuetracker.domain.project.service.ProjectValidator;
-import com.issuetracker.global.common.SessionManager;
-
-import com.issuetracker.domain.recommend.controller.IRecommendController;
 import com.issuetracker.domain.recommend.controller.RecommendController;
-import com.issuetracker.domain.recommend.service.IRecommendService;
 import com.issuetracker.domain.recommend.service.RecommendService;
+import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 
 import java.util.Comparator;
@@ -65,8 +62,8 @@ public class Main {
         CommentService commentService = new CommentService(commentRepository, commentValidator);
         IssueStatisticsService issueStatisticsService = new IssueStatisticsService(issueRepository, issueStatisticsValidator);
 
-        IRecommendService recommendService = new RecommendService(issueRepository);
-        IRecommendController recommendController = new RecommendController(recommendService, accountRepository);
+        RecommendService recommendService = new RecommendService(issueRepository);
+        RecommendController recommendController = new RecommendController(recommendService, accountRepository);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
         ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
@@ -75,9 +72,9 @@ public class Main {
 
         // 1. 초기화된 admin으로 로그인 시도
         System.out.println("--- 1. login test ---");
-        boolean loginResult = accountController.login("admin", "admin123");
+        Response<Account> loginResult = accountController.login("admin", "admin123");
 
-        if (loginResult) {
+        if (loginResult.isSuccess()) {
             // 2. 관리자 권한으로 다른 계정들 생성 테스트
             System.out.println("\n--- 2. Account Creation Test ---");
             accountController.createAccount("pl1", "1234", Role.PL);
@@ -95,12 +92,12 @@ public class Main {
         accountController.logout();
         accountController.login("admin", "admin123");
         projectController.createProject("Project-A");
-        projectController.printProjectMembers(1L);
+        projectController.listProjectMembers(1L);
 
         // 5. admin이 다른 멤버(dev1) 추가
         System.out.println("\n--- 5. Admin Add Member Test ---");
         projectController.addProjectMember(1L, "dev1", Role.DEV);
-        projectController.printProjectMembers(1L);
+        projectController.listProjectMembers(1L);
 
         // 5.1 admin이 존재하지 않는 멤버 추가 (실패해야 함)
         System.out.println("\n--- 5.1 Admin Adds Not Existing Member Test ---");
@@ -127,24 +124,24 @@ public class Main {
 
         // 10. 로그인 안 한 상태로 이슈 생성 시도 (실패해야 함)
         System.out.println("\n--- 10. Not Logged In Create Issue Test (should fail) ---");
-        issueController.createIssue(1L, "Bug-1", "something is broken", 2L);
+        issueController.createIssue(1L, "Bug-1", "something is broken");
 
         // 11. 프로젝트 멤버인 dev1으로 이슈 생성 (성공해야 함)
         System.out.println("\n--- 11. Member Create Issue Test ---");
         accountController.login("dev1", "1234");
-        Long dev1Id = accountController.getAccountIdByUsername("dev1");
-        issueController.createIssue(1L, "Bug-1", "something is broken", dev1Id);
+        Long dev1Id = accountController.getAccountIdByUsername("dev1").getData();
+        issueController.createIssue(1L, "Bug-1", "something is broken");
 
-        // 12. reporterId를 다른 유저 ID로 전달 (실패해야 함 - not authorized)
-        System.out.println("\n--- 12. Wrong reporterId Test (should fail) ---");
-        issueController.createIssue(1L, "Bug-2", "another bug", dev1Id + 999L);
+        // 12. 로그인한 사용자로 이슈 생성 (reporter는 항상 세션 사용자)
+        System.out.println("\n--- 12. Create Issue Test ---");
+        issueController.createIssue(1L, "Bug-2", "another bug");
 
         // 13. 프로젝트 멤버가 아닌 유저(tester1)로 이슈 생성 시도 (실패해야 함)
         System.out.println("\n--- 13. Non-Member Create Issue Test (should fail) ---");
         accountController.logout();
         accountController.login("tester1", "1234");
-        Long tester1Id = accountController.getAccountIdByUsername("tester1");
-        issueController.createIssue(1L, "Bug-3", "tester bug", tester1Id);
+        Long tester1Id = accountController.getAccountIdByUsername("tester1").getData();
+        issueController.createIssue(1L, "Bug-3", "tester bug");
         accountController.logout();
 
         // 14. PDF 예제 시나리오: issue 등록 -> assign -> fixed -> resolved -> closed
@@ -154,44 +151,44 @@ public class Main {
         accountController.login("admin", "admin123");
         projectController.addProjectMember(1L, "pl1", Role.PL);
         projectController.addProjectMember(1L, "tester1", Role.TESTER);
-        projectController.printProjectMembers(1L);
+        projectController.listProjectMembers(1L);
         accountController.logout();
 
         // 14.2 tester1이 이슈 등록
         accountController.login("tester1", "1234");
-        issueController.createIssue(1L, "Login button error", "The login button does not respond.", tester1Id);
+        issueController.createIssue(1L, "Login button error", "The login button does not respond.");
         Issue scenarioIssue = getLatestIssue(issueRepository);
         Long scenarioIssueId = scenarioIssue.getIssueId();
-        issueController.printIssueDetail(scenarioIssueId);
+        issueController.getIssueDetail(scenarioIssueId);
         accountController.logout();
 
         // 14.3 PL이 NEW 이슈를 dev1에게 배정
         accountController.login("pl1", "1234");
         issueController.assignIssue(scenarioIssueId, dev1Id);
-        issueController.printIssueDetail(scenarioIssueId);
+        issueController.getIssueDetail(scenarioIssueId);
         accountController.logout();
 
         // 14.4 dev1이 수정 완료 처리
         accountController.login("dev1", "1234");
         issueController.fixIssue(scenarioIssueId);
-        issueController.printIssueDetail(scenarioIssueId);
+        issueController.getIssueDetail(scenarioIssueId);
         accountController.logout();
 
         // 14.5 reporter인 tester1이 수정 확인 후 resolved 처리
         accountController.login("tester1", "1234");
         issueController.resolveIssue(scenarioIssueId);
-        issueController.printIssueDetail(scenarioIssueId);
+        issueController.getIssueDetail(scenarioIssueId);
         accountController.logout();
 
         // 14.6 PL이 resolved 이슈를 closed 처리
         accountController.login("pl1", "1234");
         issueController.closeIssue(scenarioIssueId);
-        issueController.printIssueDetail(scenarioIssueId);
+        issueController.getIssueDetail(scenarioIssueId);
         accountController.logout();
 
         // 15. 프로젝트 name, 이슈 title이 null이면 생성 못함 (실패해야 함)
         System.out.println("\n--- 15. project name, issue title null test (should fail) ---");
-        issueController.createIssue(1L, "", "another bug", dev1Id + 999L);
+        issueController.createIssue(1L, "", "another bug");
         accountController.logout();
         accountController.login("admin", "admin123");
         projectController.createProject("");
@@ -249,9 +246,9 @@ public class Main {
         // 26. Assignee 추천 테스트: 기존 closed 이슈와 유사한 새 이슈 등록 시 추천 자동 표시
         System.out.println("\n--- 26. Assignee Recommend Test ---");
         accountController.login("tester1", "1234");
-        issueController.createIssue(1L, "Login page error", "The login button is not working.", tester1Id);
+        issueController.createIssue(1L, "Login page error", "The login button is not working.");
         Issue recommendTestIssue = getLatestIssue(issueRepository);
-        issueController.printIssueDetail(recommendTestIssue.getIssueId());
+        issueController.getIssueDetail(recommendTestIssue.getIssueId());
         List<Account> recommended = recommendController.getRecommendedAssignees(
                 recommendTestIssue.getProjectId(),
                 recommendTestIssue.getTitle(),
