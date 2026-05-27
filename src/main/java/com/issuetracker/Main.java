@@ -12,7 +12,6 @@ import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.comment.service.CommentValidator;
 import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.issue.controller.IssueStatisticsController;
-import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.issue.service.IssueService;
@@ -33,10 +32,10 @@ import com.issuetracker.global.common.SessionManager;
 
 public class Main {
     public static void main(String[] args) {
-        Backend backend = Backend();
+        Backend backend = createBackend();
     }
 
-    public static Backend Backend() {
+    public static Backend createBackend() {
         AccountRepository accountRepository = new JsonAccountRepository();
         ProjectRepository projectRepository = new JsonProjectRepository();
         ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
