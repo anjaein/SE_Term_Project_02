@@ -137,8 +137,8 @@ public class IssueService {
         if(issue == null){
             return Response.fail("Issue not found.");
         }
-        if(issue.getStatus() != Status.ASSIGNED){
-            return Response.fail("Issue is not in ASSIGNED status.");
+        if(issue.getStatus() != Status.ASSIGNED && issue.getStatus() != Status.REOPENED){
+            return Response.fail("Issue is not in ASSIGNED or REOPENED status.");
         }
 
         String notAssignee = issueValidator.checkRequesterIsAssignee(issue.getAssigneeId(), requesterId);
@@ -203,5 +203,31 @@ public class IssueService {
             return Response.fail("Failed to update the issue.");
         }
         return Response.success("Issue closed.", issue);
+    }
+
+    public Response<Issue> reopenIssue(Long issueId, Long requesterId){
+        String missingParams = issueValidator.checkNonNull(issueId, requesterId);
+        if(missingParams != null){
+            return Response.fail(missingParams);
+        }
+
+        Issue issue = issueRepository.findByIssueId(issueId);
+        if(issue == null){
+            return Response.fail("Issue not found.");
+        }
+        if(issue.getStatus() != Status.CLOSED){
+            return Response.fail("Issue is not in CLOSED status.");
+        }
+
+        String notLead = issueValidator.checkRequesterIsProjectLead(issue.getProjectId(), requesterId);
+        if(notLead != null){
+            return Response.fail(notLead);
+        }
+
+        issue.markAsReopened();
+        if(!issueRepository.update(issue)){
+            return Response.fail("Failed to update the issue.");
+        }
+        return Response.success("Issue reopened.", issue);
     }
 }

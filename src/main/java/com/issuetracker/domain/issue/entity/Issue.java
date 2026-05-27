@@ -60,4 +60,12 @@ public class Issue {
         this.closedDate = LocalDateTime.now();
     }
 
+    public void markAsReopened() {
+        this.status = Status.REOPENED;
+        this.fixerId = null;
+        this.fixedDate = null;
+        this.resolvedDate = null;
+        this.closedDate = null;
+    }
+
 }
