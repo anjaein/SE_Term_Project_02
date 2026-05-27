@@ -20,7 +20,7 @@ class IssueTest {
     void createIssueInitializesDefaults() {
         LocalDateTime before = LocalDateTime.now();
 
-        Issue issue = new Issue(PROJECT_ID, "title", "description", REPORTER_ID);
+        Issue issue = new Issue(PROJECT_ID, "title", "description", Priority.MAJOR, REPORTER_ID);
 
         LocalDateTime after = LocalDateTime.now();
         assertEquals(PROJECT_ID, issue.getProjectId());
@@ -84,6 +84,6 @@ class IssueTest {
     }
 
     private Issue createIssue() {
-        return new Issue(PROJECT_ID, "title", "description", REPORTER_ID);
+        return new Issue(PROJECT_ID, "title", "description", Priority.MAJOR, REPORTER_ID);
     }
 }

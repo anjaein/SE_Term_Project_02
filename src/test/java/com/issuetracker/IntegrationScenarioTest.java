@@ -14,6 +14,7 @@ import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.comment.service.CommentValidator;
 import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
@@ -122,7 +123,7 @@ class IntegrationScenarioTest {
         accountController.logout();
 
         assertTrue(accountController.login("tester1", "1234").isSuccess());
-        Issue created = issueController.createIssue(projectId, "Login button error", "The login button does not respond.").getData();
+        Issue created = issueController.createIssue(projectId, "Login button error", "The login button does not respond.", Priority.MAJOR).getData();
         Long issueId = created.getIssueId();
         Issue afterCreate = issueRepository.findByIssueId(issueId);
         assertEquals(Status.NEW, afterCreate.getStatus());

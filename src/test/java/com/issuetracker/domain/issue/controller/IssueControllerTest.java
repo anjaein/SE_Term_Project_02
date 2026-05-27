@@ -4,6 +4,7 @@ import com.google.gson.reflect.TypeToken;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.issue.service.IssueService;
@@ -88,7 +89,7 @@ class IssueControllerTest {
     void createIssueSucceedsByTester() {
         loginAs(TESTER_ID, Role.TESTER);
 
-        Response<Issue> result = issueController.createIssue(PROJECT_ID, "title", "desc");
+        Response<Issue> result = issueController.createIssue(PROJECT_ID, "title", "desc", Priority.MAJOR);
 
         assertTrue(result.isSuccess());
         assertEquals(TESTER_ID, result.getData().getReporterId());
@@ -97,7 +98,7 @@ class IssueControllerTest {
     @Test
     @DisplayName("이슈 생성 실패: 비로그인 상태")
     void createIssueFailsWhenNotLoggedIn() {
-        Response<Issue> result = issueController.createIssue(PROJECT_ID, "title", "desc");
+        Response<Issue> result = issueController.createIssue(PROJECT_ID, "title", "desc", Priority.MAJOR);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("not logged in"));
@@ -227,7 +228,7 @@ class IssueControllerTest {
 
     private Issue createNewIssueAsTester() {
         loginAs(TESTER_ID, Role.TESTER);
-        Response<Issue> created = issueController.createIssue(PROJECT_ID, "title", "desc");
+        Response<Issue> created = issueController.createIssue(PROJECT_ID, "title", "desc", Priority.MAJOR);
         assertTrue(created.isSuccess(), "fixture failed: " + created.getMessage());
         sessionManager.logout();
         return created.getData();

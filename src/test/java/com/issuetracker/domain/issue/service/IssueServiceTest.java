@@ -2,6 +2,7 @@ package com.issuetracker.domain.issue.service;
 
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
@@ -79,22 +80,24 @@ class IssueServiceTest {
         seedProject(PROJECT_ID);
         seedProjectMember(PROJECT_ID, REPORTER_ID, Role.TESTER);
 
-        Response<Issue> result = issueService.createIssue(PROJECT_ID, "title", "description", REPORTER_ID);
+        Response<Issue> result = issueService.createIssue(PROJECT_ID, "title", "description", Priority.MAJOR, REPORTER_ID);
 
         assertTrue(result.isSuccess());
         Issue saved = result.getData();
         assertNotNull(saved.getIssueId());
         assertEquals(Status.NEW, saved.getStatus());
+        assertEquals(Priority.MAJOR, saved.getPriority());
         assertEquals(REPORTER_ID, saved.getReporterId());
     }
 
     @Test
-    @DisplayName("이슈 생성 실패: 필수 파라미터(projectId/title/description/reporterId) 중 하나라도 null")
+    @DisplayName("이슈 생성 실패: 필수 파라미터(projectId/title/description/priority/reporterId) 중 하나라도 null")
     void createIssueFailsWhenRequiredParamIsNull() {
-        Response<Issue> nullProject = issueService.createIssue(null, "title", "desc", REPORTER_ID);
-        Response<Issue> nullTitle = issueService.createIssue(PROJECT_ID, null, "desc", REPORTER_ID);
-        Response<Issue> nullDesc = issueService.createIssue(PROJECT_ID, "title", null, REPORTER_ID);
-        Response<Issue> nullReporter = issueService.createIssue(PROJECT_ID, "title", "desc", null);
+        Response<Issue> nullProject = issueService.createIssue(null, "title", "desc", Priority.MAJOR, REPORTER_ID);
+        Response<Issue> nullTitle = issueService.createIssue(PROJECT_ID, null, "desc", Priority.MAJOR, REPORTER_ID);
+        Response<Issue> nullDesc = issueService.createIssue(PROJECT_ID, "title", null, Priority.MAJOR, REPORTER_ID);
+        Response<Issue> nullPriority = issueService.createIssue(PROJECT_ID, "title", "desc", null, REPORTER_ID);
+        Response<Issue> nullReporter = issueService.createIssue(PROJECT_ID, "title", "desc", Priority.MAJOR, null);
 
         assertFalse(nullProject.isSuccess());
         assertTrue(nullProject.getMessage().contains("Required parameter is missing"));
@@ -102,6 +105,8 @@ class IssueServiceTest {
         assertTrue(nullTitle.getMessage().contains("Required parameter is missing"));
         assertFalse(nullDesc.isSuccess());
         assertTrue(nullDesc.getMessage().contains("Required parameter is missing"));
+        assertFalse(nullPriority.isSuccess());
+        assertTrue(nullPriority.getMessage().contains("Required parameter is missing"));
         assertFalse(nullReporter.isSuccess());
         assertTrue(nullReporter.getMessage().contains("Required parameter is missing"));
     }
@@ -109,7 +114,7 @@ class IssueServiceTest {
     @Test
     @DisplayName("이슈 생성 실패: title이 blank")
     void createIssueFailsWhenTitleIsBlank() {
-        Response<Issue> result = issueService.createIssue(PROJECT_ID, "   ", "desc", REPORTER_ID);
+        Response<Issue> result = issueService.createIssue(PROJECT_ID, "   ", "desc", Priority.MAJOR, REPORTER_ID);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("title cannot be empty"));
@@ -118,7 +123,7 @@ class IssueServiceTest {
     @Test
     @DisplayName("이슈 생성 실패: description이 blank")
     void createIssueFailsWhenDescriptionIsBlank() {
-        Response<Issue> result = issueService.createIssue(PROJECT_ID, "title", "   ", REPORTER_ID);
+        Response<Issue> result = issueService.createIssue(PROJECT_ID, "title", "   ", Priority.MAJOR, REPORTER_ID);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("description cannot be empty"));
@@ -127,7 +132,7 @@ class IssueServiceTest {
     @Test
     @DisplayName("이슈 생성 실패: project 존재하지 않음")
     void createIssueFailsWhenProjectDoesNotExist() {
-        Response<Issue> result = issueService.createIssue(999L, "title", "desc", REPORTER_ID);
+        Response<Issue> result = issueService.createIssue(999L, "title", "desc", Priority.MAJOR, REPORTER_ID);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("Project does not exist"));
@@ -138,7 +143,7 @@ class IssueServiceTest {
     void createIssueFailsWhenReporterIsNotMember() {
         seedProject(PROJECT_ID);
 
-        Response<Issue> result = issueService.createIssue(PROJECT_ID, "title", "desc", REPORTER_ID);
+        Response<Issue> result = issueService.createIssue(PROJECT_ID, "title", "desc", Priority.MAJOR, REPORTER_ID);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("not a member"));
@@ -460,7 +465,7 @@ class IssueServiceTest {
     private Issue seedNewIssue() {
         seedProject(PROJECT_ID);
         seedProjectMember(PROJECT_ID, REPORTER_ID, Role.TESTER);
-        Issue issue = new Issue(PROJECT_ID, "title", "description", REPORTER_ID);
+        Issue issue = new Issue(PROJECT_ID, "title", "description", Priority.MAJOR, REPORTER_ID);
         issueRepository.save(issue);
         return issueRepository.findByIssueId(issue.getIssueId());
     }

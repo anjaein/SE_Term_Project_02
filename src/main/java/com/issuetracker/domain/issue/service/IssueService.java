@@ -15,10 +15,10 @@ public class IssueService {
     private final IssueRepository issueRepository;
     private final IssueValidator issueValidator;
 
-    public Response<Issue> createIssue(Long projectId, String title, String description, Long reporterId){
+    public Response<Issue> createIssue(Long projectId, String title, String description, Priority priority, Long reporterId){
 
         // 요청에 누락은 없는지
-        String missingParams = issueValidator.checkNonNull(projectId, title, description, reporterId);
+        String missingParams = issueValidator.checkNonNull(projectId, title, description, priority, reporterId);
         if(missingParams != null){
             return Response.fail(missingParams);
         }
@@ -47,7 +47,7 @@ public class IssueService {
             return Response.fail(notMember);
         }
 
-        Issue issue = new Issue(projectId, title, description, reporterId);
+        Issue issue = new Issue(projectId, title, description, priority, reporterId);
         if(!issueRepository.save(issue)){
             return Response.fail("Failed to save the issue.");
         }

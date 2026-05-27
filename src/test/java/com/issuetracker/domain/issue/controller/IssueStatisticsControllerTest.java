@@ -181,7 +181,7 @@ class IssueStatisticsControllerTest {
         private long nextId = 1L;
 
         Issue saveWithReportedDate(Long projectId, LocalDateTime reportedDate) {
-            Issue issue = new Issue(projectId, "title", "description", 10L);
+            Issue issue = new Issue(projectId, "title", "description", Priority.MAJOR, 10L);
             issue.setIssueId(nextId++);
             setField(issue, "reportedDate", reportedDate);
             issues.add(issue);
@@ -189,7 +189,7 @@ class IssueStatisticsControllerTest {
         }
 
         Issue saveWithReportedAndClosedDate(Long projectId, LocalDateTime reportedDate, LocalDateTime closedDate) {
-            Issue issue = new Issue(projectId, "title", "description", 10L);
+            Issue issue = new Issue(projectId, "title", "description", Priority.MAJOR, 10L);
             issue.setIssueId(nextId++);
             setField(issue, "reportedDate", reportedDate);
             setField(issue, "status", Status.CLOSED);

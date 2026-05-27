@@ -9,6 +9,7 @@ import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.comment.service.CommentValidator;
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.project.entity.ProjectMember;
@@ -205,7 +206,7 @@ class CommentControllerTest {
         List<Issue> issues = JsonFileManager.readList(ISSUES_FILE.toString(),
                 new TypeToken<List<Issue>>(){}.getType());
         if (issues == null) issues = new ArrayList<>();
-        Issue issue = new Issue(projectId, "title", "desc", 999L);
+        Issue issue = new Issue(projectId, "title", "desc", Priority.MAJOR, 999L);
         issue.setIssueId(issueId);
         issues.add(issue);
         JsonFileManager.writeList(ISSUES_FILE.toString(), issues);

@@ -51,8 +51,8 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 저장 성공: ID가 순차 부여되고 저장소에 유지")
     void saveAssignsSequentialIds() {
-        assertTrue(issueRepository.save(new Issue(PROJECT_ID, "첫 번째", "설명1", REPORTER_ID)));
-        assertTrue(issueRepository.save(new Issue(PROJECT_ID, "두 번째", "설명2", REPORTER_ID)));
+        assertTrue(issueRepository.save(new Issue(PROJECT_ID, "첫 번째", "설명1", Priority.MAJOR, REPORTER_ID)));
+        assertTrue(issueRepository.save(new Issue(PROJECT_ID, "두 번째", "설명2", Priority.MAJOR, REPORTER_ID)));
 
         List<Issue> issues = issueRepository.findAll();
         assertEquals(2, issues.size());
@@ -63,7 +63,7 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 단건 조회 성공: issueId로 정확히 반환")
     void findByIssueIdReturnsIssue() {
-        Issue issue = new Issue(PROJECT_ID, "이슈 제목", "설명", REPORTER_ID);
+        Issue issue = new Issue(PROJECT_ID, "이슈 제목", "설명", Priority.MAJOR, REPORTER_ID);
         issueRepository.save(issue);
 
         Issue found = issueRepository.findByIssueId(issue.getIssueId());
@@ -75,8 +75,8 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 프로젝트별 조회 성공: 해당 프로젝트 이슈만 반환")
     void findByProjectIdReturnsOnlyThatProject() {
-        issueRepository.save(new Issue(PROJECT_ID, "프로젝트1 이슈", "설명", REPORTER_ID));
-        issueRepository.save(new Issue(OTHER_PROJECT_ID, "프로젝트2 이슈", "설명", REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "프로젝트1 이슈", "설명", Priority.MAJOR, REPORTER_ID));
+        issueRepository.save(new Issue(OTHER_PROJECT_ID, "프로젝트2 이슈", "설명", Priority.MAJOR, REPORTER_ID));
 
         List<Issue> issues = issueRepository.findByProjectId(PROJECT_ID);
 
@@ -87,13 +87,13 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 담당자별 조회 성공: 해당 담당자 이슈만 반환")
     void findByAssigneeIdReturnsOnlyAssigned() {
-        Issue assigned = new Issue(PROJECT_ID, "담당 이슈", "설명", REPORTER_ID);
+        Issue assigned = new Issue(PROJECT_ID, "담당 이슈", "설명", Priority.MAJOR, REPORTER_ID);
         issueRepository.save(assigned);
         assigned = issueRepository.findByIssueId(assigned.getIssueId());
         assigned.assignTo(ASSIGNEE_ID);
         issueRepository.update(assigned);
 
-        issueRepository.save(new Issue(PROJECT_ID, "미담당 이슈", "설명", REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "미담당 이슈", "설명", Priority.MAJOR, REPORTER_ID));
 
         List<Issue> issues = issueRepository.findByAssigneeId(ASSIGNEE_ID);
 
@@ -104,8 +104,8 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 보고자별 조회 성공: 해당 보고자 이슈만 반환")
     void findByReporterIdReturnsOnlyReporter() {
-        issueRepository.save(new Issue(PROJECT_ID, "이슈1", "설명", REPORTER_ID));
-        issueRepository.save(new Issue(PROJECT_ID, "이슈2", "설명", OTHER_REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "이슈1", "설명", Priority.MAJOR, REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "이슈2", "설명", Priority.MAJOR, OTHER_REPORTER_ID));
 
         List<Issue> issues = issueRepository.findByReporterId(REPORTER_ID);
 
@@ -116,9 +116,9 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 상태별 조회 성공: 해당 상태 이슈만 반환")
     void findByStatusReturnsOnlyMatching() {
-        issueRepository.save(new Issue(PROJECT_ID, "새 이슈", "설명", REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "새 이슈", "설명", Priority.MAJOR, REPORTER_ID));
 
-        Issue assignedIssue = new Issue(PROJECT_ID, "담당 이슈", "설명", REPORTER_ID);
+        Issue assignedIssue = new Issue(PROJECT_ID, "담당 이슈", "설명", Priority.MAJOR, REPORTER_ID);
         issueRepository.save(assignedIssue);
         assignedIssue = issueRepository.findByIssueId(assignedIssue.getIssueId());
         assignedIssue.assignTo(ASSIGNEE_ID);
@@ -136,9 +136,9 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 우선순위별 조회 성공: 해당 우선순위 이슈만 반환")
     void findByPriorityReturnsOnlyMatching() {
-        issueRepository.save(new Issue(PROJECT_ID, "MAJOR 이슈", "설명", REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "MAJOR 이슈", "설명", Priority.MAJOR, REPORTER_ID));
 
-        Issue criticalIssue = new Issue(PROJECT_ID, "CRITICAL 이슈", "설명", REPORTER_ID);
+        Issue criticalIssue = new Issue(PROJECT_ID, "CRITICAL 이슈", "설명", Priority.MAJOR, REPORTER_ID);
         issueRepository.save(criticalIssue);
         criticalIssue = issueRepository.findByIssueId(criticalIssue.getIssueId());
         criticalIssue.setPriority(Priority.CRITICAL);
@@ -156,7 +156,7 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 수정 성공: 변경된 내용이 저장소에 반영")
     void updatePersistsChanges() {
-        Issue issue = new Issue(PROJECT_ID, "원래 제목", "설명", REPORTER_ID);
+        Issue issue = new Issue(PROJECT_ID, "원래 제목", "설명", Priority.MAJOR, REPORTER_ID);
         issueRepository.save(issue);
         issue = issueRepository.findByIssueId(issue.getIssueId());
         issue.setTitle("수정된 제목");
@@ -170,8 +170,8 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 전체 조회 성공: 저장된 모든 이슈 반환")
     void findAllReturnsAllIssues() {
-        issueRepository.save(new Issue(PROJECT_ID, "이슈1", "설명", REPORTER_ID));
-        issueRepository.save(new Issue(PROJECT_ID, "이슈2", "설명", REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "이슈1", "설명", Priority.MAJOR, REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "이슈2", "설명", Priority.MAJOR, REPORTER_ID));
 
         List<Issue> all = issueRepository.findAll();
 
