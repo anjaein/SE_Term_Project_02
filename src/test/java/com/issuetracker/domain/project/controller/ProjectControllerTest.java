@@ -73,7 +73,7 @@ class ProjectControllerTest {
                 projectMemberRepository,
                 new ProjectValidator(projectRepository)
         );
-        projectController = new ProjectController(projectService, accountController, sessionManager);
+        projectController = new ProjectController(projectService, accountService, sessionManager);
         sessionManager.logout();
     }
 

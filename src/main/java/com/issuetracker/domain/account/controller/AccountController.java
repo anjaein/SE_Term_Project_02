@@ -39,8 +39,4 @@ public class AccountController {
         }
         return accountService.createAccount(username, password, role);
     }
-
-    public Response<Long> getAccountIdByUsername(String username) {
-        return accountService.getAccountIdByUsername(username);
-    }
 }

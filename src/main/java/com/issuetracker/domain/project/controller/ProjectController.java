@@ -1,8 +1,8 @@
 package com.issuetracker.domain.project.controller;
 
-import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.account.service.AccountService;
 import com.issuetracker.domain.project.entity.Project;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.service.ProjectService;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProjectController {
     private final ProjectService projectService;
-    private final AccountController accountController;
+    private final AccountService accountService;
     private final SessionManager sessionManager;
 
     public Response<Project> createProject(String name){
@@ -38,7 +38,7 @@ public class ProjectController {
         if(currentUser.getRole() != Role.ADMIN){
             return Response.fail("You are not allowed to add a member.");
         }
-        Response<Long> accountIdResult = accountController.getAccountIdByUsername(username);
+        Response<Long> accountIdResult = accountService.getAccountIdByUsername(username);
         if(!accountIdResult.isSuccess()){
             return Response.fail("User does not exist.");
         }

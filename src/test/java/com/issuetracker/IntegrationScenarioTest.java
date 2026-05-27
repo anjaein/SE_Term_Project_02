@@ -54,6 +54,7 @@ class IntegrationScenarioTest {
     private final String[] originalJson = new String[DATA_FILES.length];
 
     private AccountController accountController;
+    private AccountService accountService;
     private ProjectController projectController;
     private IssueController issueController;
     private CommentController commentController;
@@ -82,13 +83,13 @@ class IntegrationScenarioTest {
         IssueValidator issueValidator = new IssueValidator(projectMemberRepository, projectRepository);
         CommentValidator commentValidator = new CommentValidator(issueRepository, projectMemberRepository);
 
-        AccountService accountService = new AccountService(accountRepository, accountValidator);
+        accountService = new AccountService(accountRepository, accountValidator);
         ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository, new ProjectValidator(projectRepository));
         issueService = new IssueService(issueRepository, issueValidator);
         CommentService commentService = new CommentService(commentRepository, commentValidator);
 
         accountController = new AccountController(accountService, sessionManager);
-        projectController = new ProjectController(projectService, accountController, sessionManager);
+        projectController = new ProjectController(projectService, accountService, sessionManager);
         issueController = new IssueController(issueService, sessionManager);
         commentController = new CommentController(commentService, sessionManager);
     }
@@ -116,8 +117,8 @@ class IntegrationScenarioTest {
         assertTrue(projectController.addProjectMember(projectId, "pl1", Role.PL).isSuccess());
         assertTrue(projectController.addProjectMember(projectId, "dev1", Role.DEV).isSuccess());
         assertTrue(projectController.addProjectMember(projectId, "tester1", Role.TESTER).isSuccess());
-        Long dev1Id = accountController.getAccountIdByUsername("dev1").getData();
-        Long tester1Id = accountController.getAccountIdByUsername("tester1").getData();
+        Long dev1Id = accountService.getAccountIdByUsername("dev1").getData();
+        Long tester1Id = accountService.getAccountIdByUsername("tester1").getData();
         accountController.logout();
 
         assertTrue(accountController.login("tester1", "1234").isSuccess());

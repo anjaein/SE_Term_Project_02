@@ -55,7 +55,7 @@ public class Main {
         IRecommendService recommendService = new RecommendService(issueRepository);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
-        ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
+        ProjectController projectController = new ProjectController(projectService, accountService, sessionManager);
         IssueController issueController = new IssueController(issueService, sessionManager);
         CommentController commentController = new CommentController(commentService, sessionManager);
         IssueStatisticsController issueStatisticsController = new IssueStatisticsController(issueStatisticsService, sessionManager);
