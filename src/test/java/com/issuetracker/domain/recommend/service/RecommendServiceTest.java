@@ -1,6 +1,8 @@
 package com.issuetracker.domain.recommend.service;
 
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
+import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -183,7 +185,7 @@ class RecommendServiceTest {
         issueRepository.save(issue);
     }
 
-    private static class FakeIssueRepository extends IssueRepository {
+    private static class FakeIssueRepository implements IssueRepository {
         private final List<Issue> issues = new ArrayList<>();
 
         @Override
@@ -203,5 +205,23 @@ class RecommendServiceTest {
             issues.add(issue);
             return true;
         }
+
+        @Override
+        public boolean update(Issue issue) { return false; }
+
+        @Override
+        public List<Issue> findByAssigneeId(Long assigneeId) { return List.of(); }
+
+        @Override
+        public List<Issue> findByReporterId(Long reporterId) { return List.of(); }
+
+        @Override
+        public List<Issue> findByStatus(Status status) { return List.of(); }
+
+        @Override
+        public List<Issue> findByPriority(Priority priority) { return List.of(); }
+
+        @Override
+        public Issue findByIssueId(Long issueId) { return null; }
     }
 }
