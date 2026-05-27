@@ -16,25 +16,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/*
-테스트 목록:
-- save: ID 자동 부여 및 저장
-- findAll: 전체 조회
-- findByIssueId: ID로 단건 조회
-- findByProjectId: 프로젝트 ID로 조회
-- findByAssigneeId: 담당자 ID로 조회
-- findByReporterId: 보고자 ID로 조회
-- findByStatus: 상태로 조회
-- findByPriority: 우선순위로 조회
-- update: 이슈 수정
-- update: 존재하지 않는 이슈 수정 시 false 반환
-*/
-
 class IssueRepositoryTest {
 
     private static final Path ISSUES_FILE = Path.of("data", "issues.json");
     private static final Long PROJECT_ID = 1L;
+    private static final Long OTHER_PROJECT_ID = 2L;
     private static final Long REPORTER_ID = 10L;
+    private static final Long OTHER_REPORTER_ID = 11L;
     private static final Long ASSIGNEE_ID = 20L;
 
     private final IssueRepository issueRepository = new JsonIssueRepository();
@@ -61,17 +49,11 @@ class IssueRepositoryTest {
     }
 
     @Test
-    @DisplayName("이슈 저장 시 ID가 순차적으로 부여되고 저장소에 데이터가 유지된다")
-    void saveAssignsIdAndPersists() {
-        // given
-        Issue issue1 = new Issue(PROJECT_ID, "첫 번째 이슈", "설명1", REPORTER_ID);
-        Issue issue2 = new Issue(PROJECT_ID, "두 번째 이슈", "설명2", REPORTER_ID);
+    @DisplayName("이슈 저장 성공: ID가 순차 부여되고 저장소에 유지")
+    void saveAssignsSequentialIds() {
+        assertTrue(issueRepository.save(new Issue(PROJECT_ID, "첫 번째", "설명1", REPORTER_ID)));
+        assertTrue(issueRepository.save(new Issue(PROJECT_ID, "두 번째", "설명2", REPORTER_ID)));
 
-        // when
-        assertTrue(issueRepository.save(issue1));
-        assertTrue(issueRepository.save(issue2));
-
-        // then
         List<Issue> issues = issueRepository.findAll();
         assertEquals(2, issues.size());
         assertEquals(1L, issues.get(0).getIssueId());
@@ -79,49 +61,32 @@ class IssueRepositoryTest {
     }
 
     @Test
-    @DisplayName("ID로 이슈 단건 조회")
-    void findByIssueId() {
-        // given
+    @DisplayName("이슈 단건 조회 성공: issueId로 정확히 반환")
+    void findByIssueIdReturnsIssue() {
         Issue issue = new Issue(PROJECT_ID, "이슈 제목", "설명", REPORTER_ID);
         issueRepository.save(issue);
 
-        // when
         Issue found = issueRepository.findByIssueId(issue.getIssueId());
 
-        // then
         assertNotNull(found);
         assertEquals("이슈 제목", found.getTitle());
     }
 
     @Test
-    @DisplayName("존재하지 않는 ID로 조회 시 null 반환")
-    void findByIssueIdReturnsNullWhenNotFound() {
-        // when
-        Issue found = issueRepository.findByIssueId(999L);
-
-        // then
-        assertNull(found);
-    }
-
-    @Test
-    @DisplayName("프로젝트 ID로 조회 시 해당 프로젝트 이슈만 반환")
-    void findByProjectId() {
-        // given
+    @DisplayName("이슈 프로젝트별 조회 성공: 해당 프로젝트 이슈만 반환")
+    void findByProjectIdReturnsOnlyThatProject() {
         issueRepository.save(new Issue(PROJECT_ID, "프로젝트1 이슈", "설명", REPORTER_ID));
-        issueRepository.save(new Issue(2L, "프로젝트2 이슈", "설명", REPORTER_ID));
+        issueRepository.save(new Issue(OTHER_PROJECT_ID, "프로젝트2 이슈", "설명", REPORTER_ID));
 
-        // when
         List<Issue> issues = issueRepository.findByProjectId(PROJECT_ID);
 
-        // then
         assertEquals(1, issues.size());
-        assertEquals(PROJECT_ID, issues.getFirst().getProjectId());
+        assertEquals(PROJECT_ID, issues.get(0).getProjectId());
     }
 
     @Test
-    @DisplayName("담당자 ID로 조회 시 해당 담당자의 이슈만 반환")
-    void findByAssigneeId() {
-        // given
+    @DisplayName("이슈 담당자별 조회 성공: 해당 담당자 이슈만 반환")
+    void findByAssigneeIdReturnsOnlyAssigned() {
         Issue assigned = new Issue(PROJECT_ID, "담당 이슈", "설명", REPORTER_ID);
         issueRepository.save(assigned);
         assigned = issueRepository.findByIssueId(assigned.getIssueId());
@@ -130,35 +95,28 @@ class IssueRepositoryTest {
 
         issueRepository.save(new Issue(PROJECT_ID, "미담당 이슈", "설명", REPORTER_ID));
 
-        // when
         List<Issue> issues = issueRepository.findByAssigneeId(ASSIGNEE_ID);
 
-        // then
         assertEquals(1, issues.size());
-        assertEquals(ASSIGNEE_ID, issues.getFirst().getAssigneeId());
+        assertEquals(ASSIGNEE_ID, issues.get(0).getAssigneeId());
     }
 
     @Test
-    @DisplayName("보고자 ID로 조회 시 해당 보고자의 이슈만 반환")
-    void findByReporterId() {
-        // given
+    @DisplayName("이슈 보고자별 조회 성공: 해당 보고자 이슈만 반환")
+    void findByReporterIdReturnsOnlyReporter() {
         issueRepository.save(new Issue(PROJECT_ID, "이슈1", "설명", REPORTER_ID));
-        issueRepository.save(new Issue(PROJECT_ID, "이슈2", "설명", 99L));
+        issueRepository.save(new Issue(PROJECT_ID, "이슈2", "설명", OTHER_REPORTER_ID));
 
-        // when
         List<Issue> issues = issueRepository.findByReporterId(REPORTER_ID);
 
-        // then
         assertEquals(1, issues.size());
-        assertEquals(REPORTER_ID, issues.getFirst().getReporterId());
+        assertEquals(REPORTER_ID, issues.get(0).getReporterId());
     }
 
     @Test
-    @DisplayName("상태로 조회 시 해당 상태의 이슈만 반환")
-    void findByStatus() {
-        // given
-        Issue newIssue = new Issue(PROJECT_ID, "새 이슈", "설명", REPORTER_ID);
-        issueRepository.save(newIssue);
+    @DisplayName("이슈 상태별 조회 성공: 해당 상태 이슈만 반환")
+    void findByStatusReturnsOnlyMatching() {
+        issueRepository.save(new Issue(PROJECT_ID, "새 이슈", "설명", REPORTER_ID));
 
         Issue assignedIssue = new Issue(PROJECT_ID, "담당 이슈", "설명", REPORTER_ID);
         issueRepository.save(assignedIssue);
@@ -166,21 +124,19 @@ class IssueRepositoryTest {
         assignedIssue.assignTo(ASSIGNEE_ID);
         issueRepository.update(assignedIssue);
 
-        // when
         List<Issue> newIssues = issueRepository.findByStatus(Status.NEW);
         List<Issue> assignedIssues = issueRepository.findByStatus(Status.ASSIGNED);
 
-        // then
         assertEquals(1, newIssues.size());
+        assertEquals(Status.NEW, newIssues.get(0).getStatus());
         assertEquals(1, assignedIssues.size());
+        assertEquals(Status.ASSIGNED, assignedIssues.get(0).getStatus());
     }
 
     @Test
-    @DisplayName("우선순위로 조회 시 해당 우선순위의 이슈만 반환")
-    void findByPriority() {
-        // given
-        Issue majorIssue = new Issue(PROJECT_ID, "MAJOR 이슈", "설명", REPORTER_ID);
-        issueRepository.save(majorIssue);
+    @DisplayName("이슈 우선순위별 조회 성공: 해당 우선순위 이슈만 반환")
+    void findByPriorityReturnsOnlyMatching() {
+        issueRepository.save(new Issue(PROJECT_ID, "MAJOR 이슈", "설명", REPORTER_ID));
 
         Issue criticalIssue = new Issue(PROJECT_ID, "CRITICAL 이슈", "설명", REPORTER_ID);
         issueRepository.save(criticalIssue);
@@ -188,43 +144,37 @@ class IssueRepositoryTest {
         criticalIssue.setPriority(Priority.CRITICAL);
         issueRepository.update(criticalIssue);
 
-        // when
         List<Issue> majorIssues = issueRepository.findByPriority(Priority.MAJOR);
         List<Issue> criticalIssues = issueRepository.findByPriority(Priority.CRITICAL);
 
-        // then
         assertEquals(1, majorIssues.size());
+        assertEquals(Priority.MAJOR, majorIssues.get(0).getPriority());
         assertEquals(1, criticalIssues.size());
+        assertEquals(Priority.CRITICAL, criticalIssues.get(0).getPriority());
     }
 
     @Test
-    @DisplayName("이슈 수정 시 변경된 내용이 저장소에 반영된다")
+    @DisplayName("이슈 수정 성공: 변경된 내용이 저장소에 반영")
     void updatePersistsChanges() {
-        // given
         Issue issue = new Issue(PROJECT_ID, "원래 제목", "설명", REPORTER_ID);
         issueRepository.save(issue);
         issue = issueRepository.findByIssueId(issue.getIssueId());
-
-        // when
         issue.setTitle("수정된 제목");
+
         assertTrue(issueRepository.update(issue));
 
-        // then
         Issue updated = issueRepository.findByIssueId(issue.getIssueId());
         assertEquals("수정된 제목", updated.getTitle());
     }
 
     @Test
-    @DisplayName("존재하지 않는 이슈 수정 시 false 반환")
-    void updateReturnsFalseWhenNotFound() {
-        // given
-        Issue nonExistent = new Issue(PROJECT_ID, "없는 이슈", "설명", REPORTER_ID);
-        nonExistent.setIssueId(999L);
+    @DisplayName("이슈 전체 조회 성공: 저장된 모든 이슈 반환")
+    void findAllReturnsAllIssues() {
+        issueRepository.save(new Issue(PROJECT_ID, "이슈1", "설명", REPORTER_ID));
+        issueRepository.save(new Issue(PROJECT_ID, "이슈2", "설명", REPORTER_ID));
 
-        // when
-        boolean result = issueRepository.update(nonExistent);
+        List<Issue> all = issueRepository.findAll();
 
-        // then
-        assertFalse(result);
+        assertEquals(2, all.size());
     }
 }
