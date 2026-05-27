@@ -99,7 +99,7 @@ class RecommendServiceTest {
     @DisplayName("추천 실패: RESOLVED/CLOSED 아닌 이슈는 제외")
     void ignoresNonResolvedIssues() {
         // given: NEW 상태(fixerId 없음) 이슈만 존재
-        Issue issue = new Issue(PROJECT_ID, "login bug", "button error", 99L);
+        Issue issue = new Issue(PROJECT_ID, "login bug", "button error", Priority.MAJOR, 99L);
         issue.setIssueId(1L);
         issueRepository.save(issue);
 
@@ -169,7 +169,7 @@ class RecommendServiceTest {
     }
 
     private void addResolvedIssue(Long id, String title, String desc, Long fixerId) {
-        Issue issue = new Issue(PROJECT_ID, title, desc, 99L);
+        Issue issue = new Issue(PROJECT_ID, title, desc, Priority.MAJOR, 99L);
         issue.setIssueId(id);
         issue.markAsFixed(fixerId);
         issue.markAsResolved();
@@ -177,7 +177,7 @@ class RecommendServiceTest {
     }
 
     private void addClosedIssue(Long id, String title, String desc, Long fixerId) {
-        Issue issue = new Issue(PROJECT_ID, title, desc, 99L);
+        Issue issue = new Issue(PROJECT_ID, title, desc, Priority.MAJOR, 99L);
         issue.setIssueId(id);
         issue.markAsFixed(fixerId);
         issue.markAsResolved();
