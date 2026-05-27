@@ -61,4 +61,12 @@ public class IssueController {
         }
         return issueService.closeIssue(issueId, currentUser.getAccountId());
     }
+
+    public Response<Issue> reopenIssue(Long issueId){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            return Response.fail("You are not logged in.");
+        }
+        return issueService.reopenIssue(issueId, currentUser.getAccountId());
+    }
 }

@@ -280,14 +280,14 @@ class IssueServiceTest {
     }
 
     @Test
-    @DisplayName("이슈 FIX 실패: 상태가 ASSIGNED가 아님")
+    @DisplayName("이슈 FIX 실패: 상태가 ASSIGNED/REOPENED가 아님")
     void fixIssueFailsWhenStatusIsNotAssigned() {
         Issue issue = seedNewIssue();
 
         Response<Issue> result = issueService.fixIssue(issue.getIssueId(), DEV_ID);
 
         assertFalse(result.isSuccess());
-        assertTrue(result.getMessage().contains("not in ASSIGNED status"));
+        assertTrue(result.getMessage().contains("not in ASSIGNED or REOPENED status"));
     }
 
     @Test
@@ -407,6 +407,80 @@ class IssueServiceTest {
     }
 
     @Test
+    @DisplayName("이슈 REOPEN 성공: PL이 CLOSED 이슈를 다시 열고 fix/resolve/close 관련 필드는 초기화, assignee는 유지")
+    void reopenIssueSucceeds() {
+        seedProjectMember(PROJECT_ID, PL_ID, Role.PL);
+        Issue issue = seedClosedIssue();
+
+        Response<Issue> result = issueService.reopenIssue(issue.getIssueId(), PL_ID);
+
+        assertTrue(result.isSuccess());
+        Issue updated = issueRepository.findByIssueId(issue.getIssueId());
+        assertEquals(Status.REOPENED, updated.getStatus());
+        assertEquals(DEV_ID, updated.getAssigneeId());
+        assertNull(updated.getFixerId());
+        assertNull(updated.getFixedDate());
+        assertNull(updated.getResolvedDate());
+        assertNull(updated.getClosedDate());
+    }
+
+    @Test
+    @DisplayName("이슈 REOPEN 실패: 필수 파라미터(issueId/requesterId) 중 하나라도 null")
+    void reopenIssueFailsWhenRequiredParamIsNull() {
+        assertFalse(issueService.reopenIssue(null, PL_ID).isSuccess());
+        assertFalse(issueService.reopenIssue(1L, null).isSuccess());
+    }
+
+    @Test
+    @DisplayName("이슈 REOPEN 실패: 존재하지 않는 issue")
+    void reopenIssueFailsWhenIssueDoesNotExist() {
+        Response<Issue> result = issueService.reopenIssue(999L, PL_ID);
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("Issue not found"));
+    }
+
+    @Test
+    @DisplayName("이슈 REOPEN 실패: 상태가 CLOSED가 아님")
+    void reopenIssueFailsWhenStatusIsNotClosed() {
+        seedProjectMember(PROJECT_ID, PL_ID, Role.PL);
+        Issue issue = seedResolvedIssue();
+
+        Response<Issue> result = issueService.reopenIssue(issue.getIssueId(), PL_ID);
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("not in CLOSED status"));
+    }
+
+    @Test
+    @DisplayName("이슈 REOPEN 실패: 요청자가 PL이 아님")
+    void reopenIssueFailsWhenRequesterIsNotPL() {
+        seedProjectMember(PROJECT_ID, TESTER_ID, Role.TESTER);
+        Issue issue = seedClosedIssue();
+
+        Response<Issue> result = issueService.reopenIssue(issue.getIssueId(), TESTER_ID);
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("Only a PL can perform this action"));
+    }
+
+    @Test
+    @DisplayName("이슈 REOPEN 후 FIX 가능: 기존 assignee가 REOPENED 이슈를 FIX 처리")
+    void fixIssueSucceedsAfterReopen() {
+        seedProjectMember(PROJECT_ID, PL_ID, Role.PL);
+        Issue issue = seedClosedIssue();
+        issueService.reopenIssue(issue.getIssueId(), PL_ID);
+
+        Response<Issue> result = issueService.fixIssue(issue.getIssueId(), DEV_ID);
+
+        assertTrue(result.isSuccess());
+        Issue updated = issueRepository.findByIssueId(issue.getIssueId());
+        assertEquals(Status.FIXED, updated.getStatus());
+        assertEquals(DEV_ID, updated.getFixerId());
+        assertNotNull(updated.getFixedDate());
+    }
+
+    @Test
     @DisplayName("이슈 프로젝트별 조회 성공: projectId가 null이면 빈 리스트")
     void getIssuesByProjectIdReturnsEmptyWhenNull() {
         Response<List<Issue>> result = issueService.getIssuesByProjectId(null);
@@ -487,6 +561,13 @@ class IssueServiceTest {
     private Issue seedResolvedIssue() {
         Issue issue = seedFixedIssue();
         issue.markAsResolved();
+        issueRepository.update(issue);
+        return issueRepository.findByIssueId(issue.getIssueId());
+    }
+
+    private Issue seedClosedIssue() {
+        Issue issue = seedResolvedIssue();
+        issue.markAsClosed();
         issueRepository.update(issue);
         return issueRepository.findByIssueId(issue.getIssueId());
     }
