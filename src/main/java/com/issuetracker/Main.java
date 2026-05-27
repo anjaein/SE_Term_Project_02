@@ -1,8 +1,6 @@
 package com.issuetracker;
 
 import com.issuetracker.domain.account.controller.AccountController;
-import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
@@ -27,21 +25,17 @@ import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
 import com.issuetracker.domain.project.service.ProjectValidator;
-import com.issuetracker.global.common.SessionManager;
-
-import com.issuetracker.domain.recommend.controller.IRecommendController;
 import com.issuetracker.domain.recommend.controller.RecommendController;
-import com.issuetracker.domain.recommend.service.IRecommendService;
 import com.issuetracker.domain.recommend.service.RecommendService;
+import com.issuetracker.global.common.Backend;
 import com.issuetracker.global.common.SessionManager;
-
-import java.util.Comparator;
-import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
+        Backend backend = createBackend();
+    }
 
-        // Repository
+    public static Backend createBackend() {
         AccountRepository accountRepository = new JsonAccountRepository();
         ProjectRepository projectRepository = new JsonProjectRepository();
         ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
@@ -50,28 +44,34 @@ public class Main {
 
         SessionManager sessionManager = new SessionManager();
 
-        // Validator
         AccountValidator accountValidator = new AccountValidator(accountRepository);
         ProjectValidator projectValidator = new ProjectValidator(projectRepository);
         IssueValidator issueValidator = new IssueValidator(projectMemberRepository, projectRepository);
         IssueStatisticsValidator issueStatisticsValidator = new IssueStatisticsValidator();
-        CommentValidator commentValidator =
-                new CommentValidator(issueRepository, projectMemberRepository);
+        CommentValidator commentValidator = new CommentValidator(issueRepository, projectMemberRepository);
 
-        // Service
         AccountService accountService = new AccountService(accountRepository, accountValidator);
         ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository, projectValidator);
-        IssueService issueService = new IssueService(issueRepository, projectMemberRepository, issueValidator);
+        IssueService issueService = new IssueService(issueRepository, issueValidator);
         CommentService commentService = new CommentService(commentRepository, commentValidator);
         IssueStatisticsService issueStatisticsService = new IssueStatisticsService(issueRepository, issueStatisticsValidator);
+        RecommendService recommendService = new RecommendService(issueRepository);
 
-        IRecommendService recommendService = new RecommendService(issueRepository);
-        IRecommendController recommendController = new RecommendController(recommendService, accountRepository);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
-        ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
+        ProjectController projectController = new ProjectController(projectService, accountService, sessionManager);
         IssueController issueController = new IssueController(issueService, sessionManager);
         CommentController commentController = new CommentController(commentService, sessionManager);
+        IssueStatisticsController issueStatisticsController = new IssueStatisticsController(issueStatisticsService, sessionManager);
+        RecommendController recommendController = new RecommendController(recommendService, accountRepository);
 
+        return new Backend(
+                accountController,
+                projectController,
+                issueController,
+                commentController,
+                issueStatisticsController,
+                recommendController
+        );
     }
 }

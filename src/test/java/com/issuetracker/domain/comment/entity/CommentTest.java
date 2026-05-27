@@ -10,38 +10,31 @@ import static org.junit.jupiter.api.Assertions.*;
 class CommentTest {
 
     @Test
-    @DisplayName("Comment 생성 시 이슈 ID, 작성자 ID, 내용 및 생성/수정 시간이 올바르게 초기화된다")
-    void constructorSetsIssueAuthorContentAndTimestamps() {
-        //given
-        LocalDateTime beforeCreate = LocalDateTime.now();
+    @DisplayName("댓글 생성 성공: issueId/authorId/content 저장 및 createdDate/updatedDate 자동 기록")
+    void constructorInitializesFieldsAndTimestamps() {
+        LocalDateTime before = LocalDateTime.now();
 
-        //when
         Comment comment = new Comment(10L, 1L, "content");
-        LocalDateTime afterCreate = LocalDateTime.now();
 
-        //then
+        LocalDateTime after = LocalDateTime.now();
         assertNull(comment.getCommentId());
         assertEquals(10L, comment.getIssueId());
         assertEquals(1L, comment.getAuthorId());
         assertEquals("content", comment.getContent());
-        assertFalse(comment.getCreatedDate().isBefore(beforeCreate));
-        assertFalse(comment.getCreatedDate().isAfter(afterCreate));
-        assertFalse(comment.getUpdatedDate().isBefore(beforeCreate));
-        assertFalse(comment.getUpdatedDate().isAfter(afterCreate));
+        assertFalse(comment.getCreatedDate().isBefore(before));
+        assertFalse(comment.getCreatedDate().isAfter(after));
+        assertFalse(comment.getUpdatedDate().isBefore(before));
+        assertFalse(comment.getUpdatedDate().isAfter(after));
     }
 
     @Test
-    @DisplayName("댓글 내용을 수정하면 내용이 변경되고 수정 시간이 갱신된다")
-    void updateContentChangesContentAndRefreshesUpdatedDate() {
-        //given
+    @DisplayName("댓글 내용 수정 성공: trim 적용 및 updatedDate 갱신")
+    void updateContentTrimsAndRefreshesUpdatedDate() {
         Comment comment = new Comment(1L, 10L, "old content");
-        //isAfter 검증 시 컴퓨터의 연산 속도가 너무 빠르므로 '동시성' 문제가 발생할 수 있으므로 이를 방지하기 위해 1나노초 과거로 설정
         LocalDateTime oldUpdatedDate = comment.getUpdatedDate().minusNanos(1);
 
-        //when
-        comment.updateContent("new content");
+        comment.updateContent("  new content  ");
 
-        //then
         assertEquals("new content", comment.getContent());
         assertTrue(comment.getUpdatedDate().isAfter(oldUpdatedDate));
     }

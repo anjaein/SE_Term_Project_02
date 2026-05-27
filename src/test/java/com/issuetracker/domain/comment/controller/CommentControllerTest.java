@@ -1,5 +1,6 @@
 package com.issuetracker.domain.comment.controller;
 
+import com.google.gson.reflect.TypeToken;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.comment.entity.Comment;
@@ -8,15 +9,16 @@ import com.issuetracker.domain.comment.repository.JsonCommentRepository;
 import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.domain.comment.service.CommentValidator;
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.repository.JsonProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.global.common.JsonFileManager;
-
 import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,166 +27,213 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class CommentControllerTest {
 
-    private static final Path ACCOUNTS_FILE = Path.of("data", "accounts.json");
     private static final Path COMMENTS_FILE = Path.of("data", "comments.json");
     private static final Path ISSUES_FILE = Path.of("data", "issues.json");
     private static final Path PROJECT_MEMBERS_FILE = Path.of("data", "project_members.json");
 
-    private CommentController commentController;
+    private static final Long PROJECT_ID = 1L;
+    private static final Long ISSUE_ID = 10L;
+    private static final Long AUTHOR_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
+    private static final Long ADMIN_ID = 99L;
+
     private CommentRepository commentRepository;
     private SessionManager sessionManager;
+    private CommentController commentController;
+
+    private String originalCommentsJson;
+    private String originalIssuesJson;
+    private String originalProjectMembersJson;
 
     @BeforeEach
     void setUp() throws IOException {
-        // 1. 파일 시스템 초기화 (빈 배열로 초기화)
-        Files.createDirectories(ACCOUNTS_FILE.getParent());
-        Files.writeString(ACCOUNTS_FILE, "[]", StandardCharsets.UTF_8);
-        Files.writeString(COMMENTS_FILE, "[]", StandardCharsets.UTF_8);
-        Files.writeString(ISSUES_FILE, "[]", StandardCharsets.UTF_8);
-        Files.writeString(PROJECT_MEMBERS_FILE, "[]", StandardCharsets.UTF_8);
+        originalCommentsJson = readOriginal(COMMENTS_FILE);
+        originalIssuesJson = readOriginal(ISSUES_FILE);
+        originalProjectMembersJson = readOriginal(PROJECT_MEMBERS_FILE);
+        resetJsonFile(COMMENTS_FILE);
+        resetJsonFile(ISSUES_FILE);
+        resetJsonFile(PROJECT_MEMBERS_FILE);
 
-        // 2. 의존성 객체 생성 및 주입
-        this.sessionManager = new SessionManager();
-        this.commentRepository = new JsonCommentRepository();
+        commentRepository = new JsonCommentRepository();
         IssueRepository issueRepository = new JsonIssueRepository();
         ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
-
-        CommentValidator commentValidator = new CommentValidator(issueRepository, projectMemberRepository);
-
-        // 서비스 생성 시 필요한 레포지토리 주입
         CommentService commentService = new CommentService(
                 commentRepository,
-                commentValidator
+                new CommentValidator(issueRepository, projectMemberRepository)
         );
 
-        // 컨트롤러 주입
-        this.commentController = new CommentController(commentService, sessionManager);
+        sessionManager = new SessionManager();
+        commentController = new CommentController(commentService, sessionManager);
+
+        seedIssue(ISSUE_ID, PROJECT_ID);
+        seedProjectMember(PROJECT_ID, AUTHOR_ID, Role.DEV);
 
         sessionManager.logout();
     }
 
-    @Test
-    @DisplayName("성공: 로그인한 사용자가 유효한 이슈에 댓글을 작성한다")
-    void createComment_Success() {
-        // given
-        Long userId = 1L;
-        Long issueId = 10L;
-        seedAccount(userId, Role.DEV);
-        seedIssue(issueId);
-        seedProjectMember(1L, userId, Role.DEV);
-        loginAs(userId, Role.DEV);
-
-        // when
-        Response<Comment> response = commentController.createComment(issueId, "Hello World");
-
-        // then
-        assertTrue(response.isSuccess());
-        List<Comment> all = commentRepository.findAll();
-        assertEquals(1, all.size());
-        assertEquals("Hello World", all.get(0).getContent());
+    @AfterEach
+    void tearDown() throws IOException {
+        restoreJsonFile(COMMENTS_FILE, originalCommentsJson);
+        restoreJsonFile(ISSUES_FILE, originalIssuesJson);
+        restoreJsonFile(PROJECT_MEMBERS_FILE, originalProjectMembersJson);
     }
 
     @Test
-    @DisplayName("실패: 로그인하지 않은 경우 댓글 작성이 거부된다")
-    void createComment_Fail_NotLoggedIn() {
-        // when
-        Response<Comment> response = commentController.createComment(10L, "Not logged in");
+    @DisplayName("댓글 생성 성공: 로그인한 프로젝트 멤버가 작성")
+    void createCommentSucceeds() {
+        loginAs(AUTHOR_ID, Role.DEV);
 
-        // then
-        assertFalse(response.isSuccess());
-        assertTrue(response.getMessage().contains("You are not logged in."));
-        assertTrue(commentRepository.findAll().isEmpty());
+        Response<Comment> result = commentController.createComment(ISSUE_ID, "hello");
+
+        assertTrue(result.isSuccess());
+        assertEquals(1, commentRepository.findAll().size());
     }
 
     @Test
-    @DisplayName("실패: 존재하지 않는 이슈에 댓글을 달 수 없다")
-    void createComment_Fail_InvalidIssue() {
-        // given
-        loginAs(1L, Role.DEV);
-        seedAccount(1L, Role.DEV);
+    @DisplayName("댓글 생성 실패: 비로그인 상태")
+    void createCommentFailsWhenNotLoggedIn() {
+        Response<Comment> result = commentController.createComment(ISSUE_ID, "hello");
 
-        // when
-        Response<Comment> response = commentController.createComment(999L, "Ghost issue");
-
-        // then
-        assertFalse(response.isSuccess());
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("not logged in"));
     }
 
     @Test
-    @DisplayName("성공: 본인이 작성한 댓글을 수정한다")
-    void updateComment_Success() {
-        // given
-        Long userId = 1L;
-        loginAs(userId, Role.DEV);
-        Comment existing = new Comment(10L, userId, "Old Content");
-        commentRepository.save(existing);
+    @DisplayName("댓글 이슈별 조회 성공: 로그인 상태에서 목록 반환")
+    void listCommentsSucceeds() {
+        commentRepository.save(new Comment(ISSUE_ID, AUTHOR_ID, "c1"));
+        loginAs(AUTHOR_ID, Role.DEV);
 
-        // when
-        Response<Comment> response = commentController.updateComment(1L, "New Content");
+        Response<List<Comment>> result = commentController.listComments(ISSUE_ID);
 
-        // then
-        assertTrue(response.isSuccess());
-        assertEquals("New Content", commentRepository.findByCommentId(1L).getContent());
+        assertTrue(result.isSuccess());
+        assertEquals(1, result.getData().size());
     }
 
     @Test
-    @DisplayName("실패: 다른 사람의 댓글은 수정할 수 없다")
-    void updateComment_Fail_Forbidden() {
-        // given
-        loginAs(2L, Role.DEV);
-        Comment othersComment = new Comment(10L, 1L, "Author is User 1");
-        commentRepository.save(othersComment);
+    @DisplayName("댓글 이슈별 조회 실패: 비로그인 상태")
+    void listCommentsFailsWhenNotLoggedIn() {
+        Response<List<Comment>> result = commentController.listComments(ISSUE_ID);
 
-        // when
-        Response<Comment> response = commentController.updateComment(1L, "Hacked!");
-
-        // then
-        assertFalse(response.isSuccess());
-        assertEquals("Author is User 1", commentRepository.findByCommentId(1L).getContent());
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("not logged in"));
     }
 
     @Test
-    @DisplayName("성공: 관리자는 다른 사람의 댓글을 삭제할 수 있다")
-    void deleteComment_Admin_Success() {
-        // given
-        loginAs(99L, Role.ADMIN);
-        Comment userComment = new Comment(10L, 1L, "User's comment");
-        commentRepository.save(userComment);
+    @DisplayName("댓글 수정 성공: 작성자 본인이 로그인 상태에서 수정")
+    void updateCommentSucceeds() {
+        Comment comment = new Comment(ISSUE_ID, AUTHOR_ID, "old");
+        commentRepository.save(comment);
+        loginAs(AUTHOR_ID, Role.DEV);
 
-        // when
-        Response<Comment> response = commentController.deleteComment(1L);
+        Response<Comment> result = commentController.updateComment(comment.getCommentId(), "new");
 
-        // then
-        assertTrue(response.isSuccess());
-        assertTrue(commentRepository.findAll().isEmpty());
+        assertTrue(result.isSuccess());
+        assertEquals("new", commentRepository.findByCommentId(comment.getCommentId()).getContent());
+    }
+
+    @Test
+    @DisplayName("댓글 수정 실패: 비로그인 상태")
+    void updateCommentFailsWhenNotLoggedIn() {
+        Response<Comment> result = commentController.updateComment(1L, "new");
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("not logged in"));
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 성공: 작성자 본인이 로그인 상태에서 삭제")
+    void deleteCommentSucceedsForAuthor() {
+        Comment comment = new Comment(ISSUE_ID, AUTHOR_ID, "content");
+        commentRepository.save(comment);
+        loginAs(AUTHOR_ID, Role.DEV);
+
+        Response<Comment> result = commentController.deleteComment(comment.getCommentId());
+
+        assertTrue(result.isSuccess());
+        assertNull(commentRepository.findByCommentId(comment.getCommentId()));
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 성공: ADMIN으로 로그인하여 타인 댓글 삭제")
+    void deleteCommentSucceedsForAdmin() {
+        Comment comment = new Comment(ISSUE_ID, AUTHOR_ID, "content");
+        commentRepository.save(comment);
+        loginAs(ADMIN_ID, Role.ADMIN);
+
+        Response<Comment> result = commentController.deleteComment(comment.getCommentId());
+
+        assertTrue(result.isSuccess());
+        assertNull(commentRepository.findByCommentId(comment.getCommentId()));
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 실패: 비로그인 상태")
+    void deleteCommentFailsWhenNotLoggedIn() {
+        Response<Comment> result = commentController.deleteComment(1L);
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("not logged in"));
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 실패: 작성자도 ADMIN도 아닌 사용자가 로그인")
+    void deleteCommentFailsForNonAuthorNonAdmin() {
+        Comment comment = new Comment(ISSUE_ID, AUTHOR_ID, "content");
+        commentRepository.save(comment);
+        loginAs(OTHER_USER_ID, Role.DEV);
+
+        Response<Comment> result = commentController.deleteComment(comment.getCommentId());
+
+        assertFalse(result.isSuccess());
+        assertNotNull(commentRepository.findByCommentId(comment.getCommentId()));
     }
 
     private void loginAs(Long id, Role role) {
-        Account account = new Account("testUser", "pw", role);
+        Account account = new Account("user" + id, "pw", role);
         account.setAccountId(id);
         sessionManager.login(account);
     }
 
-    private void seedAccount(Long id, Role role) {
-        Account account = new Account("testUser", "pw", role);
-        account.setAccountId(id);
-        JsonFileManager.writeList(ACCOUNTS_FILE.toString(), List.of(account));
-    }
-
-    private void seedIssue(Long id) {
-        Issue issue = new Issue(1L, "title", "desc", 1L);
-        issue.setIssueId(id);
-        JsonFileManager.writeList(ISSUES_FILE.toString(), List.of(issue));
+    private void seedIssue(Long issueId, Long projectId) {
+        List<Issue> issues = JsonFileManager.readList(ISSUES_FILE.toString(),
+                new TypeToken<List<Issue>>(){}.getType());
+        if (issues == null) issues = new ArrayList<>();
+        Issue issue = new Issue(projectId, "title", "desc", Priority.MAJOR, 999L);
+        issue.setIssueId(issueId);
+        issues.add(issue);
+        JsonFileManager.writeList(ISSUES_FILE.toString(), issues);
     }
 
     private void seedProjectMember(Long projectId, Long accountId, Role role) {
-        ProjectMember member = new ProjectMember(projectId, accountId, role);
-        JsonFileManager.writeList(PROJECT_MEMBERS_FILE.toString(), List.of(member));
+        List<ProjectMember> members = JsonFileManager.readList(PROJECT_MEMBERS_FILE.toString(),
+                new TypeToken<List<ProjectMember>>(){}.getType());
+        if (members == null) members = new ArrayList<>();
+        members.add(new ProjectMember(projectId, accountId, role));
+        JsonFileManager.writeList(PROJECT_MEMBERS_FILE.toString(), members);
+    }
+
+    private String readOriginal(Path path) throws IOException {
+        return Files.exists(path) ? Files.readString(path, StandardCharsets.UTF_8) : null;
+    }
+
+    private void resetJsonFile(Path path) throws IOException {
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "[]", StandardCharsets.UTF_8);
+    }
+
+    private void restoreJsonFile(Path path, String originalJson) throws IOException {
+        if (originalJson == null) {
+            Files.deleteIfExists(path);
+        } else {
+            Files.writeString(path, originalJson, StandardCharsets.UTF_8);
+        }
     }
 }

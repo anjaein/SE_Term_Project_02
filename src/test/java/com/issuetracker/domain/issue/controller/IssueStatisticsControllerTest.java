@@ -7,9 +7,7 @@ import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.service.IssueStatisticsService;
-import com.issuetracker.domain.issue.service.IssueStatisticsValidator;
 import com.issuetracker.global.common.SessionManager;
-import com.issuetracker.global.common.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,12 +22,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/*
-테스트 목록:
-- 비로그인 상태에서 각 통계 메서드가 null을 반환
-- 로그인 상태에서 각 통계 메서드가 결과를 반환
-*/
-
 class IssueStatisticsControllerTest {
     private static final Long PROJECT_ID = 1L;
 
@@ -41,51 +33,50 @@ class IssueStatisticsControllerTest {
     void setUp() {
         issueRepository = new FakeIssueRepository();
         sessionManager = new SessionManager();
-        IssueStatisticsValidator validator = new IssueStatisticsValidator();
-        IssueStatisticsService service = new IssueStatisticsService(issueRepository, validator);
+        IssueStatisticsService service = new IssueStatisticsService(issueRepository, new com.issuetracker.domain.issue.service.IssueStatisticsValidator());
         controller = new IssueStatisticsController(service, sessionManager);
     }
 
     @Test
-    @DisplayName("비로그인: getMonthlyReportedTrend는 실패 응답 반환")
+    @DisplayName("비로그인: getMonthlyReportedTrend는 null 반환")
     void monthlyReportedTrendRequiresLogin() {
-        assertFalse(controller.getMonthlyReportedTrend(PROJECT_ID, 3).isSuccess());
+        assertNull(controller.getMonthlyReportedTrend(PROJECT_ID, 3).getData());
     }
 
     @Test
-    @DisplayName("비로그인: getMonthlyResolvedTrend는 실패 응답 반환")
+    @DisplayName("비로그인: getMonthlyResolvedTrend는 null 반환")
     void monthlyResolvedTrendRequiresLogin() {
-        assertFalse(controller.getMonthlyResolvedTrend(PROJECT_ID, 3).isSuccess());
+        assertNull(controller.getMonthlyResolvedTrend(PROJECT_ID, 3).getData());
     }
 
     @Test
-    @DisplayName("비로그인: getDailyReportedTrend는 실패 응답 반환")
+    @DisplayName("비로그인: getDailyReportedTrend는 null 반환")
     void dailyReportedTrendRequiresLogin() {
-        assertFalse(controller.getDailyReportedTrend(PROJECT_ID).isSuccess());
+        assertNull(controller.getDailyReportedTrend(PROJECT_ID).getData());
     }
 
     @Test
-    @DisplayName("비로그인: getDailyResolvedTrend는 실패 응답 반환")
+    @DisplayName("비로그인: getDailyResolvedTrend는 null 반환")
     void dailyResolvedTrendRequiresLogin() {
-        assertFalse(controller.getDailyResolvedTrend(PROJECT_ID).isSuccess());
+        assertNull(controller.getDailyResolvedTrend(PROJECT_ID).getData());
     }
 
     @Test
-    @DisplayName("비로그인: getDailyPriorityDistribution는 실패 응답 반환")
+    @DisplayName("비로그인: getDailyPriorityDistribution는 null 반환")
     void dailyPriorityDistributionRequiresLogin() {
-        assertFalse(controller.getDailyPriorityDistribution(PROJECT_ID).isSuccess());
+        assertNull(controller.getDailyPriorityDistribution(PROJECT_ID).getData());
     }
 
     @Test
-    @DisplayName("비로그인: getMonthlyPriorityDistribution는 실패 응답 반환")
+    @DisplayName("비로그인: getMonthlyPriorityDistribution는 null 반환")
     void monthlyPriorityDistributionRequiresLogin() {
-        assertFalse(controller.getMonthlyPriorityDistribution(PROJECT_ID, 3).isSuccess());
+        assertNull(controller.getMonthlyPriorityDistribution(PROJECT_ID, 3).getData());
     }
 
     @Test
-    @DisplayName("비로그인: getMonthlyAverageClosedDays는 실패 응답 반환")
+    @DisplayName("비로그인: getMonthlyAverageClosedDays는 null 반환")
     void monthlyAverageClosedDaysRequiresLogin() {
-        assertFalse(controller.getMonthlyAverageClosedDays(PROJECT_ID, 3).isSuccess());
+        assertNull(controller.getMonthlyAverageClosedDays(PROJECT_ID, 3).getData());
     }
 
     @Test
@@ -97,11 +88,9 @@ class IssueStatisticsControllerTest {
         issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(1).atStartOfDay());
 
         // when
-        Response<Map<YearMonth, Long>> response = controller.getMonthlyReportedTrend(PROJECT_ID, 1);
+        Map<YearMonth, Long> result = controller.getMonthlyReportedTrend(PROJECT_ID, 1).getData();
 
         // then
-        assertTrue(response.isSuccess());
-        Map<YearMonth, Long> result = response.getData();
         assertNotNull(result);
         assertEquals(1L, result.get(thisMonth));
     }
@@ -116,11 +105,9 @@ class IssueStatisticsControllerTest {
         setField(issue, "resolvedDate", thisMonth.atDay(20).atStartOfDay());
 
         // when
-        Response<Map<YearMonth, Long>> response = controller.getMonthlyResolvedTrend(PROJECT_ID, 1);
+        Map<YearMonth, Long> result = controller.getMonthlyResolvedTrend(PROJECT_ID, 1).getData();
 
         // then
-        assertTrue(response.isSuccess());
-        Map<YearMonth, Long> result = response.getData();
         assertNotNull(result);
         assertEquals(1L, result.get(thisMonth));
     }
@@ -134,11 +121,9 @@ class IssueStatisticsControllerTest {
         issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(9, 0));
 
         // when
-        Response<Map<LocalDate, Long>> response = controller.getDailyReportedTrend(PROJECT_ID);
+        Map<LocalDate, Long> result = controller.getDailyReportedTrend(PROJECT_ID).getData();
 
         // then
-        assertTrue(response.isSuccess());
-        Map<LocalDate, Long> result = response.getData();
         assertNotNull(result);
         assertEquals(1L, result.get(today));
     }
@@ -153,11 +138,9 @@ class IssueStatisticsControllerTest {
         issue.setPriority(Priority.BLOCKER);
 
         // when
-        Response<Map<LocalDate, Map<Priority, Long>>> response = controller.getDailyPriorityDistribution(PROJECT_ID);
+        Map<LocalDate, Map<Priority, Long>> result = controller.getDailyPriorityDistribution(PROJECT_ID).getData();
 
         // then
-        assertTrue(response.isSuccess());
-        Map<LocalDate, Map<Priority, Long>> result = response.getData();
         assertNotNull(result);
         assertEquals(1L, result.get(today).get(Priority.BLOCKER));
     }
@@ -172,11 +155,9 @@ class IssueStatisticsControllerTest {
         issueRepository.saveWithReportedAndClosedDate(PROJECT_ID, base, base.plusDays(10));
 
         // when
-        Response<Map<YearMonth, Double>> response = controller.getMonthlyAverageClosedDays(PROJECT_ID, 1);
+        Map<YearMonth, Double> result = controller.getMonthlyAverageClosedDays(PROJECT_ID, 1).getData();
 
         // then
-        assertTrue(response.isSuccess());
-        Map<YearMonth, Double> result = response.getData();
         assertNotNull(result);
         assertEquals(10.0, result.get(thisMonth), 0.1);
     }
@@ -200,7 +181,7 @@ class IssueStatisticsControllerTest {
         private long nextId = 1L;
 
         Issue saveWithReportedDate(Long projectId, LocalDateTime reportedDate) {
-            Issue issue = new Issue(projectId, "title", "description", 10L);
+            Issue issue = new Issue(projectId, "title", "description", Priority.MAJOR, 10L);
             issue.setIssueId(nextId++);
             setField(issue, "reportedDate", reportedDate);
             issues.add(issue);
@@ -208,7 +189,7 @@ class IssueStatisticsControllerTest {
         }
 
         Issue saveWithReportedAndClosedDate(Long projectId, LocalDateTime reportedDate, LocalDateTime closedDate) {
-            Issue issue = new Issue(projectId, "title", "description", 10L);
+            Issue issue = new Issue(projectId, "title", "description", Priority.MAJOR, 10L);
             issue.setIssueId(nextId++);
             setField(issue, "reportedDate", reportedDate);
             setField(issue, "status", Status.CLOSED);

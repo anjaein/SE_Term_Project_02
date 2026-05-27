@@ -2,24 +2,24 @@ package com.issuetracker.domain.issue.controller;
 
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.service.IssueService;
 import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 import lombok.RequiredArgsConstructor;
-import java.util.List;
 
 @RequiredArgsConstructor
 public class IssueController {
     private final IssueService issueService;
     private final SessionManager sessionManager;
 
-    public Response<Issue> createIssue(Long projectId, String title, String description){
+    public Response<Issue> createIssue(Long projectId, String title, String description, Priority priority){
         Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){
             return Response.fail("You are not logged in.");
         }
         // reporter는 항상 로그인한 사용자 본인
-        return issueService.createIssue(projectId, title, description, currentUser.getAccountId());
+        return issueService.createIssue(projectId, title, description, priority, currentUser.getAccountId());
     }
 
     public Response<Issue> getIssueDetail(Long issueId){
@@ -61,27 +61,12 @@ public class IssueController {
         }
         return issueService.closeIssue(issueId, currentUser.getAccountId());
     }
-    public Response<List<Issue>> getAllIssues() {
-        Account currentUser = sessionManager.getLoggedInAccount();
-        if (currentUser == null) {
-            return Response.fail("You are not logged in.");
-        }
-        return issueService.getAllIssues();
-    }
 
-    public Response<List<Issue>> getIssuesByAssigneeId(Long assigneeId) {
+    public Response<Issue> reopenIssue(Long issueId){
         Account currentUser = sessionManager.getLoggedInAccount();
-        if (currentUser == null) {
+        if(currentUser == null){
             return Response.fail("You are not logged in.");
         }
-        return issueService.getIssuesByAssigneeId(assigneeId);
-    }
-
-    public Response<List<Issue>> getIssuesByReporterId(Long reporterId) {
-        Account currentUser = sessionManager.getLoggedInAccount();
-        if (currentUser == null) {
-            return Response.fail("You are not logged in.");
-        }
-        return issueService.getIssuesByReporterId(reporterId);
+        return issueService.reopenIssue(issueId, currentUser.getAccountId());
     }
 }

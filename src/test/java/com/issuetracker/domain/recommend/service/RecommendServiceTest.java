@@ -1,8 +1,9 @@
 package com.issuetracker.domain.recommend.service;
 
 import com.issuetracker.domain.issue.entity.Issue;
+import com.issuetracker.domain.issue.enums.Priority;
+import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
-import com.issuetracker.global.common.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,20 +34,19 @@ class RecommendServiceTest {
     @DisplayName("추천 실패: 이력 없음")
     void returnsEmptyWhenNoHistory() {
         // when
-        Response<List<Long>> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button broken");
+        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button broken");
 
         // then
-        assertTrue(result.isSuccess());
-        assertTrue(result.getData().isEmpty());
+        assertTrue(result.isEmpty());
     }
 
     @Test
     @DisplayName("추천 실패: null 입력")
     void returnsEmptyOnNullInput() {
         // when & then
-        assertTrue(recommendService.recommendAssignees(null, "title", "desc").getData().isEmpty());
-        assertTrue(recommendService.recommendAssignees(PROJECT_ID, null, "desc").getData().isEmpty());
-        assertTrue(recommendService.recommendAssignees(PROJECT_ID, "title", null).getData().isEmpty());
+        assertTrue(recommendService.recommendAssignees(null, "title", "desc").isEmpty());
+        assertTrue(recommendService.recommendAssignees(PROJECT_ID, null, "desc").isEmpty());
+        assertTrue(recommendService.recommendAssignees(PROJECT_ID, "title", null).isEmpty());
     }
 
     @Test
@@ -56,12 +56,11 @@ class RecommendServiceTest {
         addResolvedIssue(1L, "login bug", "button not responding", DEV_A);
 
         // when
-        Response<List<Long>> result = recommendService.recommendAssignees(PROJECT_ID, "login error", "button broken");
+        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login error", "button broken");
 
         // then
-        assertTrue(result.isSuccess());
-        assertEquals(1, result.getData().size());
-        assertEquals(DEV_A, result.getData().get(0));
+        assertEquals(1, result.size());
+        assertEquals(DEV_A, result.get(0));
     }
 
     @Test
@@ -73,12 +72,11 @@ class RecommendServiceTest {
         addResolvedIssue(3L, "database bug", "connection fail", DEV_B);
 
         // when
-        Response<List<Long>> result = recommendService.recommendAssignees(PROJECT_ID, "login button crash", "button not responding");
+        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login button crash", "button not responding");
 
         // then
-        assertTrue(result.isSuccess());
-        assertFalse(result.getData().isEmpty());
-        assertEquals(DEV_A, result.getData().get(0));
+        assertFalse(result.isEmpty());
+        assertEquals(DEV_A, result.get(0));
     }
 
     @Test
@@ -91,27 +89,25 @@ class RecommendServiceTest {
         addResolvedIssue(4L, "login error", "button broken", 40L);
 
         // when
-        Response<List<Long>> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error");
+        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error");
 
         // then
-        assertTrue(result.isSuccess());
-        assertTrue(result.getData().size() <= 3);
+        assertTrue(result.size() <= 3);
     }
 
     @Test
     @DisplayName("추천 실패: RESOLVED/CLOSED 아닌 이슈는 제외")
     void ignoresNonResolvedIssues() {
         // given: NEW 상태(fixerId 없음) 이슈만 존재
-        Issue issue = new Issue(PROJECT_ID, "login bug", "button error", 99L);
+        Issue issue = new Issue(PROJECT_ID, "login bug", "button error", Priority.MAJOR, 99L);
         issue.setIssueId(1L);
         issueRepository.save(issue);
 
         // when
-        Response<List<Long>> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error");
+        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error");
 
         // then
-        assertTrue(result.isSuccess());
-        assertTrue(result.getData().isEmpty());
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -122,12 +118,11 @@ class RecommendServiceTest {
         addResolvedIssue(2L, "login bug", "button error critical crash", DEV_B);
 
         // when
-        Response<List<Long>> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error critical");
+        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error critical");
 
         // then
-        assertTrue(result.isSuccess());
-        assertFalse(result.getData().isEmpty());
-        assertEquals(DEV_B, result.getData().get(0));
+        assertFalse(result.isEmpty());
+        assertEquals(DEV_B, result.get(0));
     }
 
     @Test
@@ -174,7 +169,7 @@ class RecommendServiceTest {
     }
 
     private void addResolvedIssue(Long id, String title, String desc, Long fixerId) {
-        Issue issue = new Issue(PROJECT_ID, title, desc, 99L);
+        Issue issue = new Issue(PROJECT_ID, title, desc, Priority.MAJOR, 99L);
         issue.setIssueId(id);
         issue.markAsFixed(fixerId);
         issue.markAsResolved();
@@ -182,7 +177,7 @@ class RecommendServiceTest {
     }
 
     private void addClosedIssue(Long id, String title, String desc, Long fixerId) {
-        Issue issue = new Issue(PROJECT_ID, title, desc, 99L);
+        Issue issue = new Issue(PROJECT_ID, title, desc, Priority.MAJOR, 99L);
         issue.setIssueId(id);
         issue.markAsFixed(fixerId);
         issue.markAsResolved();
@@ -212,18 +207,20 @@ class RecommendServiceTest {
         }
 
         @Override
-        public boolean update(Issue issue) {
-            return true;
-        }
+        public boolean update(Issue issue) { return false; }
 
         @Override
-        public List<Issue> findByAssigneeId(Long assigneeId) { return null; }
+        public List<Issue> findByAssigneeId(Long assigneeId) { return List.of(); }
+
         @Override
-        public List<Issue> findByReporterId(Long reporterId) { return null; }
+        public List<Issue> findByReporterId(Long reporterId) { return List.of(); }
+
         @Override
-        public List<Issue> findByStatus(com.issuetracker.domain.issue.enums.Status status) { return null; }
+        public List<Issue> findByStatus(Status status) { return List.of(); }
+
         @Override
-        public List<Issue> findByPriority(com.issuetracker.domain.issue.enums.Priority priority) { return null; }
+        public List<Issue> findByPriority(Priority priority) { return List.of(); }
+
         @Override
         public Issue findByIssueId(Long issueId) { return null; }
     }

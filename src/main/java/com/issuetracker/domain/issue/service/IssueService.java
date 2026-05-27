@@ -1,12 +1,9 @@
 package com.issuetracker.domain.issue.service;
 
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
-import com.issuetracker.domain.project.entity.ProjectMember;
-import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.global.common.Response;
 import lombok.RequiredArgsConstructor;
 
@@ -16,13 +13,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IssueService {
     private final IssueRepository issueRepository;
-    private final ProjectMemberRepository projectMemberRepository;
     private final IssueValidator issueValidator;
 
-    public Response<Issue> createIssue(Long projectId, String title, String description, Long reporterId){
+    public Response<Issue> createIssue(Long projectId, String title, String description, Priority priority, Long reporterId){
 
         // 요청에 누락은 없는지
-        String missingParams = issueValidator.checkNonNull(projectId, title, description, reporterId);
+        String missingParams = issueValidator.checkNonNull(projectId, title, description, priority, reporterId);
         if(missingParams != null){
             return Response.fail(missingParams);
         }
@@ -51,7 +47,7 @@ public class IssueService {
             return Response.fail(notMember);
         }
 
-        Issue issue = new Issue(projectId, title, description, reporterId);
+        Issue issue = new Issue(projectId, title, description, priority, reporterId);
         if(!issueRepository.save(issue)){
             return Response.fail("Failed to save the issue.");
         }
@@ -114,14 +110,14 @@ public class IssueService {
             return Response.fail("Issue is not in NEW status.");
         }
 
-        ProjectMember requester = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), requesterId);
-        if(requester == null || requester.getRole() != Role.PL){
-            return Response.fail("Only a PL can assign issues.");
+        String notLead = issueValidator.checkRequesterIsProjectLead(issue.getProjectId(), requesterId);
+        if(notLead != null){
+            return Response.fail(notLead);
         }
 
-        ProjectMember assignee = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), assigneeId);
-        if(assignee == null || assignee.getRole() != Role.DEV){
-            return Response.fail("Assignee must be a DEV of the project.");
+        String notDev = issueValidator.checkAssigneeIsDev(issue.getProjectId(), assigneeId);
+        if(notDev != null){
+            return Response.fail(notDev);
         }
 
         issue.assignTo(assigneeId);
@@ -141,12 +137,13 @@ public class IssueService {
         if(issue == null){
             return Response.fail("Issue not found.");
         }
-        if(issue.getStatus() != Status.ASSIGNED){
-            return Response.fail("Issue is not in ASSIGNED status.");
+        if(issue.getStatus() != Status.ASSIGNED && issue.getStatus() != Status.REOPENED){
+            return Response.fail("Issue is not in ASSIGNED or REOPENED status.");
         }
 
-        if(!requesterId.equals(issue.getAssigneeId())){
-            return Response.fail("Only the assignee can fix the issue.");
+        String notAssignee = issueValidator.checkRequesterIsAssignee(issue.getAssigneeId(), requesterId);
+        if(notAssignee != null){
+            return Response.fail(notAssignee);
         }
 
         issue.markAsFixed(requesterId);
@@ -170,8 +167,9 @@ public class IssueService {
             return Response.fail("Issue is not in FIXED status.");
         }
 
-        if(!requesterId.equals(issue.getReporterId())){
-            return Response.fail("Only the reporter can resolve the issue.");
+        String notReporter = issueValidator.checkRequesterIsReporter(issue.getReporterId(), requesterId);
+        if(notReporter != null){
+            return Response.fail(notReporter);
         }
 
         issue.markAsResolved();
@@ -195,9 +193,9 @@ public class IssueService {
             return Response.fail("Issue is not in RESOLVED status.");
         }
 
-        ProjectMember requester = projectMemberRepository.findByProjectIdAndAccountId(issue.getProjectId(), requesterId);
-        if(requester == null || requester.getRole() != Role.PL){
-            return Response.fail("Only a PL can close issues.");
+        String notLead = issueValidator.checkRequesterIsProjectLead(issue.getProjectId(), requesterId);
+        if(notLead != null){
+            return Response.fail(notLead);
         }
 
         issue.markAsClosed();
@@ -205,5 +203,31 @@ public class IssueService {
             return Response.fail("Failed to update the issue.");
         }
         return Response.success("Issue closed.", issue);
+    }
+
+    public Response<Issue> reopenIssue(Long issueId, Long requesterId){
+        String missingParams = issueValidator.checkNonNull(issueId, requesterId);
+        if(missingParams != null){
+            return Response.fail(missingParams);
+        }
+
+        Issue issue = issueRepository.findByIssueId(issueId);
+        if(issue == null){
+            return Response.fail("Issue not found.");
+        }
+        if(issue.getStatus() != Status.CLOSED){
+            return Response.fail("Issue is not in CLOSED status.");
+        }
+
+        String notLead = issueValidator.checkRequesterIsProjectLead(issue.getProjectId(), requesterId);
+        if(notLead != null){
+            return Response.fail(notLead);
+        }
+
+        issue.markAsReopened();
+        if(!issueRepository.update(issue)){
+            return Response.fail("Failed to update the issue.");
+        }
+        return Response.success("Issue reopened.", issue);
     }
 }

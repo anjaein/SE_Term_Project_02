@@ -27,9 +27,9 @@ import com.issuetracker.domain.project.service.ProjectService;
 import com.issuetracker.domain.project.service.ProjectValidator;
 
 import com.issuetracker.global.common.SessionManager;
-import com.issuetracker.domain.recommend.controller.IRecommendController;
 import com.issuetracker.domain.recommend.controller.RecommendController;
-import com.issuetracker.domain.recommend.service.IRecommendService;
+import com.issuetracker.domain.recommend.controller.RecommendController;
+import com.issuetracker.domain.recommend.service.RecommendService;
 import com.issuetracker.domain.recommend.service.RecommendService;
 
 import javax.swing.*;
@@ -59,8 +59,8 @@ public class SwingMain {
         IssueController issueController = new IssueController(issueService, sessionManager);
         CommentController commentController = new CommentController(commentService, sessionManager);
 
-        IRecommendService recommendService = new RecommendService(issueRepository);
-        IRecommendController recommendController = new RecommendController(recommendService, accountRepository);
+        RecommendService recommendService = new RecommendService(issueRepository);
+        RecommendController recommendController = new RecommendController(recommendService, accountRepository);
 
         IssueStatisticsValidator issueStatisticsValidator = new IssueStatisticsValidator();
         IssueStatisticsService issueStatisticsService = new IssueStatisticsService(issueRepository, issueStatisticsValidator);
