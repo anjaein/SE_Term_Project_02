@@ -29,10 +29,15 @@ import com.issuetracker.domain.recommend.controller.IRecommendController;
 import com.issuetracker.domain.recommend.controller.RecommendController;
 import com.issuetracker.domain.recommend.service.IRecommendService;
 import com.issuetracker.domain.recommend.service.RecommendService;
+import com.issuetracker.global.common.Backend;
 import com.issuetracker.global.common.SessionManager;
 
 public class Main {
     public static void main(String[] args) {
+        Backend backend = Backend();
+    }
+
+    public static Backend Backend() {
         AccountRepository accountRepository = new JsonAccountRepository();
         ProjectRepository projectRepository = new JsonProjectRepository();
         ProjectMemberRepository projectMemberRepository = new JsonProjectMemberRepository();
@@ -60,5 +65,14 @@ public class Main {
         CommentController commentController = new CommentController(commentService, sessionManager);
         IssueStatisticsController issueStatisticsController = new IssueStatisticsController(issueStatisticsService, sessionManager);
         IRecommendController recommendController = new RecommendController(recommendService, accountRepository);
+
+        return new Backend(
+                accountController,
+                projectController,
+                issueController,
+                commentController,
+                issueStatisticsController,
+                recommendController
+        );
     }
 }
