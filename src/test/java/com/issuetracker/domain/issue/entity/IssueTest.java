@@ -1,8 +1,11 @@
 package com.issuetracker.domain.issue.entity;
 
+import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,63 +16,74 @@ class IssueTest {
     private static final Long FIXER_ID = 30L;
 
     @Test
-    @DisplayName("assignTo : assigneeId가 저장되고 ASSIGNED 상태가 된다")
+    @DisplayName("이슈 생성 성공: status=NEW, priority=MAJOR, reportedDate 자동 추가")
+    void createIssueInitializesDefaults() {
+        LocalDateTime before = LocalDateTime.now();
+
+        Issue issue = new Issue(PROJECT_ID, "title", "description", Priority.MAJOR, REPORTER_ID);
+
+        LocalDateTime after = LocalDateTime.now();
+        assertEquals(PROJECT_ID, issue.getProjectId());
+        assertEquals("title", issue.getTitle());
+        assertEquals("description", issue.getDescription());
+        assertEquals(REPORTER_ID, issue.getReporterId());
+        assertEquals(Status.NEW, issue.getStatus());
+        assertEquals(Priority.MAJOR, issue.getPriority());
+        assertNull(issue.getAssigneeId());
+        assertNull(issue.getFixerId());
+        assertNull(issue.getFixedDate());
+        assertNull(issue.getResolvedDate());
+        assertNull(issue.getClosedDate());
+        assertFalse(issue.getReportedDate().isBefore(before));
+        assertFalse(issue.getReportedDate().isAfter(after));
+    }
+
+    @Test
+    @DisplayName("이슈 ASSIGN 성공: assigneeId 추가 및 ASSIGNED 상태 변경")
     void assignToChangesStatusToAssigned() {
-        // given
         Issue issue = createIssue();
 
-        // when
         issue.assignTo(ASSIGNEE_ID);
 
-        // then
         assertEquals(ASSIGNEE_ID, issue.getAssigneeId());
         assertEquals(Status.ASSIGNED, issue.getStatus());
     }
 
     @Test
-    @DisplayName("markAsFixed : fixerId와 fixedDate가 자동 기록")
+    @DisplayName("이슈 FIX 성공: fixerId/fixedDate 추가 및 FIXED 상태 변경")
     void markAsFixedRecordsFixerAndFixedDate() {
-        // given
         Issue issue = createIssue();
 
-        // when
         issue.markAsFixed(FIXER_ID);
 
-        // then
         assertEquals(Status.FIXED, issue.getStatus());
         assertEquals(FIXER_ID, issue.getFixerId());
         assertNotNull(issue.getFixedDate());
     }
 
     @Test
-    @DisplayName("markAsResolved : resolvedDate가 자동 기록")
+    @DisplayName("이슈 RESOLVE 성공: resolvedDate 추가 및 RESOLVED 상태 변경")
     void markAsResolvedRecordsResolvedDate() {
-        // given
         Issue issue = createIssue();
 
-        // when
         issue.markAsResolved();
 
-        // then
         assertEquals(Status.RESOLVED, issue.getStatus());
         assertNotNull(issue.getResolvedDate());
     }
 
     @Test
-    @DisplayName("markAsClosed : closedDate가  자동 기록")
+    @DisplayName("이슈 CLOSE 성공: closedDate 추가 및 CLOSED 상태 변경")
     void markAsClosedRecordsClosedDate() {
-        // given
         Issue issue = createIssue();
 
-        // when
         issue.markAsClosed();
 
-        // then
         assertEquals(Status.CLOSED, issue.getStatus());
         assertNotNull(issue.getClosedDate());
     }
 
     private Issue createIssue() {
-        return new Issue(PROJECT_ID, "title", "description", REPORTER_ID);
+        return new Issue(PROJECT_ID, "title", "description", Priority.MAJOR, REPORTER_ID);
     }
 }

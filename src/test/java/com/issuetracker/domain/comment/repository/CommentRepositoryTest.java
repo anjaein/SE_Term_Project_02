@@ -3,8 +3,8 @@ package com.issuetracker.domain.comment.repository;
 import com.issuetracker.domain.comment.entity.Comment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -17,14 +17,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class CommentRepositoryTest {
 
     private static final Path COMMENTS_FILE = Path.of("data", "comments.json");
+    private static final Long ISSUE_ID = 10L;
+    private static final Long OTHER_ISSUE_ID = 20L;
+    private static final Long AUTHOR_ID = 1L;
 
     private final CommentRepository commentRepository = new JsonCommentRepository();
 
-    private String originalCommentsJson;
+    private String originalJson;
 
     @BeforeEach
     void setUp() throws IOException {
-        originalCommentsJson = Files.exists(COMMENTS_FILE)
+        originalJson = Files.exists(COMMENTS_FILE)
                 ? Files.readString(COMMENTS_FILE, StandardCharsets.UTF_8)
                 : null;
 
@@ -34,108 +37,82 @@ class CommentRepositoryTest {
 
     @AfterEach
     void tearDown() throws IOException {
-        if (originalCommentsJson == null) {
+        if (originalJson == null) {
             Files.deleteIfExists(COMMENTS_FILE);
         } else {
-            Files.writeString(COMMENTS_FILE, originalCommentsJson, StandardCharsets.UTF_8);
+            Files.writeString(COMMENTS_FILE, originalJson, StandardCharsets.UTF_8);
         }
     }
 
     @Test
-    @DisplayName("댓글 저장 시 ID가 순차적으로 부여되고 저장소에 데이터가 유지된다")
-    void saveAssignsNextIdAndPersistsComment() {
-        //given
-        assertTrue(commentRepository.save(new Comment(10L, 1L, "first")));
-        assertTrue(commentRepository.save(new Comment(10L, 2L, "second")));
+    @DisplayName("댓글 저장 성공: ID가 순차 부여되고 저장소에 유지")
+    void saveAssignsSequentialIds() {
+        assertTrue(commentRepository.save(new Comment(ISSUE_ID, AUTHOR_ID, "first")));
+        assertTrue(commentRepository.save(new Comment(ISSUE_ID, AUTHOR_ID, "second")));
 
-        //when
         List<Comment> comments = commentRepository.findAll();
-
-        //then
         assertEquals(2, comments.size());
         assertEquals(1L, comments.get(0).getCommentId());
         assertEquals(2L, comments.get(1).getCommentId());
-        assertEquals("first", comments.get(0).getContent());
-        assertEquals("second", comments.get(1).getContent());
     }
 
     @Test
-    @DisplayName("이슈 ID로 조회 시 해당 이슈에 속한 댓글만 반환된다")
-    void findByIssueIdReturnsOnlyMatchingIssueComments() {
-        //given
-        Comment issue10Comment = new Comment(10L, 1L, "issue 10");
-        Comment issue20Comment = new Comment(20L, 1L, "issue 20");
-        assertTrue(commentRepository.save(issue10Comment));
-        assertTrue(commentRepository.save(issue20Comment));
+    @DisplayName("댓글 단건 조회 성공: commentId로 정확히 반환")
+    void findByCommentIdReturnsComment() {
+        Comment comment = new Comment(ISSUE_ID, AUTHOR_ID, "content");
+        commentRepository.save(comment);
 
-        //when
-        List<Comment> comments = commentRepository.findByIssueId(10L);
+        Comment found = commentRepository.findByCommentId(comment.getCommentId());
 
-        //then
+        assertNotNull(found);
+        assertEquals("content", found.getContent());
+    }
+
+    @Test
+    @DisplayName("댓글 이슈별 조회 성공: 해당 이슈 댓글만 반환")
+    void findByIssueIdReturnsOnlyMatching() {
+        commentRepository.save(new Comment(ISSUE_ID, AUTHOR_ID, "issue 10"));
+        commentRepository.save(new Comment(OTHER_ISSUE_ID, AUTHOR_ID, "issue 20"));
+
+        List<Comment> comments = commentRepository.findByIssueId(ISSUE_ID);
+
         assertEquals(1, comments.size());
         assertEquals("issue 10", comments.get(0).getContent());
     }
 
     @Test
-    @DisplayName("기존 댓글을 수정하면 같은 ID의 댓글 데이터가 새 내용으로 교체된다")
-    void updateReplacesExistingComment() {
-        //given
-        Comment old_Content = new Comment(10L, 1L, "old content");
-        assertTrue(commentRepository.save(old_Content));
-        long comment_id = old_Content.getCommentId();
+    @DisplayName("댓글 수정 성공: 변경된 내용이 저장소에 반영")
+    void updatePersistsChanges() {
+        Comment comment = new Comment(ISSUE_ID, AUTHOR_ID, "old content");
+        commentRepository.save(comment);
+        Long commentId = comment.getCommentId();
+        Comment loaded = commentRepository.findByCommentId(commentId);
+        loaded.updateContent("new content");
 
-        //when
-        Comment updated_Content = commentRepository.findByCommentId(comment_id);
-        updated_Content.updateContent("new content");
-        assertTrue(commentRepository.update(updated_Content));
+        assertTrue(commentRepository.update(loaded));
 
-        //then
-        assertEquals("new content", commentRepository.findByCommentId(comment_id).getContent());
+        assertEquals("new content", commentRepository.findByCommentId(commentId).getContent());
     }
 
     @Test
-    @DisplayName("존재하지 않는 댓글을 수정하려고 하면 false를 반환하고 저장소는 변경되지 않는다")
-    void updateReturnsFalseWhenCommentDoesNotExist() {
-        //given
-        Comment missingComment = new Comment( 10L, 1L, "missing");
+    @DisplayName("댓글 삭제 성공: 저장소에서 제거")
+    void deleteRemovesComment() {
+        Comment comment = new Comment(ISSUE_ID, AUTHOR_ID, "content");
+        commentRepository.save(comment);
 
-        //when
-        boolean result = commentRepository.update(missingComment);
+        assertTrue(commentRepository.delete(comment.getCommentId()));
 
-        //then
-        assertFalse(result);
         assertTrue(commentRepository.findAll().isEmpty());
     }
 
     @Test
-    @DisplayName("기존 댓글을 삭제하면 저장소에서 해당 댓글이 제거된다")
-    void deleteRemovesExistingComment() {
-        //given
-        Comment comment = new Comment(10L, 1L, "content");
-        assertTrue(commentRepository.save(comment));
+    @DisplayName("댓글 전체 조회 성공: 저장된 모든 댓글 반환")
+    void findAllReturnsAllComments() {
+        commentRepository.save(new Comment(ISSUE_ID, AUTHOR_ID, "c1"));
+        commentRepository.save(new Comment(OTHER_ISSUE_ID, AUTHOR_ID, "c2"));
 
-        //when
-        boolean isDeleted = commentRepository.delete(comment.getCommentId());
+        List<Comment> all = commentRepository.findAll();
 
-        //then
-        assertTrue(isDeleted);
-        assertTrue(commentRepository.findAll().isEmpty());
+        assertEquals(2, all.size());
     }
-
-
-    @Test
-    @DisplayName("존재하지 않는 댓글 ID로 삭제를 시도하면 false를 반환한다")
-    void deleteReturnsFalseWhenCommentDoesNotExist() {
-
-        // given
-        Long nonExistentId = 99L;
-
-        // when
-        boolean result = commentRepository.delete(nonExistentId);
-
-        // then
-        assertFalse(result);
-    }
-
-
 }

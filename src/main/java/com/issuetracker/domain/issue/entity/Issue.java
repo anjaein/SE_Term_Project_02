@@ -28,11 +28,11 @@ public class Issue {
     private LocalDateTime resolvedDate;
     private LocalDateTime closedDate;
 
-    public Issue(Long projectId, String title, String description, Long reporterId){
+    public Issue(Long projectId, String title, String description, Priority priority, Long reporterId){
         this.projectId = projectId;
         this.title = title;
         this.description = description;
-        this.priority = Priority.MAJOR;
+        this.priority = priority;
         this.status = Status.NEW;
         this.reporterId = reporterId;
         this.reportedDate = LocalDateTime.now();
