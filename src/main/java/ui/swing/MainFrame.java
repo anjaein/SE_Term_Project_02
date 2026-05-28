@@ -25,6 +25,7 @@ import java.util.List;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 public class MainFrame extends JFrame {
@@ -286,9 +287,9 @@ public class MainFrame extends JFrame {
 
         JComboBox<Comboitem> projectbox = createProjectComboBoxForCurrentUser(true);
         projectbox.setSelectedIndex(0);
-        JButton applyFilter = new JButton("Search Issue (choose project)");
+        JButton applyFilter = new JButton("Search Issue");
         JButton mine = new JButton("Assigned to Me");
-        JButton reported = new JButton("Reported by Me (FIXED)");
+        JButton reported = new JButton("Reported by Me");
         JButton resolved = new JButton("Resolved Issue");
 
         filter.add(new JLabel("Status:")); filter.add(statusbox);
@@ -296,15 +297,27 @@ public class MainFrame extends JFrame {
         filter.add(new JLabel("Project:")); filter.add(projectbox);
         filter.add(applyFilter);
 
-        if (sessionManager.getLoggedInAccount().getRole() == Role.DEV) {
-            filter.add(mine);
-        }
-        if (sessionManager.getLoggedInAccount().getRole() == Role.TESTER) {
-            filter.add(reported);
-        }
-        if (sessionManager.getLoggedInAccount().getRole() == Role.PL) {
-            filter.add(resolved);
-        }
+        Runnable updateProjectRoleButtons = () -> {
+            filter.remove(mine);
+            filter.remove(reported);
+            filter.remove(resolved);
+
+            Role selectedProjectRole = getSelectedProjectRole(projectbox);
+            if (selectedProjectRole == Role.DEV) {
+                filter.add(mine);
+            }
+            if (selectedProjectRole == Role.TESTER) {
+                filter.add(reported);
+            }
+            if (selectedProjectRole == Role.PL) {
+                filter.add(resolved);
+            }
+
+            filter.revalidate();
+            filter.repaint();
+        };
+        projectbox.addActionListener(e -> updateProjectRoleButtons.run());
+        updateProjectRoleButtons.run();
         createIssuePanel.add(filter, BorderLayout.NORTH);
 
         String[] cols = {"issueid", "projectid","Title", "Status", "Reporter", "Assignee"};
@@ -358,7 +371,7 @@ public class MainFrame extends JFrame {
                     boolean statusMatch = (status == null || i.getStatus() == status);
                     boolean priorityMatch = (priority == null || i.getPriority() == priority);
                     if (statusMatch && priorityMatch) {
-                        if (selectedProject != null && selectedProject.getId().equals(i.getProjectId())) {
+                        if (selectedProject != null && Objects.equals(selectedProject.getId(),i.getProjectId())) {
                             addIssueRow(model, i);
 
                         }
@@ -378,7 +391,7 @@ public class MainFrame extends JFrame {
                 Long selectedProjectId = (selectedProjectItem != null) ? selectedProjectItem.getId() : null;
                 for (Issue i : resp.getData()) {
                     // 프로젝트 필터링 (선택된 프로젝트 ID가 있고, 이슈의 프로젝트 ID와 다르면 패스)
-                    if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
+                    if (selectedProjectId != null && !Objects.equals(selectedProjectId,i.getProjectId())) {
                         continue;
                     }
                     if (i.getStatus() == Status.ASSIGNED) addIssueRow(model, i);
@@ -395,7 +408,7 @@ public class MainFrame extends JFrame {
                 Long selectedProjectId = (selectedProjectItem != null) ? selectedProjectItem.getId() : null;
                 for (Issue i : resp.getData()) {
                     // 프로젝트 필터링 (선택된 프로젝트 ID가 있고, 이슈의 프로젝트 ID와 다르면 패스)
-                    if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
+                    if (selectedProjectId != null && !Objects.equals(selectedProjectId,i.getProjectId())) {
                         continue;
                     }
                     if (i.getStatus() == Status.FIXED) addIssueRow(model, i);
@@ -412,7 +425,7 @@ public class MainFrame extends JFrame {
                 Long selectedProjectId = (selectedProjectItem != null) ? selectedProjectItem.getId() : null;
                 for (Issue i : resp.getData()) {
                     // 프로젝트 필터링 (선택된 프로젝트 ID가 있고, 이슈의 프로젝트 ID와 다르면 패스)
-                    if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
+                    if (selectedProjectId != null && !Objects.equals(selectedProjectId,i.getProjectId())) {
                         continue;
                     }
                     if (i.getStatus() == Status.RESOLVED) addIssueRow(model, i);
@@ -545,12 +558,20 @@ public class MainFrame extends JFrame {
             Object[] msg = {"Project Name:", createProjectBox, "Issue Title:", title, "Description:", new JScrollPane(description), "Priority:", priorityComboBox};
             if (JOptionPane.showConfirmDialog(this, msg, "Create Issue", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
                 Comboitem selectedProject = (Comboitem) createProjectBox.getSelectedItem();
+                if (selectedProject == null) {
+                    JOptionPane.showMessageDialog(this, "Project를 선택하세요.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if (getProjectRole(selectedProject.getId()) != Role.TESTER) {
+                    JOptionPane.showMessageDialog(this, "선택한 프로젝트에서 TESTER만 이슈를 생성할 수 있습니다.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 Response<Issue> resp = issueController.createIssue(selectedProject.getId(), title.getText(), description.getText(), (Priority) priorityComboBox.getSelectedItem());
                 if (resp.isSuccess()) {
                     JOptionPane.showMessageDialog(this, resp.getMessage());
                     for (int i = 0; i < projectbox.getItemCount(); i++) {
                         Comboitem item = projectbox.getItemAt(i);
-                        if (item != null && item.getId().equals(selectedProject.getId())) {
+                        if (item != null && Objects.equals(item.getId(), selectedProject.getId())) {
                             projectbox.setSelectedIndex(i);
                             break;
                         }
@@ -572,9 +593,7 @@ public class MainFrame extends JFrame {
                 refreshAll.run();
             }
         });
-        if (sessionManager.getLoggedInAccount().getRole() == Role.TESTER) {
-            btns.add(create);
-        }
+        btns.add(create);
         leftBtns.add(statistics);
         btns.add(detail);
         bottom.add(leftBtns, BorderLayout.WEST);
@@ -588,7 +607,7 @@ public class MainFrame extends JFrame {
         JComboBox<Comboitem> box = new JComboBox<>();
 
         if (includeAll) {
-            box.addItem(null);
+            box.addItem(new Comboitem(null, "Select Project"));
         }
 
         Response<List<Project>> projectResp = projectController.getAllProjects();
@@ -635,6 +654,31 @@ public class MainFrame extends JFrame {
         return "";
     }
 
+    private Role getSelectedProjectRole(JComboBox<Comboitem> projectbox) {
+        Comboitem selectedProject = (Comboitem) projectbox.getSelectedItem();
+        Long projectId = (selectedProject != null) ? selectedProject.getId() : null;
+        return getProjectRole(projectId);
+    }
+
+    private Role getProjectRole(Long projectId) {
+        if (projectId == null || sessionManager.getLoggedInAccount() == null) {
+            return null;
+        }
+
+        Long currentAccountId = sessionManager.getLoggedInAccount().getAccountId();
+        Response<List<ProjectMember>> memberResp = projectController.listProjectMembers(projectId);
+
+        if (!memberResp.isSuccess() || memberResp.getData() == null) {
+            return null;
+        }
+
+        return memberResp.getData().stream()
+                .filter(member -> member.getAccountId().equals(currentAccountId))
+                .map(ProjectMember::getRole)
+                .findFirst()
+                .orElse(null);
+    }
+
 
     private void showIssueDetail(Long issueId, Runnable refreshTable) {
         Response<Issue> issueResp = issueController.getIssueDetail(issueId);
@@ -643,6 +687,7 @@ public class MainFrame extends JFrame {
             return;
         }
         Issue issue = issueResp.getData();
+        Role projectRole = getProjectRole(issue.getProjectId());
 
         JDialog issueDetailDialog = new JDialog(this, "Issue Detail #" + issueId, true);
         issueDetailDialog.setSize(700, 600); issueDetailDialog.setLayout(new BorderLayout(10, 10));
@@ -661,6 +706,7 @@ public class MainFrame extends JFrame {
             assigneeName = assigneeResp.getData().getUsername();
         }
         info.add(new JLabel("Title: " + issue.getTitle()));
+        info.add(new JLabel("Priority: " + issue.getPriority()));
         info.add(new JLabel("Status: " + issue.getStatus()));
         info.add(new JLabel("Description: " + issue.getDescription()));
         info.add(new JLabel("Reporter name: " + reporterName));
@@ -771,11 +817,13 @@ public class MainFrame extends JFrame {
                 }
             });
 
-            if (curuser.getRole() == Role.PL) {
+            if (projectRole == Role.PL) {
                 actions.add(assign);
                 actions.add(recommend);
             }
-        } else if ((issue.getStatus() == Status.ASSIGNED || issue.getStatus() == Status.REOPENED) && curuser.getAccountId().equals(issue.getAssigneeId())) {
+        } else if ((issue.getStatus() == Status.ASSIGNED || issue.getStatus() == Status.REOPENED)
+                && projectRole == Role.DEV
+                && curuser.getAccountId().equals(issue.getAssigneeId())) {
             JButton fix = new JButton("Fix Issue");
             fix.addActionListener(e -> {
                 String msg = JOptionPane.showInputDialog("Fixing Message:");
@@ -791,7 +839,8 @@ public class MainFrame extends JFrame {
                 }
             });
             actions.add(fix);
-        } else if (issue.getStatus() == Status.FIXED && curuser.getAccountId().equals(issue.getReporterId())) {
+        } else if (issue.getStatus() == Status.FIXED && projectRole == Role.TESTER
+                && curuser.getAccountId().equals(issue.getReporterId())) {
             JButton resolve = new JButton("Resolve issue");
             resolve.addActionListener(e -> {
                 Response<Issue> resp = issueController.resolveIssue(issueId);
@@ -803,7 +852,7 @@ public class MainFrame extends JFrame {
                 }
             });
             actions.add(resolve);
-        } else if (issue.getStatus() == Status.RESOLVED && curuser.getRole() == Role.PL) {
+        } else if (issue.getStatus() == Status.RESOLVED && projectRole == Role.PL) {
             JButton close = new JButton("Close issue");
             close.addActionListener(e -> {
                 Response<Issue> resp = issueController.closeIssue(issueId);
@@ -815,7 +864,7 @@ public class MainFrame extends JFrame {
                 }
             });
             actions.add(close);
-        } else if (issue.getStatus() == Status.CLOSED && curuser.getRole() == Role.PL) {
+        } else if (issue.getStatus() == Status.CLOSED && projectRole == Role.PL) {
             JButton reopen = new JButton("Reopen issue");
             reopen.addActionListener(e -> {
                 Response<Issue> resp = issueController.reopenIssue(issueId);
