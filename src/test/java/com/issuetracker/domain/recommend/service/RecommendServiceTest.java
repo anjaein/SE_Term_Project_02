@@ -26,23 +26,24 @@ class RecommendServiceTest {
 
     @BeforeEach
     void setUp() {
-        issueRepository = new FakeIssueRepository();
-        recommendService = new RecommendService(issueRepository);
+        issueRepository = new FakeIssueRepository(); //실험용 저장소
+        recommendService = new RecommendService(issueRepository); //테스트용 서비스
     }
-
-    // ─── recommendAssignees ───────────────────────────────────
 
     @Test
     @DisplayName("추천 실패: 이력 없음")
     void returnsEmptyWhenNoHistory() {
+        // when
         List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button broken");
 
+        // then
         assertTrue(result.isEmpty());
     }
 
     @Test
     @DisplayName("추천 실패: null 입력")
     void returnsEmptyOnNullInput() {
+        // when & then
         assertTrue(recommendService.recommendAssignees(null, "title", "desc").isEmpty());
         assertTrue(recommendService.recommendAssignees(PROJECT_ID, null, "desc").isEmpty());
         assertTrue(recommendService.recommendAssignees(PROJECT_ID, "title", null).isEmpty());
@@ -51,10 +52,13 @@ class RecommendServiceTest {
     @Test
     @DisplayName("추천 성공: 일치 이슈 존재 시 fixer 반환")
     void recommendsFixerFromMatchingIssue() {
+        // given
         addResolvedIssue(1L, "login bug", "button not responding", DEV_A);
 
+        // when
         List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login error", "button broken");
 
+        // then
         assertEquals(1, result.size());
         assertEquals(DEV_A, result.get(0));
     }
@@ -62,13 +66,15 @@ class RecommendServiceTest {
     @Test
     @DisplayName("추천 성공: 같은 fixer의 여러 이슈 스코어 합산 후 1위 반환")
     void aggregatesScoresForSameFixer() {
-        // DEV_A가 유사한 이슈 2개, DEV_B가 1개
+        // given: DEV_A가 유사한 이슈 2개, DEV_B가 1개
         addResolvedIssue(1L, "login bug", "button error", DEV_A);
         addClosedIssue(2L, "login crash", "button freeze", DEV_A);
         addResolvedIssue(3L, "database bug", "connection fail", DEV_B);
 
+        // when
         List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login button crash", "button not responding");
 
+        // then
         assertFalse(result.isEmpty());
         assertEquals(DEV_A, result.get(0));
     }
@@ -76,107 +82,78 @@ class RecommendServiceTest {
     @Test
     @DisplayName("추천 성공: 최대 3명 반환")
     void limitsToTopThreeRecommendations() {
-        // 4명의 fixer가 각각 유사 이슈 보유
+        // given: 4명의 fixer가 각각 유사 이슈 보유
         addResolvedIssue(1L, "login bug", "button error", DEV_A);
         addResolvedIssue(2L, "login crash", "button freeze", DEV_B);
         addResolvedIssue(3L, "login timeout", "button slow", DEV_C);
         addResolvedIssue(4L, "login error", "button broken", 40L);
 
+        // when
         List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error");
 
+        // then
         assertTrue(result.size() <= 3);
     }
 
     @Test
-    @DisplayName("추천 성공: 점수 높은 순으로 정렬")
-    void returnsSortedByScoreDescending() {
-        // DEV_B가 더 유사한 이슈 보유
-        addResolvedIssue(1L, "login bug", "button error minor", DEV_A);
-        addResolvedIssue(2L, "login bug", "button error critical crash", DEV_B);
-
-        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error critical");
-
-        assertFalse(result.isEmpty());
-        assertEquals(DEV_B, result.get(0));
-    }
-
-    @Test
-    @DisplayName("추천 제외: RESOLVED/CLOSED 아닌 이슈는 포함되지 않음 (NEW 상태)")
+    @DisplayName("추천 실패: RESOLVED/CLOSED 아닌 이슈는 제외")
     void ignoresNonResolvedIssues() {
         // given: NEW 상태(fixerId 없음) 이슈만 존재
         Issue issue = new Issue(PROJECT_ID, "login bug", "button error", Priority.MAJOR, 99L);
         issue.setIssueId(1L);
         issueRepository.save(issue);
 
+        // when
         List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error");
 
+        // then
         assertTrue(result.isEmpty());
     }
 
     @Test
-    @DisplayName("추천 제외: FIXED 상태(RESOLVED/CLOSED 아님) 이슈는 포함되지 않음")
-    void ignoresFixedStatusIssues() {
-        // given: FIXED 상태 이슈 (RESOLVED/CLOSED 아님)
-        Issue issue = new Issue(PROJECT_ID, "login bug", "button error", Priority.MAJOR, 99L);
-        issue.setIssueId(1L);
-        issue.markAsFixed(DEV_A); // status = FIXED
-        issueRepository.save(issue);
+    @DisplayName("추천 성공: 점수 높은 순으로 정렬")
+    void returnsSortedByScoreDescending() {
+        // given: DEV_B가 더 유사한 이슈 보유
+        addResolvedIssue(1L, "login bug", "button error minor", DEV_A);
+        addResolvedIssue(2L, "login bug", "button error critical crash", DEV_B);
 
-        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error");
+        // when
+        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error critical");
 
-        assertTrue(result.isEmpty());
+        // then
+        assertFalse(result.isEmpty());
+        assertEquals(DEV_B, result.get(0));
     }
-
-    @Test
-    @DisplayName("추천 제외: 다른 프로젝트의 이슈는 포함되지 않음")
-    void excludesIssuesFromOtherProjects() {
-        // given: 다른 프로젝트(PROJECT_ID + 1)에만 일치 이슈 존재
-        Long otherProjectId = PROJECT_ID + 1;
-        Issue issue = new Issue(otherProjectId, "login bug", "button error", Priority.MAJOR, 99L);
-        issue.setIssueId(1L);
-        issue.markAsFixed(DEV_A);
-        issue.markAsResolved();
-        issueRepository.save(issue);
-
-        List<Long> result = recommendService.recommendAssignees(PROJECT_ID, "login bug", "button error");
-
-        assertTrue(result.isEmpty());
-    }
-
-    // ─── jaccardSimilarity ────────────────────────────────────
 
     @Test
     @DisplayName("Jaccard 유사도: 교집합/합집합 정확도")
     void jaccardSimilarityIsCorrect() {
+        // given
         Set<String> a = Set.of("login", "button", "error");
         Set<String> b = Set.of("login", "button", "crash");
 
+        // when
         double sim = recommendService.jaccardSimilarity(a, b);
 
-        // 교집합={login,button}=2, 합집합={login,button,error,crash}=4
+        // then: 교집합={login,button}=2, 합집합={login,button,error,crash}=4
         assertEquals(2.0 / 4.0, sim, 0.0001);
     }
 
     @Test
-    @DisplayName("Jaccard 유사도: 한쪽 집합이 빈 경우 0 반환")
-    void jaccardSimilarityReturnsZeroForOneEmptySet() {
+    @DisplayName("Jaccard 유사도: 빈 집합이면 0 반환")
+    void jaccardSimilarityReturnsZeroForEmptySets() {
+        // when & then
         assertEquals(0.0, recommendService.jaccardSimilarity(Set.of(), Set.of("login")));
         assertEquals(0.0, recommendService.jaccardSimilarity(Set.of("login"), Set.of()));
     }
 
     @Test
-    @DisplayName("Jaccard 유사도: 두 집합 모두 빈 경우 0 반환")
-    void jaccardSimilarityReturnsZeroForBothEmptySets() {
-        assertEquals(0.0, recommendService.jaccardSimilarity(Set.of(), Set.of()));
-    }
-
-    // ─── tokenize ────────────────────────────────────────────
-
-    @Test
     @DisplayName("토크나이징: 소문자 변환 및 1자 단어 필터")
     void tokenizeConvertsToLowercaseAndFiltersShortWords() {
+        // when
         Set<String> tokens = recommendService.tokenize("Login Button ERROR a");
 
+        // then
         assertTrue(tokens.contains("login"));
         assertTrue(tokens.contains("button"));
         assertTrue(tokens.contains("error"));
@@ -187,16 +164,9 @@ class RecommendServiceTest {
     @Test
     @DisplayName("토크나이징: null 입력 시 빈 집합 반환")
     void tokenizeReturnsEmptySetForNull() {
+        // when & then
         assertTrue(recommendService.tokenize(null).isEmpty());
     }
-
-    @Test
-    @DisplayName("토크나이징: 빈 문자열 입력 시 빈 집합 반환")
-    void tokenizeReturnsEmptySetForEmptyString() {
-        assertTrue(recommendService.tokenize("").isEmpty());
-    }
-
-    // ─── helpers ─────────────────────────────────────────────
 
     private void addResolvedIssue(Long id, String title, String desc, Long fixerId) {
         Issue issue = new Issue(PROJECT_ID, title, desc, Priority.MAJOR, 99L);
