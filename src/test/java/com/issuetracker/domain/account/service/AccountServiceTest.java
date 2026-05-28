@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,11 +28,9 @@ class AccountServiceTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // 원본 파일 백업
         originalAccountsJson = Files.exists(ACCOUNTS_FILE)
                 ? Files.readString(ACCOUNTS_FILE, StandardCharsets.UTF_8)
                 : null;
-        // 파일 초기화 후 서비스 생성 → admin 자동 생성됨
         Files.createDirectories(ACCOUNTS_FILE.getParent());
         Files.writeString(ACCOUNTS_FILE, "[]", StandardCharsets.UTF_8);
         accountRepository = new JsonAccountRepository();
@@ -67,6 +66,7 @@ class AccountServiceTest {
 
         assertTrue(result.isSuccess());
         assertEquals("admin", result.getData().getUsername());
+        assertEquals(Role.ADMIN, result.getData().getRole());
     }
 
     @Test
@@ -75,6 +75,7 @@ class AccountServiceTest {
         Response<Account> result = accountService.login("nobody", "admin123");
 
         assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("Invalid username or password"));
     }
 
     @Test
@@ -83,13 +84,19 @@ class AccountServiceTest {
         Response<Account> result = accountService.login("admin", "wrongpassword");
 
         assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("Invalid username or password"));
     }
 
     @Test
     @DisplayName("로그인 실패: null 입력")
     void loginFailsWithNullInput() {
-        assertFalse(accountService.login(null, "admin123").isSuccess());
-        assertFalse(accountService.login("admin", null).isSuccess());
+        Response<Account> nullUsername = accountService.login(null, "admin123");
+        Response<Account> nullPassword = accountService.login("admin", null);
+
+        assertFalse(nullUsername.isSuccess());
+        assertTrue(nullUsername.getMessage().contains("Required parameter is missing"));
+        assertFalse(nullPassword.isSuccess());
+        assertTrue(nullPassword.getMessage().contains("Required parameter is missing"));
     }
 
     // ─── createAccount ────────────────────────────────────────
@@ -102,15 +109,23 @@ class AccountServiceTest {
         assertTrue(result.isSuccess());
         assertEquals("dev1", result.getData().getUsername());
         assertEquals(Role.DEV, result.getData().getRole());
+        assertNotNull(result.getData().getAccountId());
         assertNotNull(accountRepository.findByUsername("dev1"));
     }
 
     @Test
-    @DisplayName("계정 생성 실패: null 입력")
+    @DisplayName("계정 생성 실패: 필수 파라미터(username/password/role) 중 하나라도 null")
     void createAccountFailsWithNullInput() {
-        assertFalse(accountService.createAccount(null, "1234", Role.DEV).isSuccess());
-        assertFalse(accountService.createAccount("dev1", null, Role.DEV).isSuccess());
-        assertFalse(accountService.createAccount("dev1", "1234", null).isSuccess());
+        Response<Account> nullUsername = accountService.createAccount(null, "1234", Role.DEV);
+        Response<Account> nullPassword = accountService.createAccount("dev1", null, Role.DEV);
+        Response<Account> nullRole = accountService.createAccount("dev1", "1234", null);
+
+        assertFalse(nullUsername.isSuccess());
+        assertTrue(nullUsername.getMessage().contains("Required parameter is missing"));
+        assertFalse(nullPassword.isSuccess());
+        assertTrue(nullPassword.getMessage().contains("Required parameter is missing"));
+        assertFalse(nullRole.isSuccess());
+        assertTrue(nullRole.getMessage().contains("Required parameter is missing"));
     }
 
     @Test
@@ -120,6 +135,7 @@ class AccountServiceTest {
 
         assertFalse(result.isSuccess());
         assertNull(result.getData());
+        assertTrue(result.getMessage().contains("cannot be empty"));
     }
 
     @Test
@@ -129,6 +145,7 @@ class AccountServiceTest {
 
         assertFalse(result.isSuccess());
         assertNull(result.getData());
+        assertTrue(result.getMessage().contains("cannot be empty"));
     }
 
     @Test
@@ -139,6 +156,7 @@ class AccountServiceTest {
         Response<Account> result = accountService.createAccount("dev1", "5678", Role.DEV);
 
         assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("Username already exists"));
         assertEquals(1, accountRepository.findAll().stream()
                 .filter(a -> a.getUsername().equals("dev1"))
                 .count());
@@ -162,5 +180,32 @@ class AccountServiceTest {
 
         assertFalse(result.isSuccess());
         assertNull(result.getData());
+        assertTrue(result.getMessage().contains("Account not found"));
+    }
+
+    // ─── getAllAccounts ───────────────────────────────────────
+
+    @Test
+    @DisplayName("전체 계정 조회 성공: 초기화 후 admin 계정만 반환")
+    void getAllAccountsReturnsAdminOnInit() {
+        Response<List<Account>> result = accountService.getAllAccounts();
+
+        assertTrue(result.isSuccess());
+        assertEquals(1, result.getData().size());
+        assertEquals("admin", result.getData().get(0).getUsername());
+    }
+
+    @Test
+    @DisplayName("전체 계정 조회 성공: 추가 계정 생성 후 전체 반환")
+    void getAllAccountsReturnsAllCreatedAccounts() {
+        accountService.createAccount("dev1", "1234", Role.DEV);
+        accountService.createAccount("tester1", "5678", Role.TESTER);
+
+        Response<List<Account>> result = accountService.getAllAccounts();
+
+        assertTrue(result.isSuccess());
+        assertEquals(3, result.getData().size()); // admin + dev1 + tester1
+        assertTrue(result.getData().stream().anyMatch(a -> a.getUsername().equals("dev1")));
+        assertTrue(result.getData().stream().anyMatch(a -> a.getUsername().equals("tester1")));
     }
 }
