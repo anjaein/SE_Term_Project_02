@@ -284,27 +284,15 @@ public class MainFrame extends JFrame {
         JComboBox<Priority> prioritybox = new JComboBox<>(Priority.values());
         prioritybox.insertItemAt(null, 0); prioritybox.setSelectedIndex(0);
 
-        JComboBox<Comboitem> projectbox = new JComboBox<>();
-        projectbox.insertItemAt(null, 0); projectbox.setSelectedIndex(0);
+        JComboBox<Comboitem> projectbox = createProjectComboBoxForCurrentUser(true);
+        projectbox.setSelectedIndex(0);
         JButton applyFilter = new JButton("Apply Filter");
         JButton all = new JButton("All Issues");
         JButton mine = new JButton("Assigned to Me");
         JButton reported = new JButton("Reported by Me (FIXED)");
         JButton resolved = new JButton("Resolved Issue");
 
-        Response<List<Project>> projectResp = projectController.getAllProjects();
-        if (projectResp.isSuccess()) {
-            // 성공적으로 가져왔다면 이름을 하나씩 꺼내서 콤보박스에 추가
-            for (Project project : projectResp.getData()) {
-                Response<List<ProjectMember>> memberResp = projectController.listProjectMembers(project.getProjectId());
-                if(memberResp.isSuccess() && memberResp.getData().stream().anyMatch(pm -> pm.getAccountId().equals(sessionManager.getLoggedInAccount().getAccountId()))) {
-                    projectbox.addItem(new Comboitem(project.getProjectId(), project.getName()));
-                }
-            }
-        } else {
-            // 에러 발생 시 로그를 남기거나 알림창 띄우기
-            JOptionPane.showMessageDialog(this, "프로젝트 목록을 불러오지 못했습니다.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+
 
 
         filter.add(new JLabel("Status:")); filter.add(statusbox);
@@ -498,24 +486,9 @@ public class MainFrame extends JFrame {
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton statistics = new JButton("Issue Statistics");
         statistics.addActionListener(e -> {
-            JComboBox<Comboitem> createProjectBox = new JComboBox<>();
-            Response<List<Project>> createProjectResp = projectController.getAllProjects();
-            if (createProjectResp.isSuccess()) {
-                for (Project project : createProjectResp.getData()) {
-                    Response<List<ProjectMember>> memberResp =
-                            projectController.listProjectMembers(project.getProjectId());
-                    if (memberResp.isSuccess()
-                            && memberResp.getData().stream()
-                            .anyMatch(pm -> pm.getAccountId().equals(sessionManager.getLoggedInAccount().getAccountId()))) {
-                        createProjectBox.addItem(new Comboitem(project.getProjectId(), project.getName()));
-                    }
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, createProjectResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            JComboBox<Comboitem> createProjectBox = createProjectComboBoxForCurrentUser(false);
             if (createProjectBox.getItemCount() == 0) {
-                JOptionPane.showMessageDialog(this, "이슈를 생성할 수 있는 프로젝트가 없습니다.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "이슈통계를 생성할 수 있는 프로젝트가 없습니다.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             JSpinner monthsSpinner = new JSpinner(new SpinnerNumberModel(3, 1, 12, 1));
@@ -615,24 +588,9 @@ public class MainFrame extends JFrame {
         JButton create = new JButton("New Issue");
         JButton detail = new JButton("View Detail & Actions");
         create.addActionListener(e -> {
-            JComboBox<Comboitem> createProjectBox = new JComboBox<>();
+            JComboBox<Comboitem> createProjectBox = createProjectComboBoxForCurrentUser(false);
 
-            Response<List<Project>> createProjectResp = projectController.getAllProjects();
-            if (createProjectResp.isSuccess()) {
-                for (Project project : createProjectResp.getData()) {
-                    Response<List<ProjectMember>> memberResp =
-                            projectController.listProjectMembers(project.getProjectId());
 
-                    if (memberResp.isSuccess()
-                            && memberResp.getData().stream()
-                            .anyMatch(pm -> pm.getAccountId().equals(sessionManager.getLoggedInAccount().getAccountId()))) {
-                        createProjectBox.addItem(new Comboitem(project.getProjectId(), project.getName()));
-                    }
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, createProjectResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
             if (createProjectBox.getItemCount() == 0) {
                 JOptionPane.showMessageDialog(this, "이슈를 생성할 수 있는 프로젝트가 없습니다.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -683,6 +641,35 @@ public class MainFrame extends JFrame {
         p.add(bottom, BorderLayout.SOUTH);
 
         return p;
+    }
+    //프로젝트 콤보박스 생성 중복 제거
+    private JComboBox<Comboitem> createProjectComboBoxForCurrentUser(boolean includeAll) {
+        JComboBox<Comboitem> box = new JComboBox<>();
+
+        if (includeAll) {
+            box.addItem(null);
+        }
+
+        Response<List<Project>> projectResp = projectController.getAllProjects();
+        if (!projectResp.isSuccess()) {
+            JOptionPane.showMessageDialog(this, projectResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return box;
+        }
+
+        Long currentAccountId = sessionManager.getLoggedInAccount().getAccountId();
+
+        for (Project project : projectResp.getData()) {
+            Response<List<ProjectMember>> memberResp =
+                    projectController.listProjectMembers(project.getProjectId());
+
+            if (memberResp.isSuccess()
+                    && memberResp.getData().stream()
+                    .anyMatch(pm -> pm.getAccountId().equals(currentAccountId))) {
+                box.addItem(new Comboitem(project.getProjectId(), project.getName()));
+            }
+        }
+
+        return box;
     }
 
     private void showIssueDetail(Long issueId, Runnable refreshTable) {
