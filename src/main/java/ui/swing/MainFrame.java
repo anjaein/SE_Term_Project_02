@@ -95,11 +95,11 @@ public class MainFrame extends JFrame {
 
     private void showDashboard() {
         JPanel dashboard = new JPanel(new BorderLayout());
-        Account current = sessionManager.getLoggedInAccount();
+        Account curuser = sessionManager.getLoggedInAccount();
 
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(new Color(230, 230, 230));
-        topBar.add(new JLabel("  User: " + current.getUsername() + " | Role: " + current.getRole()), BorderLayout.WEST);
+        topBar.add(new JLabel("  User: " + curuser.getUsername() + " | Role: " + curuser.getRole()), BorderLayout.WEST);
         JButton logoutBtn = new JButton("Logout");
         logoutBtn.addActionListener(e -> {
             accountController.logout();
@@ -109,7 +109,7 @@ public class MainFrame extends JFrame {
         dashboard.add(topBar, BorderLayout.NORTH);
 
         JTabbedPane tabs = new JTabbedPane();
-        if (current.getRole() == Role.ADMIN) tabs.addTab("Admin Console", createAdminPanel());
+        if (curuser.getRole() == Role.ADMIN) tabs.addTab("Admin Console", createAdminPanel());
         tabs.addTab("Projects & Members", createProjectPanel());
         tabs.addTab("Issue Management", createIssuePanel());
 
@@ -119,31 +119,31 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel createAdminPanel() {
-        JPanel p = new JPanel(new GridLayout(2, 1, 10, 10));
-        p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        JPanel adminPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+        adminPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JPanel acc = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        acc.setBorder(BorderFactory.createTitledBorder("Add Account"));
-        JTextField u = new JTextField(10); JTextField pw = new JTextField(10);
-        JComboBox<Role> r = new JComboBox<>(Role.values());
-        JButton b = new JButton("Create Account");
-        b.addActionListener(e -> {
-            Response<Account> resp = accountController.createAccount(u.getText(), pw.getText(), (Role)r.getSelectedItem());
+        JPanel accountPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        accountPanel.setBorder(BorderFactory.createTitledBorder("Add Account"));
+        JTextField usernameField = new JTextField(10); JTextField passwordField = new JTextField(10);
+        JComboBox<Role> rolebox = new JComboBox<>(Role.values());
+        JButton createAccountbtn = new JButton("Create Account");
+        createAccountbtn.addActionListener(e -> {
+            Response<Account> resp = accountController.createAccount(usernameField.getText(), passwordField.getText(), (Role)rolebox.getSelectedItem());
             if (resp.isSuccess()) {
                 JOptionPane.showMessageDialog(this, resp.getMessage());
             } else {
                 JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
-        acc.add(new JLabel("User:")); acc.add(u); acc.add(new JLabel("Password:")); acc.add(pw);
-        acc.add(new JLabel("Role:")); acc.add(r); acc.add(b);
+        accountPanel.add(new JLabel("User:")); accountPanel.add(usernameField); accountPanel.add(new JLabel("Password:")); accountPanel.add(passwordField);
+        accountPanel.add(new JLabel("Role:")); accountPanel.add(rolebox); accountPanel.add(createAccountbtn);
 
-        JPanel proj = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        proj.setBorder(BorderFactory.createTitledBorder("Add Project"));
-        JTextField pn = new JTextField(20);
-        JButton pb = new JButton("Create Project");
-        pb.addActionListener(e -> {
-            Response<Project> resp = projectController.createProject(pn.getText());
+        JPanel projectPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        projectPanel.setBorder(BorderFactory.createTitledBorder("Add Project"));
+        JTextField projectNameField = new JTextField(20);
+        JButton createProjectbtn = new JButton("Create Project");
+        createProjectbtn.addActionListener(e -> {
+            Response<Project> resp = projectController.createProject(projectNameField.getText());
 
             if (resp.isSuccess()) {
                 JOptionPane.showMessageDialog(this, resp.getMessage());
@@ -151,35 +151,35 @@ public class MainFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
-        proj.add(new JLabel("Name:")); proj.add(pn); proj.add(pb);
+        projectPanel.add(new JLabel("Name:")); projectPanel.add(projectNameField); projectPanel.add(createProjectbtn);
 
-        p.add(acc); p.add(proj);
-        return p;
+        adminPanel.add(accountPanel); adminPanel.add(projectPanel);
+        return adminPanel;
     }
 
     private JPanel createProjectPanel() {
-        JPanel p = new JPanel(new BorderLayout(10, 10));
-        p.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel ProjectPanel = new JPanel(new BorderLayout(10, 10));
+        ProjectPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
 
-        String[] pCols = {"Project ID", "Project Name"};
-        DefaultTableModel pModel = new DefaultTableModel(pCols, 0);
-        JTable pTable = new JTable(pModel);
+        String[] projectCols = {"Project ID", "Project Name"};
+        DefaultTableModel projectTableModel = new DefaultTableModel(projectCols, 0);
+        JTable projectTable = new JTable(projectTableModel);
 
-        // Ptable에서 Pid는 안보이게 숨김
-        pTable.getColumnModel().getColumn(0).setMinWidth(0);
-        pTable.getColumnModel().getColumn(0).setMaxWidth(0);
-        pTable.getColumnModel().getColumn(0).setWidth(0);
+        // projectTable에서  Pid는 안보이게 숨김
+        projectTable.getColumnModel().getColumn(0).setMinWidth(0);
+        projectTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        projectTable.getColumnModel().getColumn(0).setWidth(0);
 
-        String[] mCols = {"User name", "Member Role"};
-        DefaultTableModel mModel = new DefaultTableModel(mCols, 0);
-        JTable mTable = new JTable(mModel);
+        String[] memberCols = {"User name", "Member Role"};
+        DefaultTableModel memberTableModel = new DefaultTableModel(memberCols, 0);
+        JTable mTable = new JTable(memberTableModel);
 
         //프로젝트 목록 조회(내 프로젝트만 필터링)
         JButton refresh = new JButton("Refresh Project List");
         refresh.addActionListener(e -> {
-            pModel.setRowCount(0);
-            mModel.setRowCount(0); // 프로젝트 목록이 새로고침되면 멤버 목록도 비워줍니다.
+            projectTableModel.setRowCount(0);
+            memberTableModel.setRowCount(0); // 프로젝트 목록이 새로고침되면 멤버 목록도 비워줍니다.
 
             // 현재 로그인한 사용자 ID
             Long myAccountId = sessionManager.getLoggedInAccount().getAccountId();
@@ -208,7 +208,7 @@ public class MainFrame extends JFrame {
 
                         // 5. 내가 속한 프로젝트일 경우에만 테이블(pModel)에 추가합니다.
                         if (isMyProject) {
-                            pModel.addRow(new Object[]{pr.getProjectId(), pr.getName()});
+                            projectTableModel.addRow(new Object[]{pr.getProjectId(), pr.getName()});
                         }
                     }
                 }
@@ -219,13 +219,13 @@ public class MainFrame extends JFrame {
 
 
         //2 프로젝트 클릭시 멤버 목록 띄우기(이름,역할)
-        pTable.getSelectionModel().addListSelectionListener(e -> {
+        projectTable.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) return; // 중복 실행 방지
 
-            int row = pTable.getSelectedRow();
+            int row = projectTable.getSelectedRow();
             if (row >= 0) {
-                mModel.setRowCount(0);
-                Long pid = (Long) pTable.getValueAt(row, 0);
+                memberTableModel.setRowCount(0);
+                Long pid = (Long) projectTable.getValueAt(row, 0);
                 Response<List<ProjectMember>> resp = projectController.listProjectMembers(pid);
                 if (resp.isSuccess()) {
                     for (ProjectMember m : resp.getData()) {
@@ -238,7 +238,7 @@ public class MainFrame extends JFrame {
                         }
 
                         // 3. ID(m.getAccountId()) 대신 추출한 username을 테이블에 넣습니다.
-                        mModel.addRow(new Object[]{username, m.getRole()});
+                        memberTableModel.addRow(new Object[]{username, m.getRole()});
                     }
                 } else {
                     JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -247,19 +247,19 @@ public class MainFrame extends JFrame {
         });
 
         JPanel split = new JPanel(new GridLayout(1, 2, 10, 10));
-        split.add(new JScrollPane(pTable)); split.add(new JScrollPane(mTable));
-        p.add(refresh, BorderLayout.NORTH); p.add(split, BorderLayout.CENTER);
+        split.add(new JScrollPane(projectTable)); split.add(new JScrollPane(mTable));
+        ProjectPanel.add(refresh, BorderLayout.NORTH); ProjectPanel.add(split, BorderLayout.CENTER);
 
         //관리자만 프로젝트에 멤버 추가 가능
         if (sessionManager.getLoggedInAccount().getRole() == Role.ADMIN) {
-            JPanel addM = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            addM.setBorder(BorderFactory.createTitledBorder("Add Member to Selected Project"));
-            JTextField un = new JTextField(10); JComboBox<Role> r = new JComboBox<>(Role.values());
-            JButton b = new JButton("Add Member");
-            b.addActionListener(e -> {
-                int row = pTable.getSelectedRow();
+            JPanel addMember = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            addMember.setBorder(BorderFactory.createTitledBorder("Add Member to Selected Project"));
+            JTextField usernameField = new JTextField(10); JComboBox<Role> rolebox = new JComboBox<>(Role.values());
+            JButton addMemBtn = new JButton("Add Member");
+            addMemBtn.addActionListener(e -> {
+                int row = projectTable.getSelectedRow();
                 if (row >= 0) {
-                    Response<ProjectMember> resp = projectController.addProjectMember((Long)pTable.getValueAt(row, 0), un.getText(), (Role)r.getSelectedItem());
+                    Response<ProjectMember> resp = projectController.addProjectMember((Long)projectTable.getValueAt(row, 0), usernameField.getText(), (Role)rolebox.getSelectedItem());
                     if (resp.isSuccess()) {
                         JOptionPane.showMessageDialog(this, resp.getMessage());
                     } else {
@@ -268,15 +268,15 @@ public class MainFrame extends JFrame {
                 }
                 else JOptionPane.showMessageDialog(this, "Please select a project first.");
             });
-            addM.add(new JLabel("User:")); addM.add(un); addM.add(new JLabel("Role:")); addM.add(r); addM.add(b);
-            p.add(addM, BorderLayout.SOUTH);
+            addMember.add(new JLabel("User:")); addMember.add(usernameField); addMember.add(new JLabel("Role:")); addMember.add(rolebox); addMember.add(addMemBtn);
+            ProjectPanel.add(addMember, BorderLayout.SOUTH);
         }
-        return p;
+        return ProjectPanel;
     }
 
     private JPanel createIssuePanel() {
-        JPanel p = new JPanel(new BorderLayout(10, 10));
-        p.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel createIssuePanel = new JPanel(new BorderLayout(10, 10));
+        createIssuePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel filter = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JComboBox<Status> statusbox = new JComboBox<>(Status.values());
@@ -286,14 +286,10 @@ public class MainFrame extends JFrame {
 
         JComboBox<Comboitem> projectbox = createProjectComboBoxForCurrentUser(true);
         projectbox.setSelectedIndex(0);
-        JButton applyFilter = new JButton("Apply Filter");
-        JButton all = new JButton("All Issues");
+        JButton applyFilter = new JButton("Search Issue (choose project)");
         JButton mine = new JButton("Assigned to Me");
         JButton reported = new JButton("Reported by Me (FIXED)");
         JButton resolved = new JButton("Resolved Issue");
-
-
-
 
         filter.add(new JLabel("Status:")); filter.add(statusbox);
         filter.add(new JLabel("Priority:")); filter.add(prioritybox);
@@ -309,7 +305,7 @@ public class MainFrame extends JFrame {
         if (sessionManager.getLoggedInAccount().getRole() == Role.PL) {
             filter.add(resolved);
         }
-        p.add(filter, BorderLayout.NORTH);
+        createIssuePanel.add(filter, BorderLayout.NORTH);
 
         String[] cols = {"issueid", "projectid","Title", "Status", "Reporter", "Assignee"};
         DefaultTableModel model = new DefaultTableModel(cols, 0){
@@ -325,7 +321,7 @@ public class MainFrame extends JFrame {
         table.getColumnModel().getColumn(1).setMinWidth(0);
         table.getColumnModel().getColumn(1).setMaxWidth(0);
         table.getColumnModel().getColumn(1).setWidth(0);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
+        createIssuePanel.add(new JScrollPane(table), BorderLayout.CENTER);
 
         // 3. 컨트롤러에서 실제 프로젝트 목록 가져오기
 
@@ -341,17 +337,7 @@ public class MainFrame extends JFrame {
                         continue;
                     }
                     // null일 경우 표시할 기본값 설정 (원하는 대로 변경 가능)
-                    String reporterName = "";
-                    String assigneeName = "";
-                    Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
-                    Response<Account> assigneeresp = accountController.getAccountById(i.getAssigneeId());
-                    if(reporterresp.isSuccess()){
-                        reporterName = reporterresp.getData().getUsername();
-                    }
-                    if(assigneeresp.isSuccess()){
-                        assigneeName = assigneeresp.getData().getUsername();
-                    }
-                    model.addRow(new Object[]{ i.getIssueId(),i.getProjectId(), i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                    addIssueRow(model, i);
                 }
             } else {
                 JOptionPane.showMessageDialog(this, issueresp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -368,22 +354,12 @@ public class MainFrame extends JFrame {
 
             if (issueresp.isSuccess()) {
                 for (Issue i : issueresp.getData()) {
-                    Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
-                    Response<Account> assigneeresp = accountController.getAccountById(i.getAssigneeId());
                     // 1. Reporter 정보 가져오기 (ID가 null이 아닐 때만 + status와 priority로 필터링)
                     boolean statusMatch = (status == null || i.getStatus() == status);
                     boolean priorityMatch = (priority == null || i.getPriority() == priority);
-                    String reporterName = "";
-                    String assigneeName = "";
                     if (statusMatch && priorityMatch) {
                         if (selectedProject != null && selectedProject.getId().equals(i.getProjectId())) {
-                            if (reporterresp.isSuccess()) {
-                                reporterName = reporterresp.getData().getUsername();
-                            }
-                            if (assigneeresp.isSuccess()) {
-                                assigneeName = assigneeresp.getData().getUsername();
-                            }
-                            model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                            addIssueRow(model, i);
 
                         }
                     }
@@ -393,11 +369,6 @@ public class MainFrame extends JFrame {
             } else {
                 JOptionPane.showMessageDialog(this, issueresp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        });
-        all.addActionListener(e -> {
-            statusbox.setSelectedIndex(0);
-            projectbox.setSelectedIndex(0);
-            refreshAll.run();
         });
         mine.addActionListener(e -> {
             model.setRowCount(0);
@@ -410,17 +381,7 @@ public class MainFrame extends JFrame {
                     if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
                         continue;
                     }
-                    String reporterName = "";
-                    String assigneeName = "";
-                    Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
-                    Response<Account> assigneeresp = accountController.getAccountById(i.getAssigneeId());
-                    if(reporterresp.isSuccess()){
-                        reporterName = reporterresp.getData().getUsername();
-                    }
-                    if(assigneeresp.isSuccess()){
-                        assigneeName = assigneeresp.getData().getUsername();
-                    }
-                    if (i.getStatus() == Status.ASSIGNED) model.addRow(new Object[]{ i.getIssueId(),i.getProjectId(), i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                    if (i.getStatus() == Status.ASSIGNED) addIssueRow(model, i);
                 }
             } else {
                 JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -437,17 +398,7 @@ public class MainFrame extends JFrame {
                     if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
                         continue;
                     }
-                    String reporterName = "";
-                    String assigneeName = "";
-                    Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
-                    Response<Account> assigneeresp = accountController.getAccountById(i.getAssigneeId());
-                    if(reporterresp.isSuccess()){
-                        reporterName = reporterresp.getData().getUsername();
-                    }
-                    if(assigneeresp.isSuccess()){
-                        assigneeName = assigneeresp.getData().getUsername();
-                    }
-                    if (i.getStatus() == Status.FIXED) model.addRow(new Object[]{ i.getIssueId(),i.getProjectId(),i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                    if (i.getStatus() == Status.FIXED) addIssueRow(model, i);
                 }
             } else {
                 JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -464,17 +415,7 @@ public class MainFrame extends JFrame {
                     if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
                         continue;
                     }
-                    String reporterName = "";
-                    String assigneeName = "";
-                    Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
-                    Response<Account> assigneeresp = accountController.getAccountById(i.getAssigneeId());
-                    if(reporterresp.isSuccess()){
-                        reporterName = reporterresp.getData().getUsername();
-                    }
-                    if(assigneeresp.isSuccess()){
-                        assigneeName = assigneeresp.getData().getUsername();
-                    }
-                    if (i.getStatus() == Status.RESOLVED) model.addRow(new Object[]{i.getIssueId(),i.getProjectId(),i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                    if (i.getStatus() == Status.RESOLVED) addIssueRow(model, i);
                 }
             } else {
                 JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -638,9 +579,9 @@ public class MainFrame extends JFrame {
         btns.add(detail);
         bottom.add(leftBtns, BorderLayout.WEST);
         bottom.add(btns, BorderLayout.EAST);
-        p.add(bottom, BorderLayout.SOUTH);
+        createIssuePanel.add(bottom, BorderLayout.SOUTH);
 
-        return p;
+        return createIssuePanel;
     }
     //프로젝트 콤보박스 생성 중복 제거
     private JComboBox<Comboitem> createProjectComboBoxForCurrentUser(boolean includeAll) {
@@ -672,6 +613,29 @@ public class MainFrame extends JFrame {
         return box;
     }
 
+    private void addIssueRow(DefaultTableModel model, Issue issue) {
+        String reporterName = getUsernameOrUnknown(issue.getReporterId());
+        String assigneeName = getUsernameOrUnknown(issue.getAssigneeId());
+
+        model.addRow(new Object[]{
+                issue.getIssueId(),
+                issue.getProjectId(),
+                issue.getTitle(),
+                issue.getStatus(),
+                reporterName,
+                assigneeName
+        });
+    }
+
+    private String getUsernameOrUnknown(Long accountId) {
+        Response<Account> accountResp = accountController.getAccountById(accountId);
+        if (accountResp.isSuccess() && accountResp.getData() != null) {
+            return accountResp.getData().getUsername();
+        }
+        return "";
+    }
+
+
     private void showIssueDetail(Long issueId, Runnable refreshTable) {
         Response<Issue> issueResp = issueController.getIssueDetail(issueId);
         if (!issueResp.isSuccess()) {
@@ -680,8 +644,8 @@ public class MainFrame extends JFrame {
         }
         Issue issue = issueResp.getData();
 
-        JDialog d = new JDialog(this, "Issue Detail #" + issueId, true);
-        d.setSize(700, 600); d.setLayout(new BorderLayout(10, 10));
+        JDialog issueDetailDialog = new JDialog(this, "Issue Detail #" + issueId, true);
+        issueDetailDialog.setSize(700, 600); issueDetailDialog.setLayout(new BorderLayout(10, 10));
 
 
         JPanel info = new JPanel(new GridLayout(0, 1));
@@ -701,11 +665,11 @@ public class MainFrame extends JFrame {
         info.add(new JLabel("Description: " + issue.getDescription()));
         info.add(new JLabel("Reporter name: " + reporterName));
         info.add(new JLabel("Assignee name: " + assigneeName));
-        d.add(info, BorderLayout.NORTH);
+        issueDetailDialog.add(info, BorderLayout.NORTH);
 
-        DefaultListModel<Comment> cm = new DefaultListModel<>();
-        JList<Comment> cl = new JList<>(cm);
-        cl.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
+        DefaultListModel<Comment> commentListModel = new DefaultListModel<>();
+        JList<Comment> commentList = new JList<>(commentListModel);
+        commentList.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss");
 
             Response<Account> authorResp = accountController.getAccountById(value.getAuthorId());
@@ -721,48 +685,48 @@ public class MainFrame extends JFrame {
             label.setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
             return label;
         });
-        Runnable refreshC = () -> {
-            cm.clear();
+        Runnable refreshComment = () -> {
+            commentListModel.clear();
             Response<List<Comment>> resp = commentController.listComments(issueId);
             if (resp.isSuccess()) {
-                for (Comment c : resp.getData()) cm.addElement(c);
+                for (Comment c : resp.getData()) commentListModel.addElement(c);
             } else {
-                JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(issueDetailDialog, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         };
-        refreshC.run();
-        d.add(new JScrollPane(cl), BorderLayout.CENTER);
+        refreshComment.run();
+        issueDetailDialog.add(new JScrollPane(commentList), BorderLayout.CENTER);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton addC = new JButton("Add Comment");
-        addC.addActionListener(e -> {
+        JButton addCommentBtn = new JButton("Create Comment");
+        addCommentBtn.addActionListener(e -> {
             String c = JOptionPane.showInputDialog("Comment content:");
             if (c != null && !c.trim().isEmpty()) {
                 Response<Comment> resp = commentController.createComment(issueId, c);
                 if (resp.isSuccess()) {
-                    refreshC.run();
+                    refreshComment.run();
                 } else {
-                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(issueDetailDialog, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
-        actions.add(addC);
+        actions.add(addCommentBtn);
 
-        Account cur = sessionManager.getLoggedInAccount();
+        Account curuser = sessionManager.getLoggedInAccount();
         JButton updateCommentbutton = new JButton("Update Comment");
         updateCommentbutton.addActionListener(e -> {
-            Comment selected = cl.getSelectedValue();
+            Comment selected = commentList.getSelectedValue();
             if (selected == null) {
-                JOptionPane.showMessageDialog(d, "Please select a comment first.");
+                JOptionPane.showMessageDialog(issueDetailDialog, "Please select a comment first.");
                 return;
             }
-            String updated = JOptionPane.showInputDialog(d, "Update comment:", selected.getContent());
+            String updated = JOptionPane.showInputDialog(issueDetailDialog, "Update comment:", selected.getContent());
             if (updated != null && !updated.trim().isEmpty()) {
                 Response<Comment> resp = commentController.updateComment(selected.getCommentId(), updated);
                 if (resp.isSuccess()) {
-                    refreshC.run();
+                    refreshComment.run();
                 } else {
-                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(issueDetailDialog, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -776,16 +740,16 @@ public class MainFrame extends JFrame {
                 if (tname != null && msg != null) {
                     Response<Long> response = accountController.getAccountIdByUsername(tname);
                     if (!response.isSuccess() || response.getData() == null) {
-                        JOptionPane.showMessageDialog(d, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(issueDetailDialog, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                     Response<Issue> resp = issueController.assignIssue(issueId, response.getData());
                     if (resp.isSuccess()) {
                         commentController.createComment(issueId, msg);
-                        d.dispose();
+                        issueDetailDialog.dispose();
                         refreshTable.run();
                     } else {
-                        JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(issueDetailDialog, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             });
@@ -797,8 +761,7 @@ public class MainFrame extends JFrame {
                 String description = IssueResp.getData().getDescription();
                 List<Account> recommendedAssignees= recommendController.getRecommendedAssignees(projectId,title,description);
                 if(recommendedAssignees == null || recommendedAssignees.isEmpty()){
-                    JOptionPane.showMessageDialog(d, "No recommendations available.", "Info", JOptionPane.INFORMATION_MESSAGE);
-                    return;
+                    JOptionPane.showMessageDialog(issueDetailDialog, "No recommendations available.", "Info", JOptionPane.INFORMATION_MESSAGE);
                 } else{
                     StringBuilder sb = new StringBuilder("다음 사용자를 추천합니다:\n");
                     for (Account acc : recommendedAssignees) {
@@ -808,65 +771,65 @@ public class MainFrame extends JFrame {
                 }
             });
 
-            if (cur.getRole() == Role.PL) {
+            if (curuser.getRole() == Role.PL) {
                 actions.add(assign);
                 actions.add(recommend);
             }
-        } else if ((issue.getStatus() == Status.ASSIGNED || issue.getStatus() == Status.REOPENED) && cur.getAccountId().equals(issue.getAssigneeId())) {
-            JButton fix = new JButton("Fix (Dev)");
+        } else if ((issue.getStatus() == Status.ASSIGNED || issue.getStatus() == Status.REOPENED) && curuser.getAccountId().equals(issue.getAssigneeId())) {
+            JButton fix = new JButton("Fix Issue");
             fix.addActionListener(e -> {
                 String msg = JOptionPane.showInputDialog("Fixing Message:");
                 if (msg != null) {
                     commentController.createComment(issueId, msg);
                     Response<Issue> resp = issueController.fixIssue(issueId);
                     if (resp.isSuccess()) {
-                        d.dispose();
+                        issueDetailDialog.dispose();
                         refreshTable.run();
                     } else {
-                        JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(issueDetailDialog, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             });
             actions.add(fix);
-        } else if (issue.getStatus() == Status.FIXED && cur.getAccountId().equals(issue.getReporterId())) {
-            JButton resolve = new JButton("Resolve");
+        } else if (issue.getStatus() == Status.FIXED && curuser.getAccountId().equals(issue.getReporterId())) {
+            JButton resolve = new JButton("Resolve issue");
             resolve.addActionListener(e -> {
                 Response<Issue> resp = issueController.resolveIssue(issueId);
                 if (resp.isSuccess()) {
-                    d.dispose();
+                    issueDetailDialog.dispose();
                     refreshTable.run();
                 } else {
-                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(issueDetailDialog, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
             actions.add(resolve);
-        } else if (issue.getStatus() == Status.RESOLVED && cur.getRole() == Role.PL) {
-            JButton close = new JButton("Close (PL)");
+        } else if (issue.getStatus() == Status.RESOLVED && curuser.getRole() == Role.PL) {
+            JButton close = new JButton("Close issue");
             close.addActionListener(e -> {
                 Response<Issue> resp = issueController.closeIssue(issueId);
                 if (resp.isSuccess()) {
-                    d.dispose();
+                    issueDetailDialog.dispose();
                     refreshTable.run();
                 } else {
-                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(issueDetailDialog, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
             actions.add(close);
-        } else if (issue.getStatus() == Status.CLOSED && cur.getRole() == Role.PL) {
-            JButton reopen = new JButton("Reopen (PL)");
+        } else if (issue.getStatus() == Status.CLOSED && curuser.getRole() == Role.PL) {
+            JButton reopen = new JButton("Reopen issue");
             reopen.addActionListener(e -> {
                 Response<Issue> resp = issueController.reopenIssue(issueId);
                 if (resp.isSuccess()) {
-                    d.dispose();
+                    issueDetailDialog.dispose();
                     refreshTable.run();
                 } else {
-                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(issueDetailDialog, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
             actions.add(reopen);
         }
 
 
-        d.add(actions, BorderLayout.SOUTH); d.setLocationRelativeTo(this); d.setVisible(true);
+        issueDetailDialog.add(actions, BorderLayout.SOUTH); issueDetailDialog.setLocationRelativeTo(this); issueDetailDialog.setVisible(true);
     }
 }
