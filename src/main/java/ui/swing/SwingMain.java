@@ -25,7 +25,6 @@ import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
 import com.issuetracker.domain.project.service.ProjectValidator;
-import com.issuetracker.Main;
 
 import com.issuetracker.global.common.SessionManager;
 import com.issuetracker.domain.recommend.controller.RecommendController;

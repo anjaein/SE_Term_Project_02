@@ -2,65 +2,57 @@
   {
     "commentId": 1,
     "issueId": 1,
-    "authorId": 4,
-    "content": "1",
-    "createdDate": "2026-05-26T22:02:23.252895500",
-    "updatedDate": "2026-05-26T22:02:23.252895500"
+    "authorId": 6,
+    "content": "aaa",
+    "createdDate": "2026-05-28T21:39:16.038709100",
+    "updatedDate": "2026-05-28T22:54:00.389637300"
   },
   {
     "commentId": 2,
     "issueId": 1,
-    "authorId": 4,
-    "content": "1",
-    "createdDate": "2026-05-26T22:02:26.130164800",
-    "updatedDate": "2026-05-26T22:02:26.130164800"
+    "authorId": 6,
+    "content": "swqw",
+    "createdDate": "2026-05-28T22:54:03.333831100",
+    "updatedDate": "2026-05-28T22:54:03.333831100"
   },
   {
     "commentId": 3,
-    "issueId": 2,
-    "authorId": 4,
-    "content": "1",
-    "createdDate": "2026-05-27T02:08:20.144014800",
-    "updatedDate": "2026-05-27T02:08:20.144014800"
+    "issueId": 3,
+    "authorId": 11,
+    "content": "ㅁㅁㅁ",
+    "createdDate": "2026-05-28T23:30:19.318187100",
+    "updatedDate": "2026-05-28T23:30:22.941564500"
   },
   {
     "commentId": 4,
-    "issueId": 2,
-    "authorId": 4,
-    "content": "3",
-    "createdDate": "2026-05-27T02:08:23.451474400",
-    "updatedDate": "2026-05-27T02:08:23.451474400"
+    "issueId": 7,
+    "authorId": 12,
+    "content": "ss",
+    "createdDate": "2026-05-28T23:32:05.189091800",
+    "updatedDate": "2026-05-28T23:32:05.189091800"
   },
   {
     "commentId": 5,
-    "issueId": 3,
-    "authorId": 4,
-    "content": "3",
-    "createdDate": "2026-05-27T02:08:28.498886800",
-    "updatedDate": "2026-05-27T02:08:28.498886800"
+    "issueId": 6,
+    "authorId": 3,
+    "content": "a",
+    "createdDate": "2026-05-29T02:00:45.847856900",
+    "updatedDate": "2026-05-29T02:00:45.847856900"
   },
   {
     "commentId": 6,
-    "issueId": 4,
-    "authorId": 4,
-    "content": "3",
-    "createdDate": "2026-05-27T02:08:33.471933100",
-    "updatedDate": "2026-05-27T02:08:33.471933100"
+    "issueId": 11,
+    "authorId": 10,
+    "content": "aaa",
+    "createdDate": "2026-05-29T02:30:44.712212300",
+    "updatedDate": "2026-05-29T02:30:44.712212300"
   },
   {
     "commentId": 7,
-    "issueId": 5,
-    "authorId": 4,
-    "content": "1",
-    "createdDate": "2026-05-27T02:37:08.618497300",
-    "updatedDate": "2026-05-27T02:37:08.618497300"
-  },
-  {
-    "commentId": 8,
-    "issueId": 7,
-    "authorId": 4,
-    "content": "1",
-    "createdDate": "2026-05-27T03:35:58.585298200",
-    "updatedDate": "2026-05-27T03:35:58.585298200"
+    "issueId": 13,
+    "authorId": 8,
+    "content": "sdf",
+    "createdDate": "2026-05-29T02:39:32.859134900",
+    "updatedDate": "2026-05-29T02:39:35.932568600"
   }
 ]

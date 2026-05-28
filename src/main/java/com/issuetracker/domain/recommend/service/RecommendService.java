@@ -13,7 +13,7 @@ public class RecommendService {
     private final IssueRepository issueRepository;
 
     // 추천 Assignees ID 반환
-    @Override
+
     public Response<List<Long>> recommendAssignees(Long projectId, String title, String description) {
         if (projectId == null || title == null || description == null) {
             return Response.success("Insufficient data for recommendation.", List.of());

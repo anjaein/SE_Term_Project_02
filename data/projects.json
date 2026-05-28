@@ -1,20 +1,14 @@
 [
   {
     "projectId": 1,
-    "name": "1",
+    "name": "project1",
     "createdBy": 1,
-    "createdDate": "2026-05-24T01:32:10.049000800"
+    "createdDate": "2026-05-28T20:49:04.081288"
   },
   {
     "projectId": 2,
-    "name": "2",
+    "name": "project2",
     "createdBy": 1,
-    "createdDate": "2026-05-25T18:12:03.295775300"
-  },
-  {
-    "projectId": 3,
-    "name": "3",
-    "createdBy": 1,
-    "createdDate": "2026-05-25T18:12:06.317473500"
+    "createdDate": "2026-05-28T20:49:07.728042100"
   }
 ]
