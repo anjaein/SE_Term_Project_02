@@ -25,11 +25,10 @@ import com.issuetracker.domain.project.repository.ProjectMemberRepository;
 import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.domain.project.service.ProjectService;
 import com.issuetracker.domain.project.service.ProjectValidator;
+import com.issuetracker.Main;
 
 import com.issuetracker.global.common.SessionManager;
 import com.issuetracker.domain.recommend.controller.RecommendController;
-import com.issuetracker.domain.recommend.controller.RecommendController;
-import com.issuetracker.domain.recommend.service.RecommendService;
 import com.issuetracker.domain.recommend.service.RecommendService;
 
 import javax.swing.*;
@@ -51,11 +50,11 @@ public class SwingMain {
 
         AccountService accountService = new AccountService(accountRepository, accountValidator);
         ProjectService projectService = new ProjectService(projectRepository, projectMemberRepository, projectValidator);
-        IssueService issueService = new IssueService(issueRepository, projectMemberRepository, issueValidator);
+        IssueService issueService = new IssueService(issueRepository, issueValidator);
         CommentService commentService = new CommentService(commentRepository, commentValidator);
 
         AccountController accountController = new AccountController(accountService, sessionManager);
-        ProjectController projectController = new ProjectController(projectService, accountController, sessionManager);
+        ProjectController projectController = new ProjectController(projectService, accountService, sessionManager);
         IssueController issueController = new IssueController(issueService, sessionManager);
         CommentController commentController = new CommentController(commentService, sessionManager);
 
@@ -74,7 +73,7 @@ public class SwingMain {
 
             MainFrame mainFrame = new MainFrame(
                     accountController, projectController, issueController, commentController,
-                    issueStatisticsController, sessionManager, issueService, recommendController
+                    issueStatisticsController, sessionManager, recommendController
             );
             mainFrame.setVisible(true);
         });

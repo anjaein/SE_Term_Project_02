@@ -20,6 +20,7 @@ import com.issuetracker.domain.issue.controller.IssueStatisticsController;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -142,7 +143,7 @@ public class MainFrame extends JFrame {
         JTextField pn = new JTextField(20);
         JButton pb = new JButton("Create Project");
         pb.addActionListener(e -> {
-            Response<List<Project>> resp = projectController.getAllProjects();
+            Response<Project> resp = projectController.createProject(pn.getText());
 
             if (resp.isSuccess()) {
                 JOptionPane.showMessageDialog(this, resp.getMessage());
@@ -278,20 +279,39 @@ public class MainFrame extends JFrame {
         p.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel filter = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JComboBox<Status> sf = new JComboBox<>(Status.values());
-        sf.insertItemAt(null, 0); sf.setSelectedIndex(0);
-        JComboBox<Priority> pf = new JComboBox<>(Priority.values());
-        pf.insertItemAt(null, 0); pf.setSelectedIndex(0);
+        JComboBox<Status> statusbox = new JComboBox<>(Status.values());
+        statusbox.insertItemAt(null, 0); statusbox.setSelectedIndex(0);
+        JComboBox<Priority> prioritybox = new JComboBox<>(Priority.values());
+        prioritybox.insertItemAt(null, 0); prioritybox.setSelectedIndex(0);
+
+        JComboBox<Comboitem> projectbox = new JComboBox<>();
+        projectbox.insertItemAt(null, 0); projectbox.setSelectedIndex(0);
         JButton applyFilter = new JButton("Apply Filter");
         JButton all = new JButton("All Issues");
         JButton mine = new JButton("Assigned to Me");
         JButton reported = new JButton("Reported by Me (FIXED)");
         JButton resolved = new JButton("Resolved Issue");
 
-        filter.add(new JLabel("Status:")); filter.add(sf);
-        filter.add(new JLabel("Priority:")); filter.add(pf);
+        Response<List<Project>> projectResp = projectController.getAllProjects();
+        if (projectResp.isSuccess()) {
+            // 성공적으로 가져왔다면 이름을 하나씩 꺼내서 콤보박스에 추가
+            for (Project project : projectResp.getData()) {
+                Response<List<ProjectMember>> memberResp = projectController.listProjectMembers(project.getProjectId());
+                if(memberResp.isSuccess() && memberResp.getData().stream().anyMatch(pm -> pm.getAccountId().equals(sessionManager.getLoggedInAccount().getAccountId()))) {
+                    projectbox.addItem(new Comboitem(project.getProjectId(), project.getName()));
+                }
+            }
+        } else {
+            // 에러 발생 시 로그를 남기거나 알림창 띄우기
+            JOptionPane.showMessageDialog(this, "프로젝트 목록을 불러오지 못했습니다.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+
+        filter.add(new JLabel("Status:")); filter.add(statusbox);
+        filter.add(new JLabel("Priority:")); filter.add(prioritybox);
+        filter.add(new JLabel("Project:")); filter.add(projectbox);
         filter.add(applyFilter);
-        filter.add(all);
+
         if (sessionManager.getLoggedInAccount().getRole() == Role.DEV) {
             filter.add(mine);
         }
@@ -303,7 +323,7 @@ public class MainFrame extends JFrame {
         }
         p.add(filter, BorderLayout.NORTH);
 
-        String[] cols = {"Title", "Status", "Reporter", "Assignee"};
+        String[] cols = {"issueid", "projectid","Title", "Status", "Reporter", "Assignee"};
         DefaultTableModel model = new DefaultTableModel(cols, 0){
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -311,14 +331,27 @@ public class MainFrame extends JFrame {
             }
         };
         JTable table = new JTable(model);
+        table.getColumnModel().getColumn(0).setMinWidth(0);
+        table.getColumnModel().getColumn(0).setMaxWidth(0);
+        table.getColumnModel().getColumn(0).setWidth(0);
+        table.getColumnModel().getColumn(1).setMinWidth(0);
+        table.getColumnModel().getColumn(1).setMaxWidth(0);
+        table.getColumnModel().getColumn(1).setWidth(0);
         p.add(new JScrollPane(table), BorderLayout.CENTER);
 
+        // 3. 컨트롤러에서 실제 프로젝트 목록 가져오기
 
         Runnable refreshAll = () -> {
             model.setRowCount(0);
             Response<List<Issue>> issueresp = issueController.getAllIssues();
             if (issueresp.isSuccess()) {
+                Comboitem selectedProjectItem = (Comboitem) projectbox.getSelectedItem();
+                Long selectedProjectId = (selectedProjectItem != null) ? selectedProjectItem.getId() : null;
                 for (Issue i : issueresp.getData()) {
+                    // 프로젝트 필터링 (선택된 프로젝트 ID가 있고, 이슈의 프로젝트 ID와 다르면 패스)
+                    if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
+                        continue;
+                    }
                     // null일 경우 표시할 기본값 설정 (원하는 대로 변경 가능)
                     String reporterName = "";
                     String assigneeName = "";
@@ -330,7 +363,7 @@ public class MainFrame extends JFrame {
                     if(assigneeresp.isSuccess()){
                         assigneeName = assigneeresp.getData().getUsername();
                     }
-                    model.addRow(new Object[]{ i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                    model.addRow(new Object[]{ i.getIssueId(),i.getProjectId(), i.getTitle(), i.getStatus(), reporterName, assigneeName});
                 }
             } else {
                 JOptionPane.showMessageDialog(this, issueresp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -340,9 +373,11 @@ public class MainFrame extends JFrame {
 
         applyFilter.addActionListener(e -> {
             model.setRowCount(0);
-            Status status = (Status) sf.getSelectedItem();
-            Priority priority = (Priority) pf.getSelectedItem();
+            Status status = (Status) statusbox.getSelectedItem();
+            Priority priority = (Priority) prioritybox.getSelectedItem();
             Response<List<Issue>> issueresp = issueController.getAllIssues();
+            Comboitem selectedProject = (Comboitem) projectbox.getSelectedItem();
+
             if (issueresp.isSuccess()) {
                 for (Issue i : issueresp.getData()) {
                     Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
@@ -353,29 +388,40 @@ public class MainFrame extends JFrame {
                     String reporterName = "";
                     String assigneeName = "";
                     if (statusMatch && priorityMatch) {
-                        if(reporterresp.isSuccess()){
-                            reporterName = reporterresp.getData().getUsername();
+                        if (selectedProject != null && selectedProject.getId().equals(i.getProjectId())) {
+                            if (reporterresp.isSuccess()) {
+                                reporterName = reporterresp.getData().getUsername();
+                            }
+                            if (assigneeresp.isSuccess()) {
+                                assigneeName = assigneeresp.getData().getUsername();
+                            }
+                            model.addRow(new Object[]{i.getIssueId(), i.getProjectId(), i.getTitle(), i.getStatus(), reporterName, assigneeName});
+
                         }
-                        if(assigneeresp.isSuccess()){
-                            assigneeName = assigneeresp.getData().getUsername();
-                        }
-                        model.addRow(new Object[]{ i.getTitle(), i.getStatus(), reporterName, assigneeName});
                     }
+
                 }
+
             } else {
                 JOptionPane.showMessageDialog(this, issueresp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
         all.addActionListener(e -> {
-            sf.setSelectedIndex(0);
-            pf.setSelectedIndex(0);
+            statusbox.setSelectedIndex(0);
+            projectbox.setSelectedIndex(0);
             refreshAll.run();
         });
         mine.addActionListener(e -> {
             model.setRowCount(0);
             Response<List<Issue>> resp = issueController.getIssuesByAssigneeId(sessionManager.getLoggedInAccount().getAccountId());
             if (resp.isSuccess()) {
+                Comboitem selectedProjectItem = (Comboitem) projectbox.getSelectedItem();
+                Long selectedProjectId = (selectedProjectItem != null) ? selectedProjectItem.getId() : null;
                 for (Issue i : resp.getData()) {
+                    // 프로젝트 필터링 (선택된 프로젝트 ID가 있고, 이슈의 프로젝트 ID와 다르면 패스)
+                    if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
+                        continue;
+                    }
                     String reporterName = "";
                     String assigneeName = "";
                     Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
@@ -386,7 +432,7 @@ public class MainFrame extends JFrame {
                     if(assigneeresp.isSuccess()){
                         assigneeName = assigneeresp.getData().getUsername();
                     }
-                    if (i.getStatus() == Status.ASSIGNED) model.addRow(new Object[]{ i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                    if (i.getStatus() == Status.ASSIGNED) model.addRow(new Object[]{ i.getIssueId(),i.getProjectId(), i.getTitle(), i.getStatus(), reporterName, assigneeName});
                 }
             } else {
                 JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -396,7 +442,13 @@ public class MainFrame extends JFrame {
             model.setRowCount(0);
             Response<List<Issue>> resp = issueController.getIssuesByReporterId(sessionManager.getLoggedInAccount().getAccountId());
             if (resp.isSuccess()) {
+                Comboitem selectedProjectItem = (Comboitem) projectbox.getSelectedItem();
+                Long selectedProjectId = (selectedProjectItem != null) ? selectedProjectItem.getId() : null;
                 for (Issue i : resp.getData()) {
+                    // 프로젝트 필터링 (선택된 프로젝트 ID가 있고, 이슈의 프로젝트 ID와 다르면 패스)
+                    if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
+                        continue;
+                    }
                     String reporterName = "";
                     String assigneeName = "";
                     Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
@@ -407,7 +459,7 @@ public class MainFrame extends JFrame {
                     if(assigneeresp.isSuccess()){
                         assigneeName = assigneeresp.getData().getUsername();
                     }
-                    if (i.getStatus() == Status.FIXED) model.addRow(new Object[]{ i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                    if (i.getStatus() == Status.FIXED) model.addRow(new Object[]{ i.getIssueId(),i.getProjectId(),i.getTitle(), i.getStatus(), reporterName, assigneeName});
                 }
             } else {
                 JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -417,7 +469,13 @@ public class MainFrame extends JFrame {
             model.setRowCount(0);
             Response<List<Issue>> resp = issueController.getAllIssues();
             if (resp.isSuccess()) {
+                Comboitem selectedProjectItem = (Comboitem) projectbox.getSelectedItem();
+                Long selectedProjectId = (selectedProjectItem != null) ? selectedProjectItem.getId() : null;
                 for (Issue i : resp.getData()) {
+                    // 프로젝트 필터링 (선택된 프로젝트 ID가 있고, 이슈의 프로젝트 ID와 다르면 패스)
+                    if (selectedProjectId != null && !selectedProjectId.equals(i.getProjectId())) {
+                        continue;
+                    }
                     String reporterName = "";
                     String assigneeName = "";
                     Response<Account> reporterresp = accountController.getAccountById(i.getReporterId());
@@ -428,7 +486,7 @@ public class MainFrame extends JFrame {
                     if(assigneeresp.isSuccess()){
                         assigneeName = assigneeresp.getData().getUsername();
                     }
-                    if (i.getStatus() == Status.RESOLVED) model.addRow(new Object[]{i.getTitle(), i.getStatus(), reporterName, assigneeName});
+                    if (i.getStatus() == Status.RESOLVED) model.addRow(new Object[]{i.getIssueId(),i.getProjectId(),i.getTitle(), i.getStatus(), reporterName, assigneeName});
                 }
             } else {
                 JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -440,52 +498,51 @@ public class MainFrame extends JFrame {
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton statistics = new JButton("Issue Statistics");
         statistics.addActionListener(e -> {
-            JTextField projectNameField = new JTextField(15);
+            JComboBox<Comboitem> createProjectBox = new JComboBox<>();
+            Response<List<Project>> createProjectResp = projectController.getAllProjects();
+            if (createProjectResp.isSuccess()) {
+                for (Project project : createProjectResp.getData()) {
+                    Response<List<ProjectMember>> memberResp =
+                            projectController.listProjectMembers(project.getProjectId());
+                    if (memberResp.isSuccess()
+                            && memberResp.getData().stream()
+                            .anyMatch(pm -> pm.getAccountId().equals(sessionManager.getLoggedInAccount().getAccountId()))) {
+                        createProjectBox.addItem(new Comboitem(project.getProjectId(), project.getName()));
+                    }
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, createProjectResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (createProjectBox.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(this, "이슈를 생성할 수 있는 프로젝트가 없습니다.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             JSpinner monthsSpinner = new JSpinner(new SpinnerNumberModel(3, 1, 12, 1));
 
             Object[] input = {
-                    "Project Name:", projectNameField, // 라벨 변경
+                    "Project Name:", createProjectBox, // 라벨 변경
                     "Months:", monthsSpinner
             };
 
             int result = JOptionPane.showConfirmDialog(
-                    this,
-                    input,
-                    "Issue Statistics",
-                    JOptionPane.OK_CANCEL_OPTION
+                    this, input, "Issue Statistics", JOptionPane.OK_CANCEL_OPTION
             );
 
             if (result != JOptionPane.OK_OPTION) {
                 return;
             }
 
-            String projectName = projectNameField.getText().trim();
+            Comboitem selectedProject = (Comboitem) createProjectBox.getSelectedItem();
             int months = (Integer) monthsSpinner.getValue();
 
-            if (projectName.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Project Name cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+
+            Long targetProjectId = (selectedProject != null) ? selectedProject.getId() : null;
+            if (targetProjectId == null) {
+                JOptionPane.showMessageDialog(this, "Project를 선택하세요.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            Response<List<Project>> projectResp = projectController.getAllProjects();
-            Long targetProjectId = null;
-            if (projectResp.isSuccess()) {
-                List<Project> allProjects = projectResp.getData();
 
-                targetProjectId = allProjects.stream()
-                        .filter(pr -> projectName.equals(pr.getName())) // 이름이 똑같은 것만 통과
-                        .map(pr -> pr.getProjectId())                        // 통과한 Project 객체에서 ID(Long)만 꺼냄
-                        .findFirst()                                  // 첫 번째 매칭 결과 반환 (중복이 없으니 유일함)
-                        .orElse(null);
-
-                // 만약 일치하는 이름이 없으면 null을 반환
-                if (targetProjectId == null) {
-                    JOptionPane.showMessageDialog(this, "존재하지 않는 프로젝트 이름입니다.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return; // 찾지 못했으므로 여기서 중단
-                }
-            }
-            else{
-                JOptionPane.showMessageDialog(this, projectResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
             Response<Map<YearMonth, Long>> monthlyReportedResp =
                     issueStatisticsController.getMonthlyReportedTrend(targetProjectId, months);
             Response<Map<YearMonth, Long>> monthlyResolvedResp =
@@ -558,18 +615,47 @@ public class MainFrame extends JFrame {
         JButton create = new JButton("New Issue");
         JButton detail = new JButton("View Detail & Actions");
         create.addActionListener(e -> {
-            JTextField pid = new JTextField();
+            JComboBox<Comboitem> createProjectBox = new JComboBox<>();
+
+            Response<List<Project>> createProjectResp = projectController.getAllProjects();
+            if (createProjectResp.isSuccess()) {
+                for (Project project : createProjectResp.getData()) {
+                    Response<List<ProjectMember>> memberResp =
+                            projectController.listProjectMembers(project.getProjectId());
+
+                    if (memberResp.isSuccess()
+                            && memberResp.getData().stream()
+                            .anyMatch(pm -> pm.getAccountId().equals(sessionManager.getLoggedInAccount().getAccountId()))) {
+                        createProjectBox.addItem(new Comboitem(project.getProjectId(), project.getName()));
+                    }
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, createProjectResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (createProjectBox.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(this, "이슈를 생성할 수 있는 프로젝트가 없습니다.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             JTextField title = new JTextField();
-            JTextArea desc = new JTextArea(5, 20);
+            JTextArea description = new JTextArea(5, 20);
             JComboBox<Priority> priorityComboBox = new JComboBox<>(Priority.values());
             //priority의 기본값은 MAJOR
             priorityComboBox.setSelectedItem(Priority.MAJOR);
-            Object[] msg = {"Project ID:", pid, "Title:", title, "Description:", new JScrollPane(desc), "Priority:", priorityComboBox};
+            Object[] msg = {"Project Name:", createProjectBox, "Issue Title:", title, "Description:", new JScrollPane(description), "Priority:", priorityComboBox};
             if (JOptionPane.showConfirmDialog(this, msg, "Create Issue", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-
-                Response<Issue> resp = issueController.createIssue(Long.parseLong(pid.getText()), title.getText(), desc.getText(), (Priority) priorityComboBox.getSelectedItem());
+                Comboitem selectedProject = (Comboitem) createProjectBox.getSelectedItem();
+                Response<Issue> resp = issueController.createIssue(selectedProject.getId(), title.getText(), description.getText(), (Priority) priorityComboBox.getSelectedItem());
                 if (resp.isSuccess()) {
                     JOptionPane.showMessageDialog(this, resp.getMessage());
+                    for (int i = 0; i < projectbox.getItemCount(); i++) {
+                        Comboitem item = projectbox.getItemAt(i);
+                        if (item != null && item.getId().equals(selectedProject.getId())) {
+                            projectbox.setSelectedIndex(i);
+                            break;
+                        }
+                    }
                     refreshAll.run();
                 } else {
                     JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -584,6 +670,7 @@ public class MainFrame extends JFrame {
                 Long issueId = Long.parseLong(idObj.toString());
 
                 showIssueDetail(issueId, refreshAll);
+                refreshAll.run();
             }
         });
         if (sessionManager.getLoggedInAccount().getRole() == Role.TESTER) {
@@ -609,19 +696,39 @@ public class MainFrame extends JFrame {
         JDialog d = new JDialog(this, "Issue Detail #" + issueId, true);
         d.setSize(700, 600); d.setLayout(new BorderLayout(10, 10));
 
+
         JPanel info = new JPanel(new GridLayout(0, 1));
         info.setBorder(BorderFactory.createTitledBorder("Information"));
+        String reporterName = "";
+        String assigneeName = "";
+        Response<Account> reporterResp = accountController.getAccountById(issue.getReporterId());
+        if (reporterResp.isSuccess()) {
+            reporterName = reporterResp.getData().getUsername();
+        }
+        Response<Account> assigneeResp = accountController.getAccountById(issue.getAssigneeId());
+        if (assigneeResp.isSuccess()) {
+            assigneeName = assigneeResp.getData().getUsername();
+        }
         info.add(new JLabel("Title: " + issue.getTitle()));
         info.add(new JLabel("Status: " + issue.getStatus()));
         info.add(new JLabel("Description: " + issue.getDescription()));
-        info.add(new JLabel("Reporter ID: " + issue.getReporterId()));
-        info.add(new JLabel("Assignee ID: " + issue.getAssigneeId()));
+        info.add(new JLabel("Reporter name: " + reporterName));
+        info.add(new JLabel("Assignee name: " + assigneeName));
         d.add(info, BorderLayout.NORTH);
 
         DefaultListModel<Comment> cm = new DefaultListModel<>();
         JList<Comment> cl = new JList<>(cm);
         cl.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
-            JLabel label = new JLabel("User " + value.getAuthorId() + ": " + value.getContent());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss");
+
+            Response<Account> authorResp = accountController.getAccountById(value.getAuthorId());
+            String AuthorName = "Unknown";
+
+            if (authorResp.isSuccess() && authorResp.getData() != null) {
+                AuthorName = authorResp.getData().getUsername();
+            }
+            String dateStr = (value.getUpdatedDate() != null) ? " [" + value.getUpdatedDate().format(formatter) + "]" : "";
+            JLabel label = new JLabel(AuthorName + ": " + value.getContent() + dateStr);
             label.setOpaque(true);
             label.setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
             label.setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
@@ -629,7 +736,7 @@ public class MainFrame extends JFrame {
         });
         Runnable refreshC = () -> {
             cm.clear();
-            Response<List<Comment>> resp = commentController.listComments(issueId);;
+            Response<List<Comment>> resp = commentController.listComments(issueId);
             if (resp.isSuccess()) {
                 for (Comment c : resp.getData()) cm.addElement(c);
             } else {
@@ -655,8 +762,8 @@ public class MainFrame extends JFrame {
         actions.add(addC);
 
         Account cur = sessionManager.getLoggedInAccount();
-        JButton updateC = new JButton("Update Comment");
-        updateC.addActionListener(e -> {
+        JButton updateCommentbutton = new JButton("Update Comment");
+        updateCommentbutton.addActionListener(e -> {
             Comment selected = cl.getSelectedValue();
             if (selected == null) {
                 JOptionPane.showMessageDialog(d, "Please select a comment first.");
@@ -672,7 +779,7 @@ public class MainFrame extends JFrame {
                 }
             }
         });
-        actions.add(updateC);
+        actions.add(updateCommentbutton);
 
         if (issue.getStatus() == Status.NEW) {
             JButton assign = new JButton("Assign");
@@ -680,10 +787,14 @@ public class MainFrame extends JFrame {
             assign.addActionListener(e -> {
                 String tname = JOptionPane.showInputDialog("Target Dev name:"); String msg = JOptionPane.showInputDialog("Assignment Message:");
                 if (tname != null && msg != null) {
-                    commentController.createComment(issueId, msg);
                     Response<Long> response = accountController.getAccountIdByUsername(tname);
+                    if (!response.isSuccess() || response.getData() == null) {
+                        JOptionPane.showMessageDialog(d, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
                     Response<Issue> resp = issueController.assignIssue(issueId, response.getData());
                     if (resp.isSuccess()) {
+                        commentController.createComment(issueId, msg);
                         d.dispose();
                         refreshTable.run();
                     } else {
@@ -693,41 +804,20 @@ public class MainFrame extends JFrame {
             });
 
             recommend.addActionListener(e -> {
-                try {
-                    // 1. Controller가 이제 Response가 아닌 List<Account>를 직접 반환하므로 바로 받습니다.
-                    List<Account> recommendedAccounts = recommendController.getRecommendedAssignees(
-                            issue.getProjectId(),
-                            issue.getTitle(),
-                            issue.getDescription()
-                    );
-
-                    // 2. 결과 리스트가 null이거나 비어있는지 체크합니다.
-                    if (recommendedAccounts == null || recommendedAccounts.isEmpty()) {
-                        JOptionPane.showMessageDialog(this, "No recommended assignees found.", "Info", JOptionPane.INFORMATION_MESSAGE);
-                        return;
+                Response<Issue> IssueResp = issueController.getIssueDetail(issueId);
+                long projectId = IssueResp.getData().getProjectId();
+                String title = IssueResp.getData().getTitle();
+                String description = IssueResp.getData().getDescription();
+                List<Account> recommendedAssignees= recommendController.getRecommendedAssignees(projectId,title,description);
+                if(recommendedAssignees == null || recommendedAssignees.isEmpty()){
+                    JOptionPane.showMessageDialog(d, "No recommendations available.", "Info", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                } else{
+                    StringBuilder sb = new StringBuilder("다음 사용자를 추천합니다:\n");
+                    for (Account acc : recommendedAssignees) {
+                        sb.append("- ").append(acc.getUsername()).append("\n");
                     }
-
-                    // 3. 추천된 담당자 목록을 문자열로 조립합니다.
-                    StringBuilder message = new StringBuilder("Recommended Assignees:\n");
-                    for (Account account : recommendedAccounts) {
-                        // 혹시 리스트 내부에 null이 들어있을 경우를 대비한 방어 코드
-                        if (account == null) continue;
-
-                        message.append("- ")
-                                .append(account.getUsername())
-                                .append(" (ID: ")
-                                .append(account.getAccountId())
-                                .append(", Role: ")
-                                .append(account.getRole())
-                                .append(")\n");
-                    }
-
-                    // 4. 결과를 화면에 보여줍니다. (타이틀을 "Recommended Assignees"로 변경하면 더 자연스럽습니다)
-                    JOptionPane.showMessageDialog(this, message.toString(), "Recommended Assignees", JOptionPane.INFORMATION_MESSAGE);
-
-                } catch (Exception ex) {
-                    // 5. Controller 내부에서 에러가 발생했을 때를 대비한 예외 처리 (선택 사항이지만 권장)
-                    JOptionPane.showMessageDialog(this, "Error fetching recommendations: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, sb.toString(), "추천 완료", JOptionPane.INFORMATION_MESSAGE);
                 }
             });
 
