@@ -9,13 +9,12 @@ import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
-import com.issuetracker.domain.issue.service.IssueService;
 import com.issuetracker.domain.project.controller.ProjectController;
 import com.issuetracker.domain.project.entity.Project;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
-import com.issuetracker.domain.recommend.controller.IRecommendController;
+import com.issuetracker.domain.recommend.controller.RecommendController;
 import com.issuetracker.domain.issue.controller.IssueStatisticsController;
 
 import javax.swing.*;
@@ -26,7 +25,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 public class MainFrame extends JFrame {
     private final AccountController accountController;
@@ -34,7 +32,7 @@ public class MainFrame extends JFrame {
     private final IssueController issueController;
     private final CommentController commentController;
     private final SessionManager sessionManager;
-    private final IRecommendController recommendController;
+    private final RecommendController recommendController;
     private final IssueStatisticsController issueStatisticsController;
 
     private CardLayout cardLayout;
@@ -42,7 +40,7 @@ public class MainFrame extends JFrame {
 
     public MainFrame(AccountController accountController, ProjectController projectController,
                      IssueController issueController, CommentController commentController,  IssueStatisticsController issueStatisticsController,
-                     SessionManager sessionManager, IssueService issueService, IRecommendController recommendController) {
+                     SessionManager sessionManager, RecommendController recommendController) {
         this.accountController = accountController;
         this.projectController = projectController;
         this.issueController = issueController;
@@ -560,10 +558,16 @@ public class MainFrame extends JFrame {
         JButton create = new JButton("New Issue");
         JButton detail = new JButton("View Detail & Actions");
         create.addActionListener(e -> {
-            JTextField pid = new JTextField(); JTextField title = new JTextField(); JTextArea desc = new JTextArea(5, 20);
-            Object[] msg = {"Project ID:", pid, "Title:", title, "Description:", new JScrollPane(desc)};
+            JTextField pid = new JTextField();
+            JTextField title = new JTextField();
+            JTextArea desc = new JTextArea(5, 20);
+            JComboBox<Priority> priorityComboBox = new JComboBox<>(Priority.values());
+            //priority의 기본값은 MAJOR
+            priorityComboBox.setSelectedItem(Priority.MAJOR);
+            Object[] msg = {"Project ID:", pid, "Title:", title, "Description:", new JScrollPane(desc), "Priority:", priorityComboBox};
             if (JOptionPane.showConfirmDialog(this, msg, "Create Issue", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-                Response<Issue> resp = issueController.createIssue(Long.parseLong(pid.getText()), title.getText(), desc.getText());
+
+                Response<Issue> resp = issueController.createIssue(Long.parseLong(pid.getText()), title.getText(), desc.getText(), (Priority) priorityComboBox.getSelectedItem());
                 if (resp.isSuccess()) {
                     JOptionPane.showMessageDialog(this, resp.getMessage());
                     refreshAll.run();
@@ -689,58 +693,49 @@ public class MainFrame extends JFrame {
             });
 
             recommend.addActionListener(e -> {
+                try {
+                    // 1. Controller가 이제 Response가 아닌 List<Account>를 직접 반환하므로 바로 받습니다.
+                    List<Account> recommendedAccounts = recommendController.getRecommendedAssignees(
+                            issue.getProjectId(),
+                            issue.getTitle(),
+                            issue.getDescription()
+                    );
 
-                Response<List<Account>> recommendResp = recommendController.getRecommendedAssignees(
-                        issue.getProjectId(),
-                        issue.getTitle(),
-                        issue.getDescription()
-                );
-
-                if (!recommendResp.isSuccess()) {
-                    JOptionPane.showMessageDialog(this, recommendResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                List<Account> recommendedAccounts = recommendResp.getData();
-                if (recommendedAccounts == null || recommendedAccounts.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "No recommended assignees found.");
-                    return;
-                }
-
-                StringBuilder message = new StringBuilder("Recommended Assignees:\n");
-                for (Account account : recommendedAccounts) {
-                    message.append("- ")
-                            .append(account.getUsername())
-                            .append(" (ID: ")
-                            .append(account.getAccountId())
-                            .append(", Role: ")
-                            .append(account.getRole())
-                            .append(")\n");
-                }
-
-                JOptionPane.showMessageDialog(this, message.toString(), "Issue Statistics", JOptionPane.INFORMATION_MESSAGE);
-            });
-
-            JButton create = new JButton("New Issue");
-            JButton detail = new JButton("View Detail & Actions");
-            create.addActionListener(e -> {
-                JTextField pid = new JTextField(); JTextField title = new JTextField(); JTextArea desc = new JTextArea(5, 20);
-                Object[] msg = {"Project ID:", pid, "Title:", title, "Description:", new JScrollPane(desc)};
-                if (JOptionPane.showConfirmDialog(this, msg, "Create Issue", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-                    Response<Issue> resp = issueController.createIssue(Long.parseLong(pid.getText()), title.getText(), desc.getText());
-                    if (resp.isSuccess()) {
-                        JOptionPane.showMessageDialog(this, resp.getMessage());
-
-                    } else {
-                        JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    // 2. 결과 리스트가 null이거나 비어있는지 체크합니다.
+                    if (recommendedAccounts == null || recommendedAccounts.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "No recommended assignees found.", "Info", JOptionPane.INFORMATION_MESSAGE);
+                        return;
                     }
+
+                    // 3. 추천된 담당자 목록을 문자열로 조립합니다.
+                    StringBuilder message = new StringBuilder("Recommended Assignees:\n");
+                    for (Account account : recommendedAccounts) {
+                        // 혹시 리스트 내부에 null이 들어있을 경우를 대비한 방어 코드
+                        if (account == null) continue;
+
+                        message.append("- ")
+                                .append(account.getUsername())
+                                .append(" (ID: ")
+                                .append(account.getAccountId())
+                                .append(", Role: ")
+                                .append(account.getRole())
+                                .append(")\n");
+                    }
+
+                    // 4. 결과를 화면에 보여줍니다. (타이틀을 "Recommended Assignees"로 변경하면 더 자연스럽습니다)
+                    JOptionPane.showMessageDialog(this, message.toString(), "Recommended Assignees", JOptionPane.INFORMATION_MESSAGE);
+
+                } catch (Exception ex) {
+                    // 5. Controller 내부에서 에러가 발생했을 때를 대비한 예외 처리 (선택 사항이지만 권장)
+                    JOptionPane.showMessageDialog(this, "Error fetching recommendations: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
+
             if (cur.getRole() == Role.PL) {
                 actions.add(assign);
                 actions.add(recommend);
             }
-        } else if (issue.getStatus() == Status.ASSIGNED && cur.getAccountId().equals(issue.getAssigneeId())) {
+        } else if ((issue.getStatus() == Status.ASSIGNED || issue.getStatus() == Status.REOPENED) && cur.getAccountId().equals(issue.getAssigneeId())) {
             JButton fix = new JButton("Fix (Dev)");
             fix.addActionListener(e -> {
                 String msg = JOptionPane.showInputDialog("Fixing Message:");
@@ -780,7 +775,20 @@ public class MainFrame extends JFrame {
                 }
             });
             actions.add(close);
+        } else if (issue.getStatus() == Status.CLOSED && cur.getRole() == Role.PL) {
+            JButton reopen = new JButton("Reopen (PL)");
+            reopen.addActionListener(e -> {
+                Response<Issue> resp = issueController.reopenIssue(issueId);
+                if (resp.isSuccess()) {
+                    d.dispose();
+                    refreshTable.run();
+                } else {
+                    JOptionPane.showMessageDialog(d, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+            actions.add(reopen);
         }
+
 
         d.add(actions, BorderLayout.SOUTH); d.setLocationRelativeTo(this); d.setVisible(true);
     }
