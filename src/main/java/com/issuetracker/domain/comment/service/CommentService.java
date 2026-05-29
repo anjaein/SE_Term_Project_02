@@ -69,8 +69,10 @@ public class CommentService {
         if (comment == null) {
             return Response.fail("Comment not found.");
         }
-        if (!comment.getAuthorId().equals(userId)) {
-            return Response.fail("You can only update your own comments.");
+
+        String updatePermission = commentValidator.checkUpdatePermission(comment.getAuthorId(), userId);
+        if (updatePermission != null) {
+            return Response.fail(updatePermission);
         }
 
         comment.updateContent(newContent);
@@ -92,8 +94,9 @@ public class CommentService {
             return Response.fail("Comment not found.");
         }
 
-        if (!comment.getAuthorId().equals(userId) && !isAdmin) {
-            return Response.fail("You can only delete your own comments.");
+        String deletePermission = commentValidator.checkDeletePermission(comment.getAuthorId(), userId, isAdmin);
+        if (deletePermission != null) {
+            return Response.fail(deletePermission);
         }
 
         if (!commentRepository.delete(commentId)) {
