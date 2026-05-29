@@ -1,5 +1,6 @@
 package com.issuetracker.domain.issue.service;
 
+import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.repository.ProjectMemberRepository;
@@ -61,5 +62,20 @@ public class IssueValidator implements Validator {
             return "Only the reporter can resolve the issue.";
         }
         return null;
+    }
+
+    // 이슈가 기대하는 상태(들) 중 하나인지 검증
+    public String checkStatusIsAny(Status actual, Status... expected) {
+        for (Status status : expected) {
+            if (actual == status) {
+                return null;
+            }
+        }
+        StringBuilder names = new StringBuilder();
+        for (int i = 0; i < expected.length; i++) {
+            if (i > 0) names.append(i == expected.length - 1 ? " or " : ", ");
+            names.append(expected[i]);
+        }
+        return "Issue is not in " + names + " status.";
     }
 }

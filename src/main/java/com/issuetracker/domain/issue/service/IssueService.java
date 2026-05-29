@@ -106,8 +106,9 @@ public class IssueService {
         if(issue == null){
             return Response.fail("Issue not found.");
         }
-        if(issue.getStatus() != Status.NEW){
-            return Response.fail("Issue is not in NEW status.");
+        String invalidStatus = issueValidator.checkStatusIsAny(issue.getStatus(), Status.NEW);
+        if(invalidStatus != null){
+            return Response.fail(invalidStatus);
         }
 
         String notLead = issueValidator.checkRequesterIsProjectLead(issue.getProjectId(), requesterId);
@@ -137,8 +138,9 @@ public class IssueService {
         if(issue == null){
             return Response.fail("Issue not found.");
         }
-        if(issue.getStatus() != Status.ASSIGNED && issue.getStatus() != Status.REOPENED){
-            return Response.fail("Issue is not in ASSIGNED or REOPENED status.");
+        String invalidStatus = issueValidator.checkStatusIsAny(issue.getStatus(), Status.ASSIGNED, Status.REOPENED);
+        if(invalidStatus != null){
+            return Response.fail(invalidStatus);
         }
 
         String notAssignee = issueValidator.checkRequesterIsAssignee(issue.getAssigneeId(), requesterId);
@@ -163,8 +165,9 @@ public class IssueService {
         if(issue == null){
             return Response.fail("Issue not found.");
         }
-        if(issue.getStatus() != Status.FIXED){
-            return Response.fail("Issue is not in FIXED status.");
+        String invalidStatus = issueValidator.checkStatusIsAny(issue.getStatus(), Status.FIXED);
+        if(invalidStatus != null){
+            return Response.fail(invalidStatus);
         }
 
         String notReporter = issueValidator.checkRequesterIsReporter(issue.getReporterId(), requesterId);
@@ -189,8 +192,9 @@ public class IssueService {
         if(issue == null){
             return Response.fail("Issue not found.");
         }
-        if(issue.getStatus() != Status.RESOLVED){
-            return Response.fail("Issue is not in RESOLVED status.");
+        String invalidStatus = issueValidator.checkStatusIsAny(issue.getStatus(), Status.RESOLVED);
+        if(invalidStatus != null){
+            return Response.fail(invalidStatus);
         }
 
         String notLead = issueValidator.checkRequesterIsProjectLead(issue.getProjectId(), requesterId);
@@ -215,8 +219,9 @@ public class IssueService {
         if(issue == null){
             return Response.fail("Issue not found.");
         }
-        if(issue.getStatus() != Status.CLOSED){
-            return Response.fail("Issue is not in CLOSED status.");
+        String invalidStatus = issueValidator.checkStatusIsAny(issue.getStatus(), Status.CLOSED);
+        if(invalidStatus != null){
+            return Response.fail(invalidStatus);
         }
 
         String notLead = issueValidator.checkRequesterIsProjectLead(issue.getProjectId(), requesterId);

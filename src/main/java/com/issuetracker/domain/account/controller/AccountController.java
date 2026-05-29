@@ -52,11 +52,4 @@ public class AccountController {
         }
         return accountService.createAccount(username, password, isAdmin);
     }
-
-    public Response<Long> getAccountIdByUsername(String username) {
-        return accountService.getAccountIdByUsername(username);
-    }
-    public Response<Account> getAccountById(Long accountId) {
-        return accountService.getAccountById(accountId);
-    }
 }

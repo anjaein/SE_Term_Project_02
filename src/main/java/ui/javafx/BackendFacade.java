@@ -62,7 +62,7 @@ public class BackendFacade {
 
     private void loadPublicData(){
         accounts.setAll(dataOrThrow(accountController.listAccounts()).stream().map(account -> toUiAccount(account)).toList());
-        projects.setAll(dataOrThrow(projectController.listProjects()).stream().map(project -> toUiProject(project)).toList());
+        projects.setAll(dataOrThrow(projectController.getAllProjects()).stream().map(project -> toUiProject(project)).toList());
     }
 
     private void loadProjectData(){
