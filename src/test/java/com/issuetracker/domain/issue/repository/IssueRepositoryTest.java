@@ -137,12 +137,7 @@ class IssueRepositoryTest {
     @DisplayName("이슈 우선순위별 조회 성공: 해당 우선순위 이슈만 반환")
     void findByPriorityReturnsOnlyMatching() {
         issueRepository.save(new Issue(PROJECT_ID, "MAJOR 이슈", "설명", Priority.MAJOR, REPORTER_ID));
-
-        Issue criticalIssue = new Issue(PROJECT_ID, "CRITICAL 이슈", "설명", Priority.MAJOR, REPORTER_ID);
-        issueRepository.save(criticalIssue);
-        criticalIssue = issueRepository.findByIssueId(criticalIssue.getIssueId());
-        criticalIssue.setPriority(Priority.CRITICAL);
-        issueRepository.update(criticalIssue);
+        issueRepository.save(new Issue(PROJECT_ID, "CRITICAL 이슈", "설명", Priority.CRITICAL, REPORTER_ID));
 
         List<Issue> majorIssues = issueRepository.findByPriority(Priority.MAJOR);
         List<Issue> criticalIssues = issueRepository.findByPriority(Priority.CRITICAL);
@@ -156,15 +151,16 @@ class IssueRepositoryTest {
     @Test
     @DisplayName("이슈 수정 성공: 변경된 내용이 저장소에 반영")
     void updatePersistsChanges() {
-        Issue issue = new Issue(PROJECT_ID, "원래 제목", "설명", Priority.MAJOR, REPORTER_ID);
+        Issue issue = new Issue(PROJECT_ID, "제목", "설명", Priority.MAJOR, REPORTER_ID);
         issueRepository.save(issue);
         issue = issueRepository.findByIssueId(issue.getIssueId());
-        issue.setTitle("수정된 제목");
+        issue.assignTo(ASSIGNEE_ID);
 
         assertTrue(issueRepository.update(issue));
 
         Issue updated = issueRepository.findByIssueId(issue.getIssueId());
-        assertEquals("수정된 제목", updated.getTitle());
+        assertEquals(ASSIGNEE_ID, updated.getAssigneeId());
+        assertEquals(Status.ASSIGNED, updated.getStatus());
     }
 
     @Test

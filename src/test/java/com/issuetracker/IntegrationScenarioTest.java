@@ -1,7 +1,7 @@
 package com.issuetracker;
 
 import com.issuetracker.domain.account.controller.AccountController;
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
@@ -110,9 +110,9 @@ class IntegrationScenarioTest {
     @DisplayName("과제 예제 시나리오 성공: admin 셋업 → tester 등록 → PL assign → dev fix → tester resolve → PL close, 단계별 검색·코멘트 포함")
     void fullScenario() {
         assertTrue(accountController.login("admin", "admin123").isSuccess());
-        assertTrue(accountController.createAccount("pl1", "1234", Role.PL).isSuccess());
-        assertTrue(accountController.createAccount("dev1", "1234", Role.DEV).isSuccess());
-        assertTrue(accountController.createAccount("tester1", "1234", Role.TESTER).isSuccess());
+        assertTrue(accountController.createAccount("pl1", "1234", false).isSuccess());
+        assertTrue(accountController.createAccount("dev1", "1234", false).isSuccess());
+        assertTrue(accountController.createAccount("tester1", "1234", false).isSuccess());
         assertTrue(projectController.createProject("Project-A").isSuccess());
         Long projectId = 1L;
         assertTrue(projectController.addProjectMember(projectId, "pl1", Role.PL).isSuccess());

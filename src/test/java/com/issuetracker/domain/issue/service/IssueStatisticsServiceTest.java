@@ -165,12 +165,9 @@ class IssueStatisticsServiceTest {
     void dailyPriorityDistribution() {
         // given
         LocalDate today = LocalDate.now();
-        Issue issue1 = issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(9, 0));
-        issue1.setPriority(Priority.BLOCKER);
-        Issue issue2 = issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(11, 0));
-        issue2.setPriority(Priority.BLOCKER);
-        Issue issue3 = issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(13, 0));
-        issue3.setPriority(Priority.MINOR);
+        issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(9, 0), Priority.BLOCKER);
+        issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(11, 0), Priority.BLOCKER);
+        issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(13, 0), Priority.MINOR);
 
         // when
         Map<LocalDate, Map<Priority, Long>> distribution =
@@ -188,10 +185,8 @@ class IssueStatisticsServiceTest {
     void monthlyPriorityDistribution() {
         // given
         YearMonth thisMonth = YearMonth.now();
-        Issue issue1 = issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(1).atStartOfDay());
-        issue1.setPriority(Priority.BLOCKER);
-        Issue issue2 = issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(10).atStartOfDay());
-        issue2.setPriority(Priority.MINOR);
+        issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(1).atStartOfDay(), Priority.BLOCKER);
+        issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(10).atStartOfDay(), Priority.MINOR);
 
         // when
         Map<YearMonth, Map<Priority, Long>> distribution =
@@ -209,10 +204,8 @@ class IssueStatisticsServiceTest {
     void monthlyPriorityDistributionExcludesOtherProject() {
         // given
         YearMonth thisMonth = YearMonth.now();
-        Issue mine = issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(1).atStartOfDay());
-        mine.setPriority(Priority.BLOCKER);
-        Issue other = issueRepository.saveWithReportedDate(OTHER_PROJECT_ID, thisMonth.atDay(1).atStartOfDay());
-        other.setPriority(Priority.BLOCKER);
+        issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(1).atStartOfDay(), Priority.BLOCKER);
+        issueRepository.saveWithReportedDate(OTHER_PROJECT_ID, thisMonth.atDay(1).atStartOfDay(), Priority.BLOCKER);
 
         // when
         Map<YearMonth, Map<Priority, Long>> distribution =
@@ -309,7 +302,11 @@ class IssueStatisticsServiceTest {
         private long nextId = 1L;
 
         Issue saveWithReportedDate(Long projectId, LocalDateTime reportedDate) {
-            Issue issue = new Issue(projectId, "title", "description", Priority.MAJOR, 10L);
+            return saveWithReportedDate(projectId, reportedDate, Priority.MAJOR);
+        }
+
+        Issue saveWithReportedDate(Long projectId, LocalDateTime reportedDate, Priority priority) {
+            Issue issue = new Issue(projectId, "title", "description", priority, 10L);
             issue.setIssueId(nextId++);
             setField(issue, "reportedDate", reportedDate);
             issues.add(issue);

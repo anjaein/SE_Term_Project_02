@@ -1,6 +1,6 @@
 package com.issuetracker.domain.project.repository;
 
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

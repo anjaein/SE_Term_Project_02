@@ -1,7 +1,6 @@
 package com.issuetracker.domain.account.repository;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,8 +43,8 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("계정 저장 성공: ID가 순차 부여되고 저장소에 유지")
     void saveAssignsSequentialIds() {
-        assertTrue(accountRepository.save(new Account("dev1", "1234", Role.DEV)));
-        assertTrue(accountRepository.save(new Account("dev2", "5678", Role.DEV)));
+        assertTrue(accountRepository.save(new Account("dev1", "1234", false)));
+        assertTrue(accountRepository.save(new Account("dev2", "5678", false)));
 
         List<Account> accounts = accountRepository.findAll();
         assertEquals(2, accounts.size());
@@ -56,13 +55,13 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("username으로 계정 조회 성공: 저장된 계정 반환")
     void findByUsernameReturnsAccount() {
-        accountRepository.save(new Account("dev1", "1234", Role.DEV));
+        accountRepository.save(new Account("dev1", "1234", false));
 
         Account found = accountRepository.findByUsername("dev1");
 
         assertNotNull(found);
         assertEquals("dev1", found.getUsername());
-        assertEquals(Role.DEV, found.getRole());
+        assertFalse(found.isAdmin());
     }
 
     @Test
@@ -76,7 +75,7 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("ID로 계정 조회 성공: 저장된 계정 반환")
     void findByIdReturnsAccount() {
-        accountRepository.save(new Account("dev1", "1234", Role.DEV));
+        accountRepository.save(new Account("dev1", "1234", false));
         Long savedId = accountRepository.findByUsername("dev1").getAccountId();
 
         Account found = accountRepository.findById(savedId);
@@ -97,7 +96,7 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("username으로 ID 조회 성공: 저장된 계정의 ID 반환")
     void getAccountIdByUsernameReturnsId() {
-        accountRepository.save(new Account("dev1", "1234", Role.DEV));
+        accountRepository.save(new Account("dev1", "1234", false));
 
         Long id = accountRepository.getAccountIdByUsername("dev1");
 
@@ -115,8 +114,8 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("전체 계정 조회 성공: 저장된 모든 계정 반환")
     void findAllReturnsAllAccounts() {
-        accountRepository.save(new Account("dev1", "1234", Role.DEV));
-        accountRepository.save(new Account("tester1", "5678", Role.TESTER));
+        accountRepository.save(new Account("dev1", "1234", false));
+        accountRepository.save(new Account("tester1", "5678", false));
 
         List<Account> all = accountRepository.findAll();
 

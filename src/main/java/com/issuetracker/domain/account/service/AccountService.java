@@ -1,7 +1,6 @@
 package com.issuetracker.domain.account.service;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.global.common.Response;
 
@@ -16,7 +15,7 @@ public class AccountService {
         this.accountRepository = accountRepository;
         this.accountValidator = accountValidator;
         if (accountRepository.findAll().isEmpty()) {
-            createAccount("admin", "admin123", Role.ADMIN);
+            createAccount("admin", "admin123", true);
             System.out.println("An initial administrator account has been created.");
         }
     }
@@ -38,9 +37,9 @@ public class AccountService {
         return Response.fail("Invalid username or password.");
     }
 
-    public Response<Account> createAccount(String username, String password, Role role) {
+    public Response<Account> createAccount(String username, String password, boolean isAdmin) {
         // 요청에 누락 검증
-        String missingParams = accountValidator.checkNonNull(username, password, role);
+        String missingParams = accountValidator.checkNonNull(username, password);
         if (missingParams != null) {
             return Response.fail(missingParams);
         }
@@ -64,7 +63,7 @@ public class AccountService {
         }
 
         // 새로운 계정 객체 생성 (ID는 Repository에서 자동 생성됨)
-        Account newAccount = new Account(username, password, role);
+        Account newAccount = new Account(username, password, isAdmin);
 
         // 저장소에 저장
         if (!accountRepository.save(newAccount)) {

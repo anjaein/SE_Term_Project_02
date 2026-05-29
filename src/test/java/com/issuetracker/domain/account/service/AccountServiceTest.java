@@ -1,7 +1,6 @@
 package com.issuetracker.domain.account.service;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.global.common.Response;
@@ -54,7 +53,7 @@ class AccountServiceTest {
     void adminAccountAutoCreatedOnInit() {
         Account admin = accountRepository.findByUsername("admin");
         assertNotNull(admin);
-        assertEquals(Role.ADMIN, admin.getRole());
+        assertTrue(admin.isAdmin());
     }
 
     // ─── login ───────────────────────────────────────────────
@@ -66,7 +65,7 @@ class AccountServiceTest {
 
         assertTrue(result.isSuccess());
         assertEquals("admin", result.getData().getUsername());
-        assertEquals(Role.ADMIN, result.getData().getRole());
+        assertTrue(result.getData().isAdmin());
     }
 
     @Test
@@ -104,34 +103,40 @@ class AccountServiceTest {
     @Test
     @DisplayName("계정 생성 성공: 유효한 입력")
     void createAccountSucceedsWithValidInput() {
-        Response<Account> result = accountService.createAccount("dev1", "1234", Role.DEV);
+        Response<Account> result = accountService.createAccount("dev1", "1234", false);
 
         assertTrue(result.isSuccess());
         assertEquals("dev1", result.getData().getUsername());
-        assertEquals(Role.DEV, result.getData().getRole());
+        assertFalse(result.getData().isAdmin());
         assertNotNull(result.getData().getAccountId());
         assertNotNull(accountRepository.findByUsername("dev1"));
     }
 
     @Test
-    @DisplayName("계정 생성 실패: 필수 파라미터(username/password/role) 중 하나라도 null")
+    @DisplayName("계정 생성 성공: isAdmin=true면 관리자 계정으로 생성")
+    void createAccountSucceedsForAdmin() {
+        Response<Account> result = accountService.createAccount("admin2", "1234", true);
+
+        assertTrue(result.isSuccess());
+        assertTrue(result.getData().isAdmin());
+    }
+
+    @Test
+    @DisplayName("계정 생성 실패: 필수 파라미터(username/password) 중 하나라도 null")
     void createAccountFailsWithNullInput() {
-        Response<Account> nullUsername = accountService.createAccount(null, "1234", Role.DEV);
-        Response<Account> nullPassword = accountService.createAccount("dev1", null, Role.DEV);
-        Response<Account> nullRole = accountService.createAccount("dev1", "1234", null);
+        Response<Account> nullUsername = accountService.createAccount(null, "1234", false);
+        Response<Account> nullPassword = accountService.createAccount("dev1", null, false);
 
         assertFalse(nullUsername.isSuccess());
         assertTrue(nullUsername.getMessage().contains("Required parameter is missing"));
         assertFalse(nullPassword.isSuccess());
         assertTrue(nullPassword.getMessage().contains("Required parameter is missing"));
-        assertFalse(nullRole.isSuccess());
-        assertTrue(nullRole.getMessage().contains("Required parameter is missing"));
     }
 
     @Test
     @DisplayName("계정 생성 실패: 빈 username")
     void createAccountFailsWithBlankUsername() {
-        Response<Account> result = accountService.createAccount("   ", "1234", Role.DEV);
+        Response<Account> result = accountService.createAccount("   ", "1234", false);
 
         assertFalse(result.isSuccess());
         assertNull(result.getData());
@@ -141,7 +146,7 @@ class AccountServiceTest {
     @Test
     @DisplayName("계정 생성 실패: 빈 password")
     void createAccountFailsWithBlankPassword() {
-        Response<Account> result = accountService.createAccount("dev1", "   ", Role.DEV);
+        Response<Account> result = accountService.createAccount("dev1", "   ", false);
 
         assertFalse(result.isSuccess());
         assertNull(result.getData());
@@ -151,9 +156,9 @@ class AccountServiceTest {
     @Test
     @DisplayName("계정 생성 실패: 중복 username")
     void createAccountFailsWithDuplicateUsername() {
-        accountService.createAccount("dev1", "1234", Role.DEV);
+        accountService.createAccount("dev1", "1234", false);
 
-        Response<Account> result = accountService.createAccount("dev1", "5678", Role.DEV);
+        Response<Account> result = accountService.createAccount("dev1", "5678", false);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("Username already exists"));
@@ -198,8 +203,8 @@ class AccountServiceTest {
     @Test
     @DisplayName("전체 계정 조회 성공: 추가 계정 생성 후 전체 반환")
     void getAllAccountsReturnsAllCreatedAccounts() {
-        accountService.createAccount("dev1", "1234", Role.DEV);
-        accountService.createAccount("tester1", "5678", Role.TESTER);
+        accountService.createAccount("dev1", "1234", false);
+        accountService.createAccount("tester1", "5678", false);
 
         Response<List<Account>> result = accountService.getAllAccounts();
 

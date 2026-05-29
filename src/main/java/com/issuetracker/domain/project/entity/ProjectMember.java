@@ -1,6 +1,6 @@
 package com.issuetracker.domain.project.entity;
 
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 
 public class ProjectMember {
     private Long projectId;

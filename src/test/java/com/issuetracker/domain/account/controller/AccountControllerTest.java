@@ -1,7 +1,6 @@
 package com.issuetracker.domain.account.controller;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
@@ -105,18 +104,18 @@ class AccountControllerTest {
     void createAccountSucceedsByAdmin() {
         accountController.login("admin", "admin123");
 
-        Response<Account> result = accountController.createAccount("dev1", "1234", Role.DEV);
+        Response<Account> result = accountController.createAccount("dev1", "1234", false);
 
         assertTrue(result.isSuccess());
         assertEquals("dev1", result.getData().getUsername());
-        assertEquals(Role.DEV, result.getData().getRole());
+        assertFalse(result.getData().isAdmin());
         assertNotNull(accountRepository.findByUsername("dev1"));
     }
 
     @Test
     @DisplayName("계정 생성 실패: 비로그인 상태")
     void createAccountFailsWhenNotLoggedIn() {
-        Response<Account> result = accountController.createAccount("dev1", "1234", Role.DEV);
+        Response<Account> result = accountController.createAccount("dev1", "1234", false);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("not logged in"));
@@ -126,11 +125,11 @@ class AccountControllerTest {
     @DisplayName("계정 생성 실패: admin이 아닌 사용자")
     void createAccountFailsForNonAdmin() {
         accountController.login("admin", "admin123");
-        accountController.createAccount("dev1", "1234", Role.DEV);
+        accountController.createAccount("dev1", "1234", false);
         accountController.logout();
         accountController.login("dev1", "1234");
 
-        Response<Account> result = accountController.createAccount("dev2", "5678", Role.DEV);
+        Response<Account> result = accountController.createAccount("dev2", "5678", false);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("Only admin"));
@@ -140,9 +139,9 @@ class AccountControllerTest {
     @DisplayName("계정 생성 실패: 중복 username")
     void createAccountFailsWithDuplicateUsername() {
         accountController.login("admin", "admin123");
-        accountController.createAccount("dev1", "1234", Role.DEV);
+        accountController.createAccount("dev1", "1234", false);
 
-        Response<Account> result = accountController.createAccount("dev1", "5678", Role.TESTER);
+        Response<Account> result = accountController.createAccount("dev1", "5678", false);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("Username already exists"));

@@ -29,4 +29,20 @@ public class CommentValidator implements Validator {
         }
         return null;
     }
+
+    // 댓글 수정 권한 검증: 본인 댓글만 수정 가능
+    public String checkUpdatePermission(Long commentAuthorId, Long userId) {
+        if (!commentAuthorId.equals(userId)) {
+            return "You can only update your own comments.";
+        }
+        return null;
+    }
+
+    // 댓글 삭제 권한 검증: 본인 댓글이거나 관리자만 삭제 가능
+    public String checkDeletePermission(Long commentAuthorId, Long userId, boolean isAdmin) {
+        if (!commentAuthorId.equals(userId) && !isAdmin) {
+            return "You can only delete your own comments.";
+        }
+        return null;
+    }
 }

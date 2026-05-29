@@ -1,7 +1,6 @@
 package com.issuetracker.domain.comment.controller;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.comment.service.CommentService;
 import com.issuetracker.global.common.Response;
@@ -47,7 +46,7 @@ public class CommentController {
         if (currentUser == null) {
             return Response.fail("You are not logged in.");
         }
-        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        boolean isAdmin = currentUser.isAdmin();
         return commentService.deleteComment(commentId, currentUser.getAccountId(), isAdmin);
     }
 }
