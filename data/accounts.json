@@ -3,24 +3,24 @@
     "accountId": 1,
     "username": "admin",
     "password": "admin123",
-    "role": "ADMIN"
+    "isAdmin": true
   },
   {
     "accountId": 2,
     "username": "pl1",
     "password": "1234",
-    "role": "PL"
+    "isAdmin": false
   },
   {
     "accountId": 3,
     "username": "dev1",
     "password": "1234",
-    "role": "DEV"
+    "isAdmin": false
   },
   {
     "accountId": 4,
     "username": "tester1",
     "password": "1234",
-    "role": "TESTER"
+    "isAdmin": false
   }
 ]

@@ -1,7 +1,7 @@
 package com.issuetracker.domain.comment.service;
 
 import com.google.gson.reflect.TypeToken;
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.comment.repository.CommentRepository;
 import com.issuetracker.domain.comment.repository.JsonCommentRepository;

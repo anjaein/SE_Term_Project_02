@@ -2,7 +2,7 @@ package com.issuetracker.domain.issue.controller;
 
 import com.google.gson.reflect.TypeToken;
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.repository.IssueRepository;
@@ -221,7 +221,7 @@ class IssueControllerTest {
     }
 
     private void loginAs(Long accountId, Role role) {
-        Account account = new Account("user" + accountId, "pw", role);
+        Account account = new Account("user" + accountId, "pw", role == Role.ADMIN);
         account.setAccountId(accountId);
         sessionManager.login(account);
     }

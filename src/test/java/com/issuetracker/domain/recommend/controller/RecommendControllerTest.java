@@ -1,7 +1,6 @@
 package com.issuetracker.domain.recommend.controller;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.issue.entity.Issue;
@@ -58,7 +57,7 @@ class RecommendControllerTest {
     @Test
     @DisplayName("추천 성공: 이슈 이력 있는 fixer 계정 반환")
     void getRecommendedAssigneesReturnsMatchingAccounts() {
-        accountRepository.save(new Account("dev1", "1234", Role.DEV));
+        accountRepository.save(new Account("dev1", "1234", false));
         Long devId = accountRepository.findByUsername("dev1").getAccountId();
 
         addResolvedIssue("login bug", "button error", devId);
@@ -91,7 +90,7 @@ class RecommendControllerTest {
     @DisplayName("추천 결과: 최대 3명까지만 반환")
     void getRecommendedAssigneesLimitsToThree() {
         for (int i = 1; i <= 4; i++) {
-            accountRepository.save(new Account("dev" + i, "1234", Role.DEV));
+            accountRepository.save(new Account("dev" + i, "1234", false));
             Long devId = accountRepository.findByUsername("dev" + i).getAccountId();
             addResolvedIssue("login bug", "button error", devId);
         }
@@ -104,8 +103,8 @@ class RecommendControllerTest {
     @Test
     @DisplayName("추천 성공: 여러 fixer 중 유사도 높은 계정이 먼저 반환")
     void getRecommendedAssigneesReturnsMostSimilarFirst() {
-        accountRepository.save(new Account("dev1", "1234", Role.DEV));
-        accountRepository.save(new Account("dev2", "1234", Role.DEV));
+        accountRepository.save(new Account("dev1", "1234", false));
+        accountRepository.save(new Account("dev2", "1234", false));
         Long devId1 = accountRepository.findByUsername("dev1").getAccountId();
         Long devId2 = accountRepository.findByUsername("dev2").getAccountId();
 

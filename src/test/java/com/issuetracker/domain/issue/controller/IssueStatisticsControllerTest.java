@@ -1,7 +1,6 @@
 package com.issuetracker.domain.issue.controller;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.issue.entity.Issue;
 import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.enums.Status;
@@ -162,7 +161,7 @@ class IssueStatisticsControllerTest {
     }
 
     private void login() {
-        sessionManager.login(new Account("tester", "pw", Role.TESTER));
+        sessionManager.login(new Account("tester", "pw", false));
     }
 
     private void setField(Object target, String fieldName, Object value) {

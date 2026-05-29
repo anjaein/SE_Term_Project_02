@@ -1,17 +1,15 @@
 package com.issuetracker.domain.account.entity;
 
-import com.issuetracker.domain.account.enums.Role;
-
 public class Account {
     private Long accountId;
     private String username;
     private String password;
-    private Role role;
+    private boolean isAdmin;
 
-    public Account( String username, String password, Role role) {
+    public Account(String username, String password, boolean isAdmin) {
         this.username = username;
         this.password = password;
-        this.role = role;
+        this.isAdmin = isAdmin;
     }
 
     public Long getAccountId() { return accountId; }
@@ -20,6 +18,6 @@ public class Account {
     public void setUsername(String username) { this.username = username; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
+    public boolean isAdmin() { return isAdmin; }
+    public void setAdmin(boolean isAdmin) { this.isAdmin = isAdmin; }
 }

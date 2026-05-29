@@ -1,10 +1,10 @@
 package com.issuetracker.domain.project.controller;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.service.AccountService;
 import com.issuetracker.domain.project.entity.Project;
 import com.issuetracker.domain.project.entity.ProjectMember;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.project.service.ProjectService;
 import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
@@ -23,11 +23,10 @@ public class ProjectController {
         if(currentUser == null){
             return Response.fail("You are not logged in.");
         }
-        Role currentUserRole = currentUser.getRole();
-        if(currentUserRole != Role.ADMIN){
+        if(!currentUser.isAdmin()){
             return Response.fail("You are not allowed to create the project.");
         }
-        return projectService.createProject(name, currentUser.getAccountId(), currentUserRole);
+        return projectService.createProject(name, currentUser.getAccountId(), Role.ADMIN);
     }
 
     public Response<ProjectMember> addProjectMember(Long projectId, String username, Role role){
@@ -35,7 +34,7 @@ public class ProjectController {
         if(currentUser == null){
             return Response.fail("You are not logged in.");
         }
-        if(currentUser.getRole() != Role.ADMIN){
+        if(!currentUser.isAdmin()){
             return Response.fail("You are not allowed to add a member.");
         }
         Response<Long> accountIdResult = accountService.getAccountIdByUsername(username);

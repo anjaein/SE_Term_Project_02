@@ -1,6 +1,6 @@
 package com.issuetracker.domain.project.service;
 
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.project.entity.Project;
 import com.issuetracker.domain.project.entity.ProjectMember;
 import com.issuetracker.domain.project.repository.JsonProjectMemberRepository;

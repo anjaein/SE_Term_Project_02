@@ -2,7 +2,7 @@ package com.issuetracker.domain.project.controller;
 
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
 import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
@@ -120,7 +120,7 @@ class ProjectControllerTest {
     @DisplayName("프로젝트 멤버 추가 성공: ADMIN 로그인 후 기존 사용자 추가")
     void addProjectMemberSucceedsForAdmin() {
         accountController.login("admin", "admin123");
-        accountController.createAccount("dev1", "1234", Role.DEV);
+        accountController.createAccount("dev1", "1234", false);
         Long projectId = projectController.createProject("Project-A").getData().getProjectId();
 
         Response<ProjectMember> result =
@@ -186,7 +186,7 @@ class ProjectControllerTest {
     }
 
     private void loginAs(Role role) {
-        Account account = new Account("sessionUser", "pw", role);
+        Account account = new Account("sessionUser", "pw", role == Role.ADMIN);
         account.setAccountId(99L);
         sessionManager.login(account);
     }

@@ -1,7 +1,6 @@
 package com.issuetracker.global.common;
 
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ class SessionManagerTest {
     @DisplayName("login: 로그인하면 해당 계정이 세션에 등록된다")
     void loginRegistersAccount() {
         // given
-        Account account = new Account("dev1", "pw", Role.DEV);
+        Account account = new Account("dev1", "pw", false);
 
         // when
         sessionManager.login(account);
@@ -43,7 +42,7 @@ class SessionManagerTest {
     @DisplayName("logout: 로그아웃하면 초기 상태로 돌아간다")
     void logoutClearsSession() {
         // given
-        sessionManager.login(new Account("dev1", "pw", Role.DEV));
+        sessionManager.login(new Account("dev1", "pw", false));
 
         // when
         sessionManager.logout();
@@ -57,8 +56,8 @@ class SessionManagerTest {
     @DisplayName("재로그인: 새 계정으로 로그인하면 세션이 수정된다")
     void loginReplacesPreviousAccount() {
         // given
-        sessionManager.login(new Account("dev1", "pw", Role.DEV));
-        Account second = new Account("admin", "pw", Role.ADMIN);
+        sessionManager.login(new Account("dev1", "pw", false));
+        Account second = new Account("admin", "pw", true);
 
         // when
         sessionManager.login(second);

@@ -2,7 +2,7 @@ package com.issuetracker.domain.comment.controller;
 
 import com.google.gson.reflect.TypeToken;
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.comment.repository.CommentRepository;
 import com.issuetracker.domain.comment.repository.JsonCommentRepository;
@@ -197,7 +197,7 @@ class CommentControllerTest {
     }
 
     private void loginAs(Long id, Role role) {
-        Account account = new Account("user" + id, "pw", role);
+        Account account = new Account("user" + id, "pw", role == Role.ADMIN);
         account.setAccountId(id);
         sessionManager.login(account);
     }
