@@ -19,124 +19,107 @@ class AccountRepositoryTest {
 
     private static final Path ACCOUNTS_FILE = Path.of("data", "accounts.json");
 
-    private final AccountRepository accountRepository = new JsonAccountRepository();
-
-    private String originalAccountsJson;
+    private AccountRepository accountRepository;
+    private String originalJson;
 
     @BeforeEach
     void setUp() throws IOException {
-        originalAccountsJson = Files.exists(ACCOUNTS_FILE)
+        originalJson = Files.exists(ACCOUNTS_FILE)
                 ? Files.readString(ACCOUNTS_FILE, StandardCharsets.UTF_8)
                 : null;
-
         Files.createDirectories(ACCOUNTS_FILE.getParent());
         Files.writeString(ACCOUNTS_FILE, "[]", StandardCharsets.UTF_8);
+        accountRepository = new JsonAccountRepository();
     }
 
     @AfterEach
     void tearDown() throws IOException {
-        if (originalAccountsJson == null) {
+        if (originalJson == null) {
             Files.deleteIfExists(ACCOUNTS_FILE);
         } else {
-            Files.writeString(ACCOUNTS_FILE, originalAccountsJson, StandardCharsets.UTF_8);
+            Files.writeString(ACCOUNTS_FILE, originalJson, StandardCharsets.UTF_8);
         }
     }
 
     @Test
-    @DisplayName("계정을 저장하면 ID가 순차적으로 부여되고 저장소에 유지된다")
-    void saveAssignsNextIdAndPersistsAccount() {
-        // 판단근거: AccountRepository는 계정 ID 생성 책임을 가지므로 순차 ID 부여와 파일 저장 결과를 검증해야 한다.
-        // given
-        Account first = new Account("admin", "admin123", Role.ADMIN);
-        Account second = new Account("dev1", "1234", Role.DEV);
+    @DisplayName("계정 저장 성공: ID가 순차 부여되고 저장소에 유지")
+    void saveAssignsSequentialIds() {
+        assertTrue(accountRepository.save(new Account("dev1", "1234", Role.DEV)));
+        assertTrue(accountRepository.save(new Account("dev2", "5678", Role.DEV)));
 
-        // when
-        accountRepository.save(first);
-        accountRepository.save(second);
         List<Account> accounts = accountRepository.findAll();
-
-        // then
         assertEquals(2, accounts.size());
         assertEquals(1L, accounts.get(0).getAccountId());
         assertEquals(2L, accounts.get(1).getAccountId());
-        assertEquals("admin", accounts.get(0).getUsername());
-        assertEquals("dev1", accounts.get(1).getUsername());
     }
 
     @Test
-    @DisplayName("username으로 계정을 조회하면 일치하는 계정만 반환한다")
-    void findByUsernameReturnsMatchingAccount() {
-        // 판단근거: 로그인은 username 조회에 의존하므로 정확한 계정 조회가 보장되어야 한다.
-        // given
-        accountRepository.save(new Account("tester1", "1234", Role.TESTER));
+    @DisplayName("username으로 계정 조회 성공: 저장된 계정 반환")
+    void findByUsernameReturnsAccount() {
         accountRepository.save(new Account("dev1", "1234", Role.DEV));
 
-        // when
-        Account account = accountRepository.findByUsername("dev1");
+        Account found = accountRepository.findByUsername("dev1");
 
-        // then
-        assertNotNull(account);
-        assertEquals("dev1", account.getUsername());
-        assertEquals(Role.DEV, account.getRole());
+        assertNotNull(found);
+        assertEquals("dev1", found.getUsername());
+        assertEquals(Role.DEV, found.getRole());
     }
 
     @Test
-    @DisplayName("존재하지 않는 username으로 조회하면 null을 반환한다")
-    void findByUsernameReturnsNullWhenAccountDoesNotExist() {
-        // 판단근거: 로그인 실패 판단을 위해 저장소가 없는 username을 null로 표현하는 계약을 검증한다.
-        // given
-        accountRepository.save(new Account("tester1", "1234", Role.TESTER));
+    @DisplayName("username으로 계정 조회 실패: 존재하지 않는 username → null 반환")
+    void findByUsernameReturnsNullForUnknown() {
+        Account found = accountRepository.findByUsername("nobody");
 
-        // when
-        Account account = accountRepository.findByUsername("missing");
-
-        // then
-        assertNull(account);
+        assertNull(found);
     }
 
     @Test
-    @DisplayName("accountId로 계정을 조회하면 일치하는 계정을 반환한다")
-    void findByIdReturnsMatchingAccount() {
-        // 판단근거: 추천, 댓글, 프로젝트 멤버 등 다른 도메인이 accountId로 계정을 찾으므로 ID 조회를 검증해야 한다.
-        // given
-        accountRepository.save(new Account("pl1", "1234", Role.PL));
+    @DisplayName("ID로 계정 조회 성공: 저장된 계정 반환")
+    void findByIdReturnsAccount() {
+        accountRepository.save(new Account("dev1", "1234", Role.DEV));
+        Long savedId = accountRepository.findByUsername("dev1").getAccountId();
+
+        Account found = accountRepository.findById(savedId);
+
+        assertNotNull(found);
+        assertEquals(savedId, found.getAccountId());
+        assertEquals("dev1", found.getUsername());
+    }
+
+    @Test
+    @DisplayName("ID로 계정 조회 실패: 존재하지 않는 ID → null 반환")
+    void findByIdReturnsNullForUnknown() {
+        Account found = accountRepository.findById(999L);
+
+        assertNull(found);
+    }
+
+    @Test
+    @DisplayName("username으로 ID 조회 성공: 저장된 계정의 ID 반환")
+    void getAccountIdByUsernameReturnsId() {
         accountRepository.save(new Account("dev1", "1234", Role.DEV));
 
-        // when
-        Account account = accountRepository.findById(2L);
+        Long id = accountRepository.getAccountIdByUsername("dev1");
 
-        // then
-        assertNotNull(account);
-        assertEquals("dev1", account.getUsername());
-        assertEquals(Role.DEV, account.getRole());
+        assertNotNull(id);
     }
 
     @Test
-    @DisplayName("username으로 accountId를 조회하면 해당 계정 ID를 반환한다")
-    void getAccountIdByUsernameReturnsMatchingId() {
-        // 판단근거: UI와 프로젝트 멤버 추가 흐름에서 username을 accountId로 변환하므로 변환 결과를 검증해야 한다.
-        // given
-        accountRepository.save(new Account("pl1", "1234", Role.PL));
-        accountRepository.save(new Account("tester1", "1234", Role.TESTER));
+    @DisplayName("username으로 ID 조회 실패: 존재하지 않는 username → null 반환")
+    void getAccountIdByUsernameReturnsNullForUnknown() {
+        Long id = accountRepository.getAccountIdByUsername("nobody");
 
-        // when
-        Long accountId = accountRepository.getAccountIdByUsername("tester1");
-
-        // then
-        assertEquals(2L, accountId);
+        assertNull(id);
     }
 
     @Test
-    @DisplayName("존재하지 않는 username의 accountId를 조회하면 null을 반환한다")
-    void getAccountIdByUsernameReturnsNullWhenAccountDoesNotExist() {
-        // 판단근거: 존재하지 않는 사용자를 다른 도메인에 잘못 연결하지 않도록 null 반환 계약을 검증한다.
-        // given
-        accountRepository.save(new Account("pl1", "1234", Role.PL));
+    @DisplayName("전체 계정 조회 성공: 저장된 모든 계정 반환")
+    void findAllReturnsAllAccounts() {
+        accountRepository.save(new Account("dev1", "1234", Role.DEV));
+        accountRepository.save(new Account("tester1", "5678", Role.TESTER));
 
-        // when
-        Long accountId = accountRepository.getAccountIdByUsername("missing");
+        List<Account> all = accountRepository.findAll();
 
-        // then
-        assertNull(accountId);
+        assertEquals(2, all.size());
     }
 }

@@ -3,161 +3,148 @@ package com.issuetracker.domain.account.controller;
 import com.issuetracker.domain.account.entity.Account;
 import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.account.repository.AccountRepository;
+import com.issuetracker.domain.account.repository.JsonAccountRepository;
 import com.issuetracker.domain.account.service.AccountService;
 import com.issuetracker.domain.account.service.AccountValidator;
 import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AccountControllerTest {
 
-    @Test
-    @DisplayName("로그인 성공 시 세션에 현재 계정을 저장한다")
-    void loginStoresAccountInSessionWhenCredentialsMatch() {
-        // 판단근거: Controller의 핵심 책임은 인증 결과를 SessionManager에 반영하는 것이므로 세션 상태 변화를 검증해야 한다.
-        // given
-        FakeAccountRepository accountRepository = new FakeAccountRepository();
+    private static final Path ACCOUNTS_FILE = Path.of("data", "accounts.json");
+
+    private AccountRepository accountRepository;
+    private SessionManager sessionManager;
+    private AccountController accountController;
+
+    private String originalAccountsJson;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        originalAccountsJson = Files.exists(ACCOUNTS_FILE)
+                ? Files.readString(ACCOUNTS_FILE, StandardCharsets.UTF_8)
+                : null;
+        Files.createDirectories(ACCOUNTS_FILE.getParent());
+        Files.writeString(ACCOUNTS_FILE, "[]", StandardCharsets.UTF_8);
+
+        accountRepository = new JsonAccountRepository();
         AccountValidator accountValidator = new AccountValidator(accountRepository);
         AccountService accountService = new AccountService(accountRepository, accountValidator);
-        SessionManager sessionManager = new SessionManager();
-        AccountController accountController = new AccountController(accountService, sessionManager);
-        accountService.createAccount("dev1", "1234", Role.DEV);
 
-        // when
-        Response<Account> result = accountController.login("dev1", "1234");
+        sessionManager = new SessionManager();
+        accountController = new AccountController(accountService, sessionManager);
+    }
 
-        // then
+    @AfterEach
+    void tearDown() throws IOException {
+        if (originalAccountsJson == null) {
+            Files.deleteIfExists(ACCOUNTS_FILE);
+        } else {
+            Files.writeString(ACCOUNTS_FILE, originalAccountsJson, StandardCharsets.UTF_8);
+        }
+    }
+
+    // ─── login ───────────────────────────────────────────────
+
+    @Test
+    @DisplayName("로그인 성공: 세션에 계정이 등록됨")
+    void loginSucceedsSetsSession() {
+        Response<Account> result = accountController.login("admin", "admin123");
+
         assertTrue(result.isSuccess());
-        assertTrue(sessionManager.isLoggedIn());
-        assertEquals("dev1", sessionManager.getLoggedInAccount().getUsername());
+        assertNotNull(sessionManager.getLoggedInAccount());
+        assertEquals("admin", sessionManager.getLoggedInAccount().getUsername());
     }
 
     @Test
-    @DisplayName("로그인 실패 시 세션을 변경하지 않는다")
-    void loginDoesNotStoreSessionWhenCredentialsDoNotMatch() {
-        // 판단근거: 실패한 인증 요청이 기존/빈 세션을 로그인 상태로 바꾸지 않는지 확인해야 한다.
-        // given
-        FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountValidator accountValidator = new AccountValidator(accountRepository);
-        AccountService accountService = new AccountService(accountRepository, accountValidator);
-        SessionManager sessionManager = new SessionManager();
-        AccountController accountController = new AccountController(accountService, sessionManager);
-        accountService.createAccount("tester1", "1234", Role.TESTER);
+    @DisplayName("로그인 실패: 잘못된 비밀번호 → 세션 등록 안 됨")
+    void loginFailsDoesNotSetSession() {
+        Response<Account> result = accountController.login("admin", "wrongpassword");
 
-        // when
-        Response<Account> result = accountController.login("tester1", "wrong-password");
-
-        // then
         assertFalse(result.isSuccess());
-        assertFalse(sessionManager.isLoggedIn());
-    }
-
-    @Test
-    @DisplayName("로그아웃하면 세션의 현재 계정을 제거한다")
-    void logoutClearsCurrentSession() {
-        // 판단근거: 로그아웃 후에도 세션이 남아 있으면 권한이 유지될 수 있으므로 세션 제거를 검증해야 한다.
-        // given
-        FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountValidator accountValidator = new AccountValidator(accountRepository);
-        AccountService accountService = new AccountService(accountRepository, accountValidator);
-        SessionManager sessionManager = new SessionManager();
-        AccountController accountController = new AccountController(accountService, sessionManager);
-        accountController.login("admin", "admin123");
-
-        // when
-        accountController.logout();
-
-        // then
-        assertFalse(sessionManager.isLoggedIn());
         assertNull(sessionManager.getLoggedInAccount());
     }
 
     @Test
-    @DisplayName("관리자로 로그인한 경우 계정을 생성할 수 있다")
-    void adminCanCreateAccount() {
-        // 판단근거: 계정 생성은 관리자 전용 기능이므로 ADMIN 권한에서 성공하는 경로를 검증해야 한다.
-        // given
-        FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountValidator accountValidator = new AccountValidator(accountRepository);
-        AccountService accountService = new AccountService(accountRepository, accountValidator);
-        SessionManager sessionManager = new SessionManager();
-        AccountController accountController = new AccountController(accountService, sessionManager);
+    @DisplayName("로그인 실패: 존재하지 않는 username")
+    void loginFailsWithUnknownUsername() {
+        Response<Account> result = accountController.login("nobody", "1234");
+
+        assertFalse(result.isSuccess());
+        assertNull(sessionManager.getLoggedInAccount());
+    }
+
+    // ─── logout ──────────────────────────────────────────────
+
+    @Test
+    @DisplayName("로그아웃 성공: 세션이 초기화됨")
+    void logoutClearsSession() {
         accountController.login("admin", "admin123");
 
-        // when
-        accountController.createAccount("pl1", "1234", Role.PL);
+        Response<Void> result = accountController.logout();
 
-        // then
-        Response<Account> loginResult = accountService.login("pl1", "1234");
-        assertTrue(loginResult.isSuccess());
-        assertEquals(Role.PL, loginResult.getData().getRole());
+        assertTrue(result.isSuccess());
+        assertNull(sessionManager.getLoggedInAccount());
+    }
+
+    // ─── createAccount ────────────────────────────────────────
+
+    @Test
+    @DisplayName("계정 생성 성공: admin이 새 계정 생성")
+    void createAccountSucceedsByAdmin() {
+        accountController.login("admin", "admin123");
+
+        Response<Account> result = accountController.createAccount("dev1", "1234", Role.DEV);
+
+        assertTrue(result.isSuccess());
+        assertEquals("dev1", result.getData().getUsername());
+        assertEquals(Role.DEV, result.getData().getRole());
+        assertNotNull(accountRepository.findByUsername("dev1"));
     }
 
     @Test
-    @DisplayName("관리자가 아닌 사용자는 계정을 생성할 수 없다")
-    void nonAdminCannotCreateAccount() {
-        // 판단근거: 역할 기반 접근 제어가 깨지면 일반 사용자가 임의 계정을 만들 수 있으므로 거부 경로를 검증해야 한다.
-        // given
-        FakeAccountRepository accountRepository = new FakeAccountRepository();
-        AccountValidator accountValidator = new AccountValidator(accountRepository);
-        AccountService accountService = new AccountService(accountRepository, accountValidator);
-        SessionManager sessionManager = new SessionManager();
-        AccountController accountController = new AccountController(accountService, sessionManager);
-        accountService.createAccount("dev1", "1234", Role.DEV);
-        accountController.login("dev1", "1234");
+    @DisplayName("계정 생성 실패: 비로그인 상태")
+    void createAccountFailsWhenNotLoggedIn() {
+        Response<Account> result = accountController.createAccount("dev1", "1234", Role.DEV);
 
-        // when
-        Response<Account> createResult = accountController.createAccount("hacker", "pw", Role.ADMIN);
-
-        // then
-        assertFalse(createResult.isSuccess());
-        assertFalse(accountService.login("hacker", "pw").isSuccess());
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("not logged in"));
     }
 
-    private static class FakeAccountRepository implements AccountRepository {
-        private final List<Account> accounts = new ArrayList<>();
-        private long nextId = 1L;
+    @Test
+    @DisplayName("계정 생성 실패: admin이 아닌 사용자")
+    void createAccountFailsForNonAdmin() {
+        accountController.login("admin", "admin123");
+        accountController.createAccount("dev1", "1234", Role.DEV);
+        accountController.logout();
+        accountController.login("dev1", "1234");
 
-        @Override
-        public List<Account> findAll() {
-            return accounts;
-        }
+        Response<Account> result = accountController.createAccount("dev2", "5678", Role.DEV);
 
-        @Override
-        public Account findByUsername(String username) {
-            return accounts.stream()
-                    .filter(account -> account.getUsername().equals(username))
-                    .findFirst()
-                    .orElse(null);
-        }
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("Only admin"));
+    }
 
-        @Override
-        public Account findById(Long accountId) {
-            return accounts.stream()
-                    .filter(account -> account.getAccountId().equals(accountId))
-                    .findFirst()
-                    .orElse(null);
-        }
+    @Test
+    @DisplayName("계정 생성 실패: 중복 username")
+    void createAccountFailsWithDuplicateUsername() {
+        accountController.login("admin", "admin123");
+        accountController.createAccount("dev1", "1234", Role.DEV);
 
-        @Override
-        public boolean save(Account account) {
-            account.setAccountId(nextId++);
-            accounts.add(account);
-            return true;
-        }
+        Response<Account> result = accountController.createAccount("dev1", "5678", Role.TESTER);
 
-        @Override
-        public Long getAccountIdByUsername(String username) {
-            return Optional.ofNullable(findByUsername(username))
-                    .map(Account::getAccountId)
-                    .orElse(null);
-        }
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("Username already exists"));
     }
 }

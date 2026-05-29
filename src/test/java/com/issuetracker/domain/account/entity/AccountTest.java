@@ -9,41 +9,37 @@ import static org.junit.jupiter.api.Assertions.*;
 class AccountTest {
 
     @Test
-    @DisplayName("Account 생성 시 username, password, role이 초기화되고 accountId는 아직 없다")
-    void constructorSetsUsernamePasswordAndRole() {
-        // 판단근거: Account는 인증과 권한 판단의 기본 데이터이므로 생성 직후 필드 상태가 정확해야 한다.
-        // given
-        String username = "dev1";
-        String password = "1234";
-        Role role = Role.DEV;
+    @DisplayName("계정 생성: username/password/role 초기화, accountId는 null")
+    void createAccountInitializesFields() {
+        Account account = new Account("dev1", "1234", Role.DEV);
 
-        // when
-        Account account = new Account(username, password, role);
-
-        // then
+        assertEquals("dev1", account.getUsername());
+        assertEquals("1234", account.getPassword());
+        assertEquals(Role.DEV, account.getRole());
         assertNull(account.getAccountId());
-        assertEquals(username, account.getUsername());
-        assertEquals(password, account.getPassword());
-        assertEquals(role, account.getRole());
     }
 
     @Test
-    @DisplayName("Account의 ID와 기본 필드는 setter로 변경할 수 있다")
-    void settersUpdateAccountFields() {
-        // 판단근거: Repository가 ID를 부여하고 관리자 기능이 계정 정보를 다룰 수 있으므로 setter 동작을 검증한다.
-        // given
-        Account account = new Account("old", "old-password", Role.TESTER);
+    @DisplayName("계정 ID 설정: setAccountId로 ID 저장")
+    void setAccountIdUpdatesId() {
+        Account account = new Account("dev1", "1234", Role.DEV);
 
-        // when
-        account.setAccountId(10L);
-        account.setUsername("new");
-        account.setPassword("new-password");
-        account.setRole(Role.PL);
+        account.setAccountId(42L);
 
-        // then
-        assertEquals(10L, account.getAccountId());
-        assertEquals("new", account.getUsername());
-        assertEquals("new-password", account.getPassword());
-        assertEquals(Role.PL, account.getRole());
+        assertEquals(42L, account.getAccountId());
+    }
+
+    @Test
+    @DisplayName("계정 필드 수정: setter로 username/password/role 변경")
+    void settersUpdateFields() {
+        Account account = new Account("dev1", "1234", Role.DEV);
+
+        account.setUsername("dev2");
+        account.setPassword("5678");
+        account.setRole(Role.TESTER);
+
+        assertEquals("dev2", account.getUsername());
+        assertEquals("5678", account.getPassword());
+        assertEquals(Role.TESTER, account.getRole());
     }
 }
