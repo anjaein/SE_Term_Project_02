@@ -17,6 +17,19 @@ public class Project {
     public Long getProjectId() {
         return projectId;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public Long getCreatedBy() {
+        return createdBy;
+    }
+
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
     public void setProjectId(Long projectId) {
         this.projectId = projectId;
     }
