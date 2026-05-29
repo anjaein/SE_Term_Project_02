@@ -39,14 +39,6 @@ public class IssueController {
         return issueService.getIssuesByProjectId(projectId);
     }
 
-    public Response<List<Issue>> getAllIssues(){
-        Account currentUser = sessionManager.getLoggedInAccount();
-        if(currentUser == null){
-            return Response.fail("You are not logged in.");
-        }
-        return issueService.getAllIssues();
-    }
-
     public Response<List<Issue>> getIssuesByAssigneeId(Long assigneeId){
         Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){

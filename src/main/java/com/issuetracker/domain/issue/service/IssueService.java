@@ -54,10 +54,6 @@ public class IssueService {
         return Response.success("Issue created.", issue);
     }
 
-    public Response<List<Issue>> getAllIssues(){
-        return Response.success("Issues retrieved.", issueRepository.findAll());
-    }
-
     public Response<List<Issue>> getIssuesByProjectId(Long projectId){
         if(projectId == null) return Response.success("Issues retrieved.", List.of());
         return Response.success("Issues retrieved.", issueRepository.findByProjectId(projectId));

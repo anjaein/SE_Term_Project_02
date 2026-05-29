@@ -132,8 +132,8 @@ class IntegrationScenarioTest {
         accountController.logout();
 
         assertTrue(accountController.login("pl1", "1234").isSuccess());
-        List<Issue> allIssues = issueService.getAllIssues().getData();
-        assertTrue(allIssues.stream().anyMatch(i -> i.getIssueId().equals(issueId)));
+        List<Issue> projectIssues = issueService.getIssuesByProjectId(projectId).getData();
+        assertTrue(projectIssues.stream().anyMatch(i -> i.getIssueId().equals(issueId)));
         List<Issue> newIssues = issueService.getIssuesByStatus(Status.NEW).getData();
         assertTrue(newIssues.stream().anyMatch(i -> i.getIssueId().equals(issueId)));
         assertTrue(issueController.assignIssue(issueId, dev1Id).isSuccess());

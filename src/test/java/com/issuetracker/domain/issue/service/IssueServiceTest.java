@@ -525,17 +525,6 @@ class IssueServiceTest {
         assertTrue(result.getData().isEmpty());
     }
 
-    @Test
-    @DisplayName("이슈 전체 조회 성공: 저장된 이슈 반환")
-    void getAllIssuesReturnsSavedIssues() {
-        seedNewIssue();
-
-        Response<List<Issue>> result = issueService.getAllIssues();
-
-        assertTrue(result.isSuccess());
-        assertEquals(1, result.getData().size());
-    }
-
     private Issue seedNewIssue() {
         seedProject(PROJECT_ID);
         seedProjectMember(PROJECT_ID, REPORTER_ID, Role.TESTER);
