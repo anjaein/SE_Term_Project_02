@@ -2,6 +2,7 @@ package com.issuetracker.domain.recommend.service;
 
 import com.issuetracker.domain.issue.enums.Status;
 import com.issuetracker.domain.issue.repository.IssueRepository;
+import com.issuetracker.global.common.Response;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;

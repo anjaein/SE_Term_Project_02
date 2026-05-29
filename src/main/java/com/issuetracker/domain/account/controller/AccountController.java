@@ -6,6 +6,8 @@ import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
@@ -27,6 +29,18 @@ public class AccountController {
         return Response.success("Logged out.");
     }
 
+    public Response<List<Account>> listAccounts() {
+        return accountService.getAllAccounts();
+    }
+
+    public Response<Account> getAccountById(Long accountId) {
+        return accountService.getAccountById(accountId);
+    }
+
+    public Response<Long> getAccountIdByUsername(String username) {
+        return accountService.getAccountIdByUsername(username);
+    }
+
     // 계정 생성 (admin만 가능)
     public Response<Account> createAccount(String username, String password, boolean isAdmin) {
         Account currentUser = sessionManager.getLoggedInAccount();
@@ -37,5 +51,12 @@ public class AccountController {
             return Response.fail("Only admin can create an account.");
         }
         return accountService.createAccount(username, password, isAdmin);
+    }
+
+    public Response<Long> getAccountIdByUsername(String username) {
+        return accountService.getAccountIdByUsername(username);
+    }
+    public Response<Account> getAccountById(Long accountId) {
+        return accountService.getAccountById(accountId);
     }
 }

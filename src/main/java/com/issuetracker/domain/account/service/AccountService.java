@@ -80,6 +80,14 @@ public class AccountService {
         return Response.success("Account id retrieved.", accountId);
     }
 
+    public Response<Account> getAccountById(Long accountId) {
+        Account account = accountRepository.findById(accountId);
+        if (account == null) {
+            return Response.fail("Account not found.");
+        }
+        return Response.success("Account retrieved.", account);
+    }
+
     public Response<List<Account>> getAllAccounts() {
         return Response.success("Accounts retrieved.", accountRepository.findAll());
     }

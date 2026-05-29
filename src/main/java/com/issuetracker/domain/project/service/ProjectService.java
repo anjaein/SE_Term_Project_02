@@ -8,6 +8,7 @@ import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.global.common.Response;
 import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -61,7 +62,12 @@ public class ProjectService {
         return Response.success("Project member added.", projectMember);
     }
 
+    public Response<List<Project>> getAllProjects() {
+        return Response.success("Projects retrieved.", projectRepository.findAll());
+    }
+
     public Response<List<ProjectMember>> getProjectMembers(Long projectId) {
         return Response.success("Project members retrieved.", projectMemberRepository.findByProjectId(projectId));
     }
+
 }
