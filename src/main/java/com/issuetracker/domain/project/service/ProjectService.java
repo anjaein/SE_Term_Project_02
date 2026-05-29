@@ -61,6 +61,10 @@ public class ProjectService {
         return Response.success("Project member added.", projectMember);
     }
 
+    public Response<List<Project>> getAllProjects() {
+        return Response.success("Projects retrieved.", projectRepository.findAll());
+    }
+
     public Response<List<ProjectMember>> getProjectMembers(Long projectId) {
         return Response.success("Project members retrieved.", projectMemberRepository.findByProjectId(projectId));
     }

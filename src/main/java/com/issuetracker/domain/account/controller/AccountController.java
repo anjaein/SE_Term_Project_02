@@ -7,6 +7,8 @@ import com.issuetracker.global.common.Response;
 import com.issuetracker.global.common.SessionManager;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
@@ -26,6 +28,10 @@ public class AccountController {
     public Response<Void> logout() {
         sessionManager.logout();
         return Response.success("Logged out.");
+    }
+
+    public Response<List<Account>> listAccounts() {
+        return accountService.getAllAccounts();
     }
 
     // 계정 생성 (admin만 가능)
