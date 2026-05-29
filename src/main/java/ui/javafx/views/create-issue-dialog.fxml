@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="root" spacing="10" minWidth="520" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ui.javafx.controllers.CreateIssueDialogController">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+    <Label text="TITLE" styleClass="eyebrow"/>
+    <TextField fx:id="titleField" promptText="이슈 제목" styleClass="input"/>
+    <Label text="DESCRIPTION" styleClass="eyebrow"/>
+    <TextArea fx:id="descriptionArea" promptText="이슈 내용을 적어주세요" prefRowCount="5" styleClass="input"/>
+    <Label text="PRIORITY" styleClass="eyebrow"/>
+    <ComboBox fx:id="priorityCombo" maxWidth="Infinity"/>
+</VBox>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<BorderPane fx:id="root" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ui.javafx.controllers.AppController">
+    <top>
+        <HBox alignment="CENTER_LEFT" styleClass="topbar">
+            <HBox alignment="CENTER_LEFT" styleClass="topbar-left">
+                <Label text="IssueTracker" styleClass="logo"/>
+                <Label text="/" styleClass="dim"/>
+                <Label fx:id="projectLabel" styleClass="hand"/>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" styleClass="topbar-nav">
+                <Button fx:id="projectsButton" text="Projects" styleClass="nav-btn" onAction="#handleProjects"/>
+                <Button fx:id="boardButton" text="Board" styleClass="nav-btn" onAction="#handleBoard"/>
+                <Button fx:id="statsButton" text="Stats" styleClass="nav-btn" onAction="#handleStats"/>
+                <Button fx:id="membersButton" text="Team" styleClass="nav-btn" onAction="#handleMembers"/>
+            </HBox>
+            <HBox alignment="CENTER_RIGHT" maxWidth="Infinity" styleClass="topbar-right" HBox.hgrow="ALWAYS">
+                <Button fx:id="newIssueButton" text="+ New Issue" styleClass="btn-ghost" onAction="#handleCreateIssue"/>
+                <MenuButton fx:id="userMenu" styleClass="user-menu">
+                    <graphic>
+                        <HBox alignment="CENTER_LEFT" styleClass="user-menu-label">
+                            <StackPane fx:id="avatarPane" minWidth="28" minHeight="28" maxWidth="28" maxHeight="28">
+                                <Circle fx:id="avatarCircle" radius="14" strokeWidth="1.4"/>
+                                <Label fx:id="avatarInitial"/>
+                            </StackPane>
+                            <Label fx:id="usernameLabel"/>
+                            <Label fx:id="roleChipLabel" styleClass="role-chip"/>
+                        </HBox>
+                    </graphic>
+                    <items>
+                        <Menu fx:id="switchUserMenu" text="Switch user" styleClass="user-switch-menu"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem fx:id="signOutItem" text="Sign out" styleClass="sign-out-menu-item" onAction="#handleSignOut"/>
+                    </items>
+                </MenuButton>
+            </HBox>
+        </HBox>
+    </top>
+    <center>
+        <StackPane fx:id="contentHost"/>
+    </center>
+</BorderPane>
