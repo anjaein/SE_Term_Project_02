@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import java.lang.String?>
+
+<ScrollPane fx:id="root" fitToWidth="true" styleClass="scroll-clean" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.issuetracker.ui.controllers.ProjectsController">
+    <VBox fx:id="content" spacing="22" maxWidth="1100">
+        <padding>
+            <Insets top="40" right="32" bottom="80" left="32"/>
+        </padding>
+        <HBox fx:id="header" alignment="BOTTOM_LEFT">
+            <VBox spacing="4">
+                <Label text="WORKSPACE" styleClass="eyebrow"/>
+                <Label text="Projects" styleClass="h1"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="newProjectButton" text="+ New project" styleClass="btn-primary" onAction="#handleCreateProject"/>
+        </HBox>
+        <Line fx:id="divider"/>
+        <Label text="참여 중인 프로젝트를 선택하면 이슈 보드로 이동합니다." wrapText="true">
+            <styleClass>
+                <String fx:value="hand"/>
+                <String fx:value="dim"/>
+            </styleClass>
+        </Label>
+        <FlowPane fx:id="projectsGrid" hgap="20" vgap="20" prefWrapLength="1100"/>
+    </VBox>
+</ScrollPane>

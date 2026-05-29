@@ -43,5 +43,10 @@
     "projectId": 6,
     "accountId": 1,
     "role": "ADMIN"
+  },
+  {
+    "projectId": 1,
+    "accountId": 5,
+    "role": "TESTER"
   }
 ]

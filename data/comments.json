@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "commentId": 1,
+    "issueId": 1,
+    "authorId": 2,
+    "content": "ㅇㄹ",
+    "createdDate": "2026-05-29T18:12:07.514448",
+    "updatedDate": "2026-05-29T18:12:07.514464"
+  }
+]

@@ -1,0 +1,42 @@
+// build.gradle에 합쳐 넣을 부분
+// 기존 SE_Term_Project_02/build.gradle 의 plugins/dependencies/application 블록에 머지하세요.
+
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'   // ← 추가
+}
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    version = '21'
+    modules = ['javafx.controls', 'javafx.graphics']   // 필요시 'javafx.fxml' 도
+}
+
+dependencies {
+    // 기존 dependencies 유지 (Gson, Lombok, JUnit5 등)
+    implementation 'com.google.code.gson:gson:2.11.0'
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
+application {
+    mainClass = 'com.issuetracker.ui.App'   // ← UI 실행용
+    // 기존 백엔드 Main 그대로 두려면 별도 task 만들어도 됨
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// JavaFX 모듈 경로 이슈 회피 (Java 21에서 종종 필요)
+run {
+    jvmArgs = [
+        '--enable-native-access=ALL-UNNAMED'
+    ]
+}

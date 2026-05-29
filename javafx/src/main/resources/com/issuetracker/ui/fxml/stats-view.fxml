@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<ScrollPane fx:id="root" fitToWidth="true" styleClass="scroll-clean" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.issuetracker.ui.controllers.StatsController">
+    <VBox fx:id="content" spacing="18" maxWidth="1200">
+        <padding>
+            <Insets top="24" right="32" bottom="80" left="32"/>
+        </padding>
+        <HBox fx:id="header">
+            <VBox spacing="4">
+                <Label text="DASHBOARD" styleClass="eyebrow"/>
+                <Label text="Statistics" styleClass="h1"/>
+            </VBox>
+        </HBox>
+        <Line fx:id="divider"/>
+        <GridPane fx:id="kpis" hgap="16"/>
+        <GridPane fx:id="charts" hgap="18" vgap="18"/>
+    </VBox>
+</ScrollPane>

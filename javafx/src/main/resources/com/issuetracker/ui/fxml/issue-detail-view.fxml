@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane fx:id="root" fitToWidth="true" styleClass="scroll-clean" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.issuetracker.ui.controllers.IssueDetailController">
+    <HBox fx:id="layout" spacing="32" maxWidth="1100">
+        <VBox fx:id="main" spacing="20" prefWidth="720"/>
+        <VBox fx:id="sidebar" spacing="0" prefWidth="300"/>
+    </HBox>
+</ScrollPane>
