@@ -16,4 +16,5 @@ public class Backend {
     public final CommentController commentController;
     public final IssueStatisticsController issueStatisticsController;
     public final RecommendController recommendController;
+    public final SessionManager sessionManager;
 }
