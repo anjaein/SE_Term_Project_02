@@ -1,6 +1,6 @@
 # Issue Tracker System
 
-<img width="800" height="346" alt="image" src="https://github.com/user-attachments/assets/30a762f6-b042-4428-aebc-81f96a3f7454" />
+<img width="1262" height="653" alt="스크린샷 2026-05-29 오후 6 39 19" src="https://github.com/user-attachments/assets/822129bc-5ded-47e1-beb2-18f9dbccf136" />
 
 
 이슈 관리 시스템( Issue Tracker System) — 중앙대학교 소프트웨어공학 2026 텀프로젝트
