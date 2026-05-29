@@ -82,5 +82,11 @@
     "username": "aaa",
     "password": "1",
     "role": "PL"
+  },
+  {
+    "accountId": 15,
+    "username": "error",
+    "password": "1",
+    "role": "TESTER"
   }
 ]

@@ -21,10 +21,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
 
 public class IssuePanel extends JPanel {
     private final JFrame owner;
@@ -73,9 +71,9 @@ public class IssuePanel extends JPanel {
         JComboBox<Comboitem> projectbox = createProjectComboBoxForCurrentUser(true);
         projectbox.setSelectedIndex(0);
 
-        JButton applyFilter = new JButton("Search Issue (choose project)");
+        JButton applyFilter = new JButton("Search Issue");
         JButton mine = new JButton("Assigned to Me");
-        JButton reported = new JButton("Reported by Me (FIXED)");
+        JButton reported = new JButton("Reported by Me");
         JButton resolved = new JButton("Resolved Issue");
 
         filter.add(new JLabel("Status:"));
@@ -86,22 +84,20 @@ public class IssuePanel extends JPanel {
         filter.add(projectbox);
         filter.add(applyFilter);
 
+        final Map<Role, JButton> roleButtonMap = new EnumMap<>(Role.class);
+        roleButtonMap.put(Role.DEV, mine);
+        roleButtonMap.put(Role.TESTER, reported);
+        roleButtonMap.put(Role.PL, resolved);
+
         Runnable updateProjectRoleButtons = () -> {
-            filter.remove(mine);
-            filter.remove(reported);
-            filter.remove(resolved);
-
-            Role selectedProjectRole = getSelectedProjectRole(projectbox);
-            if (selectedProjectRole == Role.DEV) {
-                filter.add(mine);
+            // 1. 모든 버튼 숨기기
+            roleButtonMap.values().forEach(filter::remove);
+            // 2. 권한에 맞는 버튼만 가져와서 렌더링하기
+            Role role = getSelectedProjectRole(projectbox);
+            JButton buttonToShow = roleButtonMap.get(role);
+            if (buttonToShow != null) {
+                filter.add(buttonToShow);
             }
-            if (selectedProjectRole == Role.TESTER) {
-                filter.add(reported);
-            }
-            if (selectedProjectRole == Role.PL) {
-                filter.add(resolved);
-            }
-
             filter.revalidate();
             filter.repaint();
         };
@@ -143,14 +139,20 @@ public class IssuePanel extends JPanel {
         create.addActionListener(e -> showCreateIssueDialog(projectbox, refreshAll));
         detail.addActionListener(e -> showIssueDetail(table, refreshAll));
 
-        if (sessionManager.getLoggedInAccount().getRole() == Role.TESTER) {
-            btns.add(create);
-        }
+
         leftBtns.add(statistics);
+        btns.add(create);
         btns.add(detail);
         bottom.add(leftBtns, BorderLayout.WEST);
         bottom.add(btns, BorderLayout.EAST);
         add(bottom, BorderLayout.SOUTH);
+
+        projectbox.addActionListener(e -> {
+            Role role = getSelectedProjectRole(projectbox);
+            // 권한이 TESTER일 때만 'New Issue' 버튼이 보이도록 설정
+            create.setVisible(role == Role.TESTER);
+        });
+        create.setVisible(getSelectedProjectRole(projectbox) == Role.TESTER);
     }
 
     private void refreshIssues(DefaultTableModel model, JComboBox<Comboitem> projectbox) {

@@ -35,14 +35,23 @@ public class ProjectPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         String[] projectCols = {"Project ID", "Project Name"};
-        projectTableModel = new DefaultTableModel(projectCols, 0);
+        projectTableModel = new DefaultTableModel(projectCols, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // 프로젝트 테이블 수정 불가
+            }
+        };
         projectTable = new JTable(projectTableModel);
         hideColumn(projectTable, 0);
 
         String[] memberCols = {"User name", "Member Role"};
-        memberTableModel = new DefaultTableModel(memberCols, 0);
+        memberTableModel = new DefaultTableModel(memberCols, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // 멤버 테이블 수정 불가
+            }
+        };
         JTable memberTable = new JTable(memberTableModel);
-
         initLayout(memberTable);
     }
 

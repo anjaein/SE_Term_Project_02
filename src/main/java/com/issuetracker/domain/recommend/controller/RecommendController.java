@@ -17,14 +17,9 @@ public class RecommendController {
 
     // RecommendedAssignees 반환
     public List<Account> getRecommendedAssignees(Long projectId, String title, String description) {
-        Response<List<Long>> response = recommendService.recommendAssignees(projectId, title, description);
-        if (response == null || response.getData() == null) {
-            return Collections.emptyList();
-        }
-        return response.getData().stream()
+        return recommendService.recommendAssignees(projectId, title, description).stream()
                 .map(accountRepository::findById)
                 .filter(account -> account != null)
                 .collect(Collectors.toList());
     }
-
 }
