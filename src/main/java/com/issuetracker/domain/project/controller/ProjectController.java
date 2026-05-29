@@ -51,4 +51,10 @@ public class ProjectController {
         }
         return projectService.getProjectMembers(projectId);
     }
+
+    public Response<List<Project>> getAllProjects() {
+        return projectService.getAllProjects();
+    }
+
+
 }

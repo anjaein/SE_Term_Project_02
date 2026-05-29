@@ -8,6 +8,7 @@ import com.issuetracker.domain.project.repository.ProjectRepository;
 import com.issuetracker.global.common.Response;
 import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -64,4 +65,35 @@ public class ProjectService {
     public Response<List<ProjectMember>> getProjectMembers(Long projectId) {
         return Response.success("Project members retrieved.", projectMemberRepository.findByProjectId(projectId));
     }
+
+    // 전체 프로젝트 목록을 조회하여 반환하는 메서드
+    public Response<List<Project>> getMyProjects(Long accountId) {
+        // 1. Repository에서 전체 프로젝트 목록을 가져옵니다.
+        List<Project> allProjects = projectRepository.findAll();
+
+        // 2. 내가 속한 프로젝트만 골라담을 빈 바구니(List)를 준비합니다.
+        List<Project> myProjects = new ArrayList<>();
+
+        // 3. 전체 프로젝트를 하나씩 꺼내보면서 검사합니다.
+        for (Project project : allProjects) {
+            Long projectId = project.getProjectId();
+
+            // 해당 프로젝트(projectId)에 내 계정(accountId)이 멤버로 등록되어 있는지 확인합니다.
+            ProjectMember member = projectMemberRepository.findByProjectIdAndAccountId(projectId, accountId);
+
+            // 만약 member가 null이 아니라면(즉, 멤버로 존재한다면) 내 프로젝트 바구니에 담습니다.
+            // (만약 반환 타입이 Optional이라면 member.isPresent() 등으로 체크하시면 됩니다.)
+            if (member != null) {
+                myProjects.add(project);
+            }
+        }
+
+        // 4. 안전하게 필터링이 끝난 '내 프로젝트' 목록만 UI로 전달합니다.
+        return Response.success("My projects retrieved.", myProjects);
+    }
+    public Response<List<Project>> getAllProjects() {
+        return Response.success("All projects retrieved.", projectRepository.findAll());
+    }
+
+
 }

@@ -84,4 +84,15 @@ public class AccountService {
     public Response<List<Account>> getAllAccounts() {
         return Response.success("Accounts retrieved.", accountRepository.findAll());
     }
+
+    public Response<Account> getAccountById(Long accountId) {
+        if (accountId == null) {
+            return Response.fail("Account ID cannot be null.");
+        }
+        Account account = accountRepository.findById(accountId);
+        if (account == null) {
+            return Response.fail("User not found.");
+        }
+        return Response.success("User retrieved successfully.", account);
+    }
 }

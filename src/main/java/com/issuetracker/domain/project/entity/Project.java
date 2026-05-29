@@ -1,9 +1,11 @@
 package com.issuetracker.domain.project.entity;
 
 import java.time.LocalDateTime;
+import lombok.Getter;
 
 public class Project {
     private Long projectId;
+    @Getter
     private String name;
     private Long createdBy;
     private LocalDateTime createdDate;
