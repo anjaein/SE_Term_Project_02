@@ -40,6 +40,30 @@ public class IssueController {
         return issueService.getIssuesByProjectId(projectId);
     }
 
+    public Response<List<Issue>> getAllIssues(){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            return Response.fail("You are not logged in.");
+        }
+        return issueService.getAllIssues();
+    }
+
+    public Response<List<Issue>> getIssuesByAssigneeId(Long assigneeId){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            return Response.fail("You are not logged in.");
+        }
+        return issueService.getIssuesByAssigneeId(assigneeId);
+    }
+
+    public Response<List<Issue>> getIssuesByReporterId(Long reporterId){
+        Account currentUser = sessionManager.getLoggedInAccount();
+        if(currentUser == null){
+            return Response.fail("You are not logged in.");
+        }
+        return issueService.getIssuesByReporterId(reporterId);
+    }
+
     public Response<Issue> assignIssue(Long issueId, Long assigneeId){
         Account currentUser = sessionManager.getLoggedInAccount();
         if(currentUser == null){

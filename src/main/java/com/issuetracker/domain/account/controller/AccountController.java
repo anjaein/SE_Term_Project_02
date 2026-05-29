@@ -34,6 +34,14 @@ public class AccountController {
         return accountService.getAllAccounts();
     }
 
+    public Response<Account> getAccountById(Long accountId) {
+        return accountService.getAccountById(accountId);
+    }
+
+    public Response<Long> getAccountIdByUsername(String username) {
+        return accountService.getAccountIdByUsername(username);
+    }
+
     // 계정 생성 (admin만 가능)
     public Response<Account> createAccount(String username, String password, Role role) {
         Account currentUser = sessionManager.getLoggedInAccount();

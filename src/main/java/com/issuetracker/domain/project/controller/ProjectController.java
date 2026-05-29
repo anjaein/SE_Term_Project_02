@@ -49,6 +49,10 @@ public class ProjectController {
         return projectService.getAllProjects();
     }
 
+    public Response<List<Project>> getAllProjects() {
+        return listProjects();
+    }
+
     public Response<List<ProjectMember>> listProjectMembers(Long projectId) {
         if (sessionManager.getLoggedInAccount() == null) {
             return Response.fail("You are not logged in.");

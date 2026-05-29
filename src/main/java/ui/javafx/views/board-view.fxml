@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import java.lang.String?>
+
+<VBox fx:id="root" spacing="18" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ui.javafx.controllers.BoardController">
+    <padding>
+        <Insets top="24" right="32" bottom="80" left="32"/>
+    </padding>
+    <HBox fx:id="header">
+        <VBox spacing="4">
+            <Label fx:id="eyebrowLabel" styleClass="eyebrow"/>
+            <Label fx:id="titleLabel" styleClass="h1"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="newIssueButton" text="+ New issue" styleClass="btn-primary" onAction="#handleCreateIssue"/>
+    </HBox>
+    <Line fx:id="divider"/>
+    <VBox spacing="4">
+        <TextField fx:id="searchField" promptText="검색할 내용을 적어주세요"
+                   maxWidth="Infinity" styleClass="input"/>
+        <Label text="예) assignee:dev1    reporter:tester1 status:fixed priority:major"
+               wrapText="true">
+            <styleClass>
+                <String fx:value="hand"/>
+                <String fx:value="dim"/>
+                <String fx:value="small"/>
+            </styleClass>
+        </Label>
+    </VBox>
+    <ScrollPane fx:id="scroller" fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER" styleClass="scroll-clean"
+                VBox.vgrow="ALWAYS">
+        <HBox fx:id="columnsRow" spacing="14"/>
+    </ScrollPane>
+</VBox>

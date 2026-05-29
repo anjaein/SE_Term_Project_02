@@ -1,12 +1,33 @@
 plugins {
     id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
 group = 'com.issuetracker'
 version = '1.0-SNAPSHOT'
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
 repositories {
     mavenCentral()
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs += ['src/main/java']
+            exclude '**/*.java'
+        }
+    }
+}
+
+javafx {
+    version = '21.0.4'
+    modules = ['javafx.controls', 'javafx.graphics', 'javafx.fxml']
 }
 
 dependencies {
@@ -19,6 +40,24 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
 }
 
+application {
+    mainClass = 'ui.javafx.App'
+}
+
+tasks.register('runFx', JavaExec) {
+    group = 'application'
+    description = 'Runs the JavaFX UI.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ui.javafx.App'
+}
+
+tasks.register('runSwing', JavaExec) {
+    group = 'application'
+    description = 'Runs the Swing UI.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ui.swing.SwingMain'
+}
+
 test {
     useJUnitPlatform()
 }
@@ -28,5 +67,10 @@ tasks.withType(JavaCompile) {
 }
 
 tasks.withType(JavaExec) {
-    jvmArgs("-Dfile.encoding=UTF-8")
+    jvmArgs(
+            "-Dfile.encoding=UTF-8",
+            "-Dstdout.encoding=UTF-8",
+            "-Dstderr.encoding=UTF-8",
+            "--enable-native-access=ALL-UNNAMED"
+    )
 }
