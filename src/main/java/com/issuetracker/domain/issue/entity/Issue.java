@@ -12,15 +12,11 @@ public class Issue {
     @Setter
     private Long issueId;
     private Long projectId;
-    @Setter
     private String title;
-    @Setter
     private String description;
-    @Setter
     private Priority priority;
     private Status status;
     private Long reporterId;
-    @Setter
     private Long assigneeId;
     private Long fixerId;
     private LocalDateTime reportedDate;

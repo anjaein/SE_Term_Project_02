@@ -134,8 +134,7 @@ class IssueStatisticsControllerTest {
         // given
         login();
         LocalDate today = LocalDate.now();
-        Issue issue = issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(9, 0));
-        issue.setPriority(Priority.BLOCKER);
+        issueRepository.saveWithReportedDate(PROJECT_ID, today.atTime(9, 0), Priority.BLOCKER);
 
         // when
         Map<LocalDate, Map<Priority, Long>> result = controller.getDailyPriorityDistribution(PROJECT_ID).getData();
@@ -181,7 +180,11 @@ class IssueStatisticsControllerTest {
         private long nextId = 1L;
 
         Issue saveWithReportedDate(Long projectId, LocalDateTime reportedDate) {
-            Issue issue = new Issue(projectId, "title", "description", Priority.MAJOR, 10L);
+            return saveWithReportedDate(projectId, reportedDate, Priority.MAJOR);
+        }
+
+        Issue saveWithReportedDate(Long projectId, LocalDateTime reportedDate, Priority priority) {
+            Issue issue = new Issue(projectId, "title", "description", priority, 10L);
             issue.setIssueId(nextId++);
             setField(issue, "reportedDate", reportedDate);
             issues.add(issue);
