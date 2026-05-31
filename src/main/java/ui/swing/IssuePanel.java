@@ -2,7 +2,7 @@ package ui.swing;
 
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.comment.controller.CommentController;
 import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.issue.controller.IssueStatisticsController;
@@ -73,7 +73,7 @@ public class IssuePanel extends JPanel {
 
         JButton applyFilter = new JButton("Search Issue");
         JButton mine = new JButton("Assigned to Me");
-        JButton reported = new JButton("Reported by Me");
+        JButton reported = new JButton("Reported by Me(Fixed)");
         JButton resolved = new JButton("Resolved Issue");
 
         filter.add(new JLabel("Status:"));
@@ -137,7 +137,7 @@ public class IssuePanel extends JPanel {
 
         statistics.addActionListener(e -> showStatisticsDialog());
         create.addActionListener(e -> showCreateIssueDialog(projectbox, refreshAll));
-        detail.addActionListener(e -> showIssueDetail(table, refreshAll));
+        detail.addActionListener(e -> showIssueDetail(table, projectbox, refreshAll));
 
 
         leftBtns.add(statistics);
@@ -157,19 +157,22 @@ public class IssuePanel extends JPanel {
 
     private void refreshIssues(DefaultTableModel model, JComboBox<Comboitem> projectbox) {
         model.setRowCount(0);
-        Response<List<Issue>> issueresp = issueController.getAllIssues();
-        if (!issueresp.isSuccess()) {
-            JOptionPane.showMessageDialog(this, issueresp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            return;
+        Long selectedProjectId = getSelectedProjectId(projectbox);
+        if(selectedProjectId != null){
+            Response<List<Issue>> issueresp = issueController.listIssuesByProject(selectedProjectId);
+            if (!issueresp.isSuccess()) {
+                JOptionPane.showMessageDialog(this, issueresp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            for (Issue issue : issueresp.getData()) {
+                addIssueRow(model, issue);
+            }
         }
 
-        Long selectedProjectId = getSelectedProjectId(projectbox);
-        for (Issue issue : issueresp.getData()) {
-            if (selectedProjectId != null && !Objects.equals(selectedProjectId, issue.getProjectId())) {
-                continue;
-            }
-            addIssueRow(model, issue);
-        }
+
+
+
+
     }
 
     private void applyIssueFilter(
@@ -178,30 +181,36 @@ public class IssuePanel extends JPanel {
             JComboBox<Priority> prioritybox,
             JComboBox<Comboitem> projectbox
     ) {
-        model.setRowCount(0);
-        Status status = (Status) statusbox.getSelectedItem();
-        Priority priority = (Priority) prioritybox.getSelectedItem();
+
         Long selectedProjectId = getSelectedProjectId(projectbox);
         if (selectedProjectId == null) {
             JOptionPane.showMessageDialog(this, "Please select a project.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        Response<List<Issue>> issueresp = issueController.getAllIssues();
-
+        Response<List<Issue>> issueresp = issueController.listIssuesByProject(selectedProjectId);
         if (!issueresp.isSuccess()) {
             JOptionPane.showMessageDialog(this, issueresp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
+        model.setRowCount(0);
+        Status status = (Status) statusbox.getSelectedItem();
+        Priority priority = (Priority) prioritybox.getSelectedItem();
         for (Issue issue : issueresp.getData()) {
             boolean statusMatch = status == null || issue.getStatus() == status;
             boolean priorityMatch = priority == null || issue.getPriority() == priority;
-            boolean projectMatch = Objects.equals(selectedProjectId, issue.getProjectId());
-            if (statusMatch && priorityMatch && projectMatch) {
+
+            if (statusMatch && priorityMatch ) {
                 addIssueRow(model, issue);
             }
         }
+
+
+
+
+
+
     }
 
     private void showAssignedToMe(DefaultTableModel model, JComboBox<Comboitem> projectbox) {
@@ -219,7 +228,7 @@ public class IssuePanel extends JPanel {
             if (selectedProjectId != null && !Objects.equals(selectedProjectId, issue.getProjectId())) {
                 continue;
             }
-            if (issue.getStatus() == Status.ASSIGNED) {
+            if (issue.getStatus() == Status.ASSIGNED || issue.getStatus() == Status.REOPENED) {
                 addIssueRow(model, issue);
             }
         }
@@ -248,21 +257,21 @@ public class IssuePanel extends JPanel {
 
     private void showResolvedIssues(DefaultTableModel model, JComboBox<Comboitem> projectbox) {
         model.setRowCount(0);
-        Response<List<Issue>> resp = issueController.getAllIssues();
-        if (!resp.isSuccess()) {
-            JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
 
         Long selectedProjectId = getSelectedProjectId(projectbox);
-        for (Issue issue : resp.getData()) {
-            if (selectedProjectId != null && !Objects.equals(selectedProjectId, issue.getProjectId())) {
-                continue;
+        if(selectedProjectId != null){
+            Response<List<Issue>> issueresp = issueController.listIssuesByProject(selectedProjectId);
+            if (!issueresp.isSuccess()) {
+                JOptionPane.showMessageDialog(this, issueresp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-            if (issue.getStatus() == Status.RESOLVED) {
-                addIssueRow(model, issue);
+            for (Issue issue : issueresp.getData()) {
+                if (issue.getStatus() == Status.RESOLVED) {
+                    addIssueRow(model, issue);
+                }
             }
         }
+
     }
 
     private void showStatisticsDialog() {
@@ -295,6 +304,12 @@ public class IssuePanel extends JPanel {
                 issueStatisticsController.getMonthlyReportedTrend(targetProjectId, months);
         Response<Map<YearMonth, Long>> monthlyResolvedResp =
                 issueStatisticsController.getMonthlyResolvedTrend(targetProjectId, months);
+        Response<Map<LocalDate, Long>> dailyReportedResp =
+                issueStatisticsController.getDailyReportedTrend(targetProjectId);
+        Response<Map<LocalDate, Long>> dailyResolvedResp =
+                issueStatisticsController.getDailyResolvedTrend(targetProjectId);
+        Response<Map<YearMonth, Map<Priority, Long>>> monthlyPriorityResp =
+                issueStatisticsController.getMonthlyPriorityDistribution(targetProjectId, months);
         Response<Map<YearMonth, Double>> averageClosedResp =
                 issueStatisticsController.getMonthlyAverageClosedDays(targetProjectId, months);
         Response<Map<LocalDate, Map<Priority, Long>>> dailyPriorityResp =
@@ -306,6 +321,18 @@ public class IssuePanel extends JPanel {
         }
         if (!monthlyResolvedResp.isSuccess()) {
             JOptionPane.showMessageDialog(this, monthlyResolvedResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!dailyReportedResp.isSuccess()) {
+            JOptionPane.showMessageDialog(this, dailyReportedResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!dailyResolvedResp.isSuccess()) {
+            JOptionPane.showMessageDialog(this, dailyResolvedResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!monthlyPriorityResp.isSuccess()) {
+            JOptionPane.showMessageDialog(this, monthlyPriorityResp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         if (!averageClosedResp.isSuccess()) {
@@ -326,6 +353,20 @@ public class IssuePanel extends JPanel {
         for (Map.Entry<YearMonth, Long> entry : new TreeMap<>(monthlyResolvedResp.getData()).entrySet()) {
             message.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
         }
+        message.append("\n[Daily Reported Issues]\n");
+        for (Map.Entry<LocalDate, Long> entry : new TreeMap<>(dailyReportedResp.getData()).entrySet()) {
+            message.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+        }
+        message.append("\n[Daily Resolved Issues]\n");
+        for (Map.Entry<LocalDate, Long> entry : new TreeMap<>(dailyResolvedResp.getData()).entrySet()) {
+            message.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+        }
+        message.append("\n[Monthly Priority Distribution]\n");
+        for (Map.Entry<YearMonth, Map<Priority, Long>> entry : new TreeMap<>(monthlyPriorityResp.getData()).entrySet()) {
+            message.append(entry.getKey()).append(" : ");
+            appendPriorityCounts(message, entry.getValue());
+            message.append("\n");
+        }
         message.append("\n[Monthly Average Closed Days]\n");
         for (Map.Entry<YearMonth, Double> entry : new TreeMap<>(averageClosedResp.getData()).entrySet()) {
             message.append(entry.getKey())
@@ -336,10 +377,7 @@ public class IssuePanel extends JPanel {
         message.append("\n[Daily Priority Distribution]\n");
         for (Map.Entry<LocalDate, Map<Priority, Long>> entry : new TreeMap<>(dailyPriorityResp.getData()).entrySet()) {
             message.append(entry.getKey()).append(" : ");
-            for (Priority priority : Priority.values()) {
-                Long count = entry.getValue().getOrDefault(priority, 0L);
-                message.append(priority).append("=").append(count).append(" ");
-            }
+            appendPriorityCounts(message, entry.getValue());
             message.append("\n");
         }
 
@@ -354,36 +392,36 @@ public class IssuePanel extends JPanel {
         );
     }
 
+    private void appendPriorityCounts(StringBuilder message, Map<Priority, Long> counts) {
+        for (Priority priority : Priority.values()) {
+            Long count = counts.getOrDefault(priority, 0L);
+            message.append(priority).append("=").append(count).append(" ");
+        }
+    }
+
     private void showCreateIssueDialog(JComboBox<Comboitem> projectbox, Runnable refreshAll) {
-        JComboBox<Comboitem> createProjectBox = createProjectComboBoxForCurrentUser(false);
-        if (createProjectBox.getItemCount() == 0) {
-            JOptionPane.showMessageDialog(this, "No project is available for issue creation.", "Error", JOptionPane.ERROR_MESSAGE);
+        Comboitem selectedProject = (Comboitem) projectbox.getSelectedItem();
+        if (selectedProject == null || selectedProject.getId() == null) {
+            JOptionPane.showMessageDialog(this, "Please select a project.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
+        if (getProjectRole(selectedProject.getId()) != Role.TESTER) {
+            JOptionPane.showMessageDialog(this, "Only TESTER can create an issue in the selected project.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         JTextField title = new JTextField();
         JTextArea description = new JTextArea(5, 20);
         JComboBox<Priority> priorityComboBox = new JComboBox<>(Priority.values());
         priorityComboBox.setSelectedItem(Priority.MAJOR);
         Object[] msg = {
-                "Project Name:", createProjectBox,
+                "Project Name:", new JLabel(selectedProject.toString()),
                 "Issue Title:", title,
                 "Description:", new JScrollPane(description),
                 "Priority:", priorityComboBox
         };
 
         if (JOptionPane.showConfirmDialog(this, msg, "Create Issue", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) {
-            return;
-        }
-
-        Comboitem selectedProject = (Comboitem) createProjectBox.getSelectedItem();
-        if (selectedProject == null) {
-            JOptionPane.showMessageDialog(this, "Please select a project.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (getProjectRole(selectedProject.getId()) != Role.TESTER) {
-            JOptionPane.showMessageDialog(this, "Only TESTER can create an issue in the selected project.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -402,9 +440,15 @@ public class IssuePanel extends JPanel {
         }
     }
 
-    private void showIssueDetail(JTable table, Runnable refreshAll) {
+    private void showIssueDetail(JTable table, JComboBox<Comboitem> projectbox, Runnable refreshAll) {
+        if (getSelectedProjectId(projectbox) == null&& table.getSelectedRow() < 0) {
+            JOptionPane.showMessageDialog(this, "Please select a project.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         int row = table.getSelectedRow();
         if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Please select an issue.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 

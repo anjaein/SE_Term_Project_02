@@ -9,85 +9,85 @@
     "accountId": 2,
     "username": "dev1",
     "password": "1",
-    "role": "DEV"
+    "isAdmin": false
   },
   {
     "accountId": 3,
     "username": "dev2",
     "password": "1",
-    "role": "DEV"
+    "isAdmin": false
   },
   {
     "accountId": 4,
     "username": "dev3",
     "password": "1",
-    "role": "DEV"
+    "isAdmin": false
   },
   {
     "accountId": 5,
     "username": "dev4",
     "password": "1",
-    "role": "DEV"
+    "isAdmin": false
   },
   {
     "accountId": 6,
     "username": "tester1",
     "password": "1",
-    "role": "TESTER"
+    "isAdmin": false
   },
   {
     "accountId": 7,
     "username": "tester2",
     "password": "1",
-    "role": "TESTER"
+    "isAdmin": false
   },
   {
     "accountId": 8,
     "username": "tester3",
     "password": "1",
-    "role": "TESTER"
+    "isAdmin": false
   },
   {
     "accountId": 9,
     "username": "tester4",
     "password": "1",
-    "role": "TESTER"
+    "isAdmin": false
   },
   {
     "accountId": 10,
     "username": "pl1",
     "password": "1",
-    "role": "PL"
+    "isAdmin": false
   },
   {
     "accountId": 11,
     "username": "pl2",
     "password": "1",
-    "role": "PL"
+    "isAdmin": false
   },
   {
     "accountId": 12,
     "username": "pl3",
     "password": "1",
-    "role": "PL"
+    "isAdmin": false
   },
   {
     "accountId": 13,
     "username": "pl4",
     "password": "1",
-    "role": "PL"
+    "isAdmin": false
   },
   {
     "accountId": 14,
     "username": "aaa",
     "password": "1",
-    "role": "PL"
+    "isAdmin": false
   },
   {
     "accountId": 15,
     "username": "error",
     "password": "1",
-    "role": "TESTER"
+    "isAdmin": false
   },
   {
     "accountId": 5,

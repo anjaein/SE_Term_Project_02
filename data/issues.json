@@ -71,13 +71,14 @@
     "title": "모바일 화면에서 버튼 겹침 현상",
     "description": "해상도가 작은 모바일 기기에서 제출 버튼과 취소 버튼의 UI가 겹쳐서 클릭할 수 없습니다.",
     "priority": "MAJOR",
-    "status": "RESOLVED",
+    "status": "CLOSED",
     "reporterId": 6,
     "assigneeId": 4,
     "fixerId": 4,
     "reportedDate": "2026-05-29T17:37:27.175947",
     "fixedDate": "2026-05-29T17:40:25.076993",
-    "resolvedDate": "2026-05-29T17:40:56.074837"
+    "resolvedDate": "2026-05-29T17:40:56.074837",
+    "closedDate": "2026-05-31T22:57:06.578841900"
   },
   {
     "issueId": 7,
@@ -98,5 +99,43 @@
     "status": "NEW",
     "reporterId": 6,
     "reportedDate": "2026-05-29T17:42:33.410090"
+  },
+  {
+    "issueId": 9,
+    "projectId": 1,
+    "title": "ss",
+    "description": "s",
+    "priority": "MAJOR",
+    "status": "NEW",
+    "reporterId": 6,
+    "reportedDate": "2026-05-31T22:21:55.822013900"
+  },
+  {
+    "issueId": 10,
+    "projectId": 3,
+    "title": "aa",
+    "description": "aaa",
+    "priority": "MAJOR",
+    "status": "RESOLVED",
+    "reporterId": 11,
+    "assigneeId": 7,
+    "fixerId": 7,
+    "reportedDate": "2026-05-31T22:26:30.037613300",
+    "fixedDate": "2026-05-31T22:39:19.534070700",
+    "resolvedDate": "2026-05-31T22:39:35.089772400"
+  },
+  {
+    "issueId": 11,
+    "projectId": 3,
+    "title": "1-1.1",
+    "description": "ㅁㅁㅁ",
+    "priority": "MAJOR",
+    "status": "RESOLVED",
+    "reporterId": 10,
+    "assigneeId": 6,
+    "fixerId": 6,
+    "reportedDate": "2026-05-31T22:32:49.466890500",
+    "fixedDate": "2026-05-31T22:35:30.851548600",
+    "resolvedDate": "2026-05-31T22:36:24.101871500"
   }
 ]

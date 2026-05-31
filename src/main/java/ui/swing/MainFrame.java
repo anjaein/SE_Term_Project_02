@@ -2,7 +2,6 @@ package ui.swing;
 
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.comment.controller.CommentController;
 import com.issuetracker.domain.issue.controller.IssueController;
 import com.issuetracker.domain.project.controller.ProjectController;
@@ -24,6 +23,7 @@ public class MainFrame extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel mainContainer;
+    private JPanel dashboardPanel;
 
     public MainFrame(AccountController accountController, ProjectController projectController,
                      IssueController issueController, CommentController commentController,  IssueStatisticsController issueStatisticsController,
@@ -55,12 +55,17 @@ public class MainFrame extends JFrame {
     }
 
     private void showDashboard() {
+        if (dashboardPanel != null) {
+            mainContainer.remove(dashboardPanel);
+        }
+
         JPanel dashboard = new JPanel(new BorderLayout());
+        dashboardPanel = dashboard;
         Account curuser = sessionManager.getLoggedInAccount();
 
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(new Color(230, 230, 230));
-        topBar.add(new JLabel("  User: " + curuser.getUsername() + " | Role: " + curuser.getRole()), BorderLayout.WEST);
+        topBar.add(new JLabel("  User: " + curuser.getUsername() ), BorderLayout.WEST);
         JButton logoutBtn = new JButton("Logout");
         logoutBtn.addActionListener(e -> {
             accountController.logout();
@@ -70,7 +75,7 @@ public class MainFrame extends JFrame {
         dashboard.add(topBar, BorderLayout.NORTH);
 
         JTabbedPane tabs = new JTabbedPane();
-        if (curuser.getRole() == Role.ADMIN) {
+        if (curuser.isAdmin()) {
             tabs.addTab("Admin Console", new AdminPanel(accountController, projectController));
         }
         tabs.addTab("Projects & Members", new ProjectPanel(
@@ -91,6 +96,8 @@ public class MainFrame extends JFrame {
 
         dashboard.add(tabs, BorderLayout.CENTER);
         mainContainer.add(dashboard, "DASHBOARD");
+        mainContainer.revalidate();
+        mainContainer.repaint();
         cardLayout.show(mainContainer, "DASHBOARD");
     }
 

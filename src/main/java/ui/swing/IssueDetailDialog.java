@@ -2,7 +2,7 @@ package ui.swing;
 
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.comment.controller.CommentController;
 import com.issuetracker.domain.comment.entity.Comment;
 import com.issuetracker.domain.issue.controller.IssueController;
@@ -147,6 +147,10 @@ public class IssueDetailDialog extends JDialog {
         updateCommentButton.addActionListener(e -> updateComment(commentList, refreshComment));
         actions.add(updateCommentButton);
 
+        JButton deleteCommentButton = new JButton("Delete Comment");
+        deleteCommentButton.addActionListener(e -> deleteComment(commentList, refreshComment));
+        actions.add(deleteCommentButton);
+
         if (issue.getStatus() == Status.NEW) {
             addNewIssueActions(actions, issue, projectRole);
         } else if ((issue.getStatus() == Status.ASSIGNED || issue.getStatus() == Status.REOPENED)
@@ -193,6 +197,31 @@ public class IssueDetailDialog extends JDialog {
         }
 
         Response<Comment> resp = commentController.updateComment(selected.getCommentId(), updated);
+        if (resp.isSuccess()) {
+            refreshComment.run();
+        } else {
+            JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void deleteComment(JList<Comment> commentList, Runnable refreshComment) {
+        Comment selected = commentList.getSelectedValue();
+        if (selected == null) {
+            JOptionPane.showMessageDialog(this, "Please select a comment first.");
+            return;
+        }
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                "Delete selected comment?",
+                "Delete Comment",
+                JOptionPane.YES_NO_OPTION
+        );
+        if (result != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        Response<Comment> resp = commentController.deleteComment(selected.getCommentId());
         if (resp.isSuccess()) {
             refreshComment.run();
         } else {
