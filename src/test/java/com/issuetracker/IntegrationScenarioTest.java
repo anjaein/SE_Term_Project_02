@@ -107,7 +107,7 @@ class IntegrationScenarioTest {
     }
 
     @Test
-    @DisplayName("과제 예제 시나리오 성공: admin 셋업 → tester 등록 → PL assign → dev fix → tester resolve → PL close, 단계별 검색·코멘트 포함")
+    @DisplayName("과제 예제 시나리오 성공: admin 셋업 → addProjectMember -> tester create issue → PL assign → dev fix → tester resolve → PL close, 단계별 검색·코멘트 포함")
     void fullScenario() {
         assertTrue(accountController.login("admin", "admin123").isSuccess());
         assertTrue(accountController.createAccount("pl1", "1234", false).isSuccess());
