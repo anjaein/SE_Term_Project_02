@@ -8,6 +8,8 @@ import com.issuetracker.domain.issue.enums.Priority;
 import com.issuetracker.domain.issue.repository.IssueRepository;
 import com.issuetracker.domain.issue.repository.JsonIssueRepository;
 import com.issuetracker.domain.recommend.service.RecommendService;
+import com.issuetracker.global.common.Response;
+import com.issuetracker.global.common.SessionManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +32,7 @@ class RecommendControllerTest {
 
     private IssueRepository issueRepository;
     private AccountRepository accountRepository;
+    private SessionManager sessionManager;
     private RecommendController recommendController;
 
     private String originalAccountsJson;
@@ -44,8 +47,13 @@ class RecommendControllerTest {
 
         issueRepository = new JsonIssueRepository();
         accountRepository = new JsonAccountRepository();
+        sessionManager = new SessionManager();
         RecommendService recommendService = new RecommendService(issueRepository);
-        recommendController = new RecommendController(recommendService, accountRepository);
+        recommendController = new RecommendController(recommendService, accountRepository, sessionManager);
+
+        Account admin = new Account("admin", "1234", true);
+        accountRepository.save(admin);
+        sessionManager.login(accountRepository.findByUsername("admin"));
     }
 
     @AfterEach
@@ -62,18 +70,20 @@ class RecommendControllerTest {
 
         addResolvedIssue("login bug", "button error", devId);
 
-        List<Account> result = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
+        Response<List<Account>> response = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
 
-        assertEquals(1, result.size());
-        assertEquals("dev1", result.get(0).getUsername());
+        assertTrue(response.isSuccess());
+        assertEquals(1, response.getData().size());
+        assertEquals("dev1", response.getData().get(0).getUsername());
     }
 
     @Test
     @DisplayName("추천 결과: 이력 없으면 빈 리스트 반환")
     void getRecommendedAssigneesReturnsEmptyWhenNoHistory() {
-        List<Account> result = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
+        Response<List<Account>> response = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
 
-        assertTrue(result.isEmpty());
+        assertTrue(response.isSuccess());
+        assertTrue(response.getData().isEmpty());
     }
 
     @Test
@@ -81,9 +91,10 @@ class RecommendControllerTest {
     void getRecommendedAssigneesFiltersNonExistentAccounts() {
         addResolvedIssue("login bug", "button error", 999L);
 
-        List<Account> result = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
+        Response<List<Account>> response = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
 
-        assertTrue(result.isEmpty());
+        assertTrue(response.isSuccess());
+        assertTrue(response.getData().isEmpty());
     }
 
     @Test
@@ -95,9 +106,10 @@ class RecommendControllerTest {
             addResolvedIssue("login bug", "button error", devId);
         }
 
-        List<Account> result = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
+        Response<List<Account>> response = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
 
-        assertTrue(result.size() <= 3);
+        assertTrue(response.isSuccess());
+        assertTrue(response.getData().size() <= 3);
     }
 
     @Test
@@ -111,10 +123,22 @@ class RecommendControllerTest {
         addResolvedIssue("login bug", "button error minor", devId1);
         addResolvedIssue("login bug", "button error critical crash", devId2);
 
-        List<Account> result = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error critical");
+        Response<List<Account>> response = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error critical");
 
-        assertFalse(result.isEmpty());
-        assertEquals("dev2", result.get(0).getUsername());
+        assertTrue(response.isSuccess());
+        assertFalse(response.getData().isEmpty());
+        assertEquals("dev2", response.getData().get(0).getUsername());
+    }
+
+    @Test
+    @DisplayName("비로그인 상태에서 추천 요청 시 실패 반환")
+    void getRecommendedAssigneesFailsWhenNotLoggedIn() {
+        sessionManager.logout();
+
+        Response<List<Account>> response = recommendController.getRecommendedAssignees(PROJECT_ID, "login bug", "button error");
+
+        assertFalse(response.isSuccess());
+        assertEquals("You are not logged in.", response.getMessage());
     }
 
     private void addResolvedIssue(String title, String desc, Long fixerId) {
