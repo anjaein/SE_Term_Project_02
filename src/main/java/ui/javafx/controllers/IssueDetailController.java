@@ -434,22 +434,22 @@ public class IssueDetailController {
             HBox row=new HBox(12);
             row.setAlignment(Pos.CENTER_LEFT);
             VBox info=new VBox(4);
+            VBox who=new VBox(2);
             HBox name=new HBox(8);
             name.setAlignment(Pos.BASELINE_LEFT);
             Label nm=new Label(UI.accountRoleName(r.dev(), devRole));
             nm.getStyleClass().add("hand");
             Label rl=new Label(UI.accountHandle(r.dev()));
             rl.getStyleClass().addAll("mono", "small", "dim");
-            name.getChildren().addAll(nm, rl);
+            name.getChildren().add(nm);
             if (top) {
                 Label stamp=new Label("TOP MATCH");
                 stamp.getStyleClass().add("top-match-stamp");
                 stamp.setRotate(-6);
                 name.getChildren().add(stamp);
             }
-            Label stats=UI.hand("과거 해결 "+r.historyCount()+"건 · 매칭 점수 "+r.score());
-            stats.getStyleClass().add("dim");
-            info.getChildren().addAll(name, stats);
+            who.getChildren().addAll(name, rl);
+            info.getChildren().add(who);
             Region sp=new Region();
             HBox.setHgrow(sp, javafx.scene.layout.Priority.ALWAYS);
             Button assign=new Button("Assign");
