@@ -233,20 +233,6 @@ class IssueStatisticsServiceTest {
     }
 
     @Test
-    @DisplayName("월별 평균 해결 일수 조회 성공: CLOSED 이슈 없으면 해당 월 key 없음")
-    void monthlyAverageClosedDaysWithNoClosedIssues() {
-        // given
-        YearMonth thisMonth = YearMonth.now();
-        issueRepository.saveWithReportedDate(PROJECT_ID, thisMonth.atDay(1).atStartOfDay());
-
-        // when
-        Map<YearMonth, Double> result = statisticsService.getMonthlyAverageClosedDays(PROJECT_ID, 1).getData();
-
-        // then
-        assertFalse(result.containsKey(thisMonth));
-    }
-
-    @Test
     @DisplayName("월별 평균 해결 일수 조회 성공: 다른 달 CLOSED 이슈는 별도 집계")
     void monthlyAverageClosedDaysSeparatedByMonth() {
         // given

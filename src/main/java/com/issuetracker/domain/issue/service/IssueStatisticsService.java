@@ -213,15 +213,18 @@ public class IssueStatisticsService {
         List<Issue> issues = issueRepository.findByProjectId(projectId);
 
         Map<YearMonth, long[]> statistics = new HashMap<>();
+        for (YearMonth ym = start; !ym.isAfter(end); ym = ym.plusMonths(1)) {
+            statistics.put(ym, new long[2]);
+        }
 
         for(Issue issue : issues){
             if(issue.getStatus() != Status.CLOSED) continue;
             if(issue.getClosedDate() == null || issue.getReportedDate() == null) continue;
 
             YearMonth closedMonth = YearMonth.from(issue.getClosedDate());
-            if(closedMonth.isBefore(start) || closedMonth.isAfter(end)) continue;
+            if(!statistics.containsKey(closedMonth)) continue;
 
-            long[] stats = statistics.computeIfAbsent(closedMonth, k -> new long[2]);
+            long[] stats = statistics.get(closedMonth);
             stats[0] += ChronoUnit.DAYS.between(issue.getReportedDate(), issue.getClosedDate());
             stats[1] += 1;
         }
@@ -229,8 +232,7 @@ public class IssueStatisticsService {
         Map<YearMonth, Double> result = new HashMap<>();
         for(Map.Entry<YearMonth, long[]> entry : statistics.entrySet()){
             long[] stats = entry.getValue();
-            double average = (double) stats[0] / stats[1];
-            result.put(entry.getKey(), average);
+            result.put(entry.getKey(), stats[1] == 0 ? 0.0 : (double) stats[0] / stats[1]);
         }
         return Response.success("Monthly average closed days retrieved.", result);
     }
