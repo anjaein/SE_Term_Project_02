@@ -61,7 +61,7 @@ public class Main {
         IssueController issueController = new IssueController(issueService, sessionManager);
         CommentController commentController = new CommentController(commentService, sessionManager);
         IssueStatisticsController issueStatisticsController = new IssueStatisticsController(issueStatisticsService, sessionManager);
-        RecommendController recommendController = new RecommendController(recommendService, accountRepository);
+        RecommendController recommendController = new RecommendController(recommendService, accountRepository, sessionManager);
 
         return new Backend(
                 accountController,
