@@ -45,7 +45,7 @@ public class MembersController {
     private void rebuild(){
         addMemberButton.setVisible(true);
         addMemberButton.setManaged(true);
-        boolean isAdmin=facade.currentUser.get()!=null && facade.currentUser.get().getRole()==Role.ADMIN;
+        boolean isAdmin=facade.isCurrentUserAdmin();
         createAccountButton.setVisible(isAdmin);
         createAccountButton.setManaged(isAdmin);
 
@@ -65,12 +65,12 @@ public class MembersController {
         HBox top=new HBox(12);
         top.setAlignment(Pos.CENTER_LEFT);
         VBox who=new VBox(2);
-        Label name=new Label(UI.accountRoleName(a));
+        Label name=new Label(UI.accountRoleName(a, m.getRole()));
         name.getStyleClass().addAll("hand", "member-name");
         Label uname=new Label(UI.accountHandle(a));
         uname.getStyleClass().addAll("mono", "small", "dim");
         who.getChildren().addAll(name, uname);
-        top.getChildren().addAll(UI.avatar(a, 44), who);
+        top.getChildren().addAll(UI.avatar(a, m.getRole(), 44), who);
         Region sp=new Region();
         HBox.setHgrow(sp, javafx.scene.layout.Priority.ALWAYS);
         top.getChildren().add(sp);
@@ -94,15 +94,26 @@ public class MembersController {
         combo.setMaxWidth(Double.MAX_VALUE);
         combo.setConverter(new StringConverter<>() {
             @Override public String toString(Account a){
-                return a==null ? "" : UI.accountName(a)+" ("+a.getRole()+")";
+                return a==null ? "" : UI.accountName(a);
             }
             @Override public Account fromString(String s){ return null; }
         });
 
+        ComboBox<Role> roleCombo=new ComboBox<>();
+        roleCombo.getItems().setAll(Role.values());
+        roleCombo.getSelectionModel().select(Role.DEV);
+        roleCombo.setMaxWidth(Double.MAX_VALUE);
+        roleCombo.setConverter(new StringConverter<>() {
+            @Override public String toString(Role role){
+                return role==null ? "" : role.label()+" ("+role.name()+")";
+            }
+            @Override public Role fromString(String s){ return null; }
+        });
+
         Dialog<ButtonType> d=new Dialog<>();
         d.setTitle("Add member");
-        d.setHeaderText("Select an account");
-        VBox box=new VBox(10, UI.eyebrow("ACCOUNT"), combo);
+        d.setHeaderText("Select an account and project role");
+        VBox box=new VBox(10, UI.eyebrow("ACCOUNT"), combo, UI.eyebrow("PROJECT ROLE"), roleCombo);
         box.setPadding(new Insets(10));
         box.setMinWidth(420);
         d.getDialogPane().setContent(box);
@@ -115,8 +126,13 @@ public class MembersController {
                 UI.showErrorSticker(root, "추가할 계정을 선택하세요.");
                 return;
             }
+            Role role=roleCombo.getValue();
+            if (role==null) {
+                UI.showErrorSticker(root, "역할을 선택하세요.");
+                return;
+            }
             UI.runWithErrorSticker(root, () ->
-                facade.addMember(facade.currentProjectId.get(), chosen.getAccountId(), chosen.getRole()));
+                facade.addMember(facade.currentProjectId.get(), chosen.getAccountId(), role));
         });
     }
 }

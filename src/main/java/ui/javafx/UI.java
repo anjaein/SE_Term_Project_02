@@ -34,12 +34,21 @@ public class UI {
     }
 
     public static String accountRoleName(Account a){
-        return a==null || a.getRole()==null ? "UNKNOWN" : a.getRole().name();
+        if (a==null) return "UNKNOWN";
+        return a.isAdmin() ? Role.ADMIN.name() : "UNKNOWN";
+    }
+
+    public static String accountRoleName(Account a, Role role){
+        return role==null ? accountRoleName(a) : role.name();
     }
 
     public static String accountToneClass(Account a){
-        if (a==null || a.getRole()==null) return "account-unknown";
-        return "account-"+a.getRole().name().toLowerCase();
+        return accountToneClass(a!=null && a.isAdmin() ? Role.ADMIN : null);
+    }
+
+    public static String accountToneClass(Role role){
+        if (role==null) return "account-unknown";
+        return "account-"+role.name().toLowerCase();
     }
 
     public static String statusToneClass(Status s){
@@ -47,6 +56,10 @@ public class UI {
     }
 
     public static void applyAccountTone(Node node, Account a){
+        applyAccountTone(node, a!=null && a.isAdmin() ? Role.ADMIN : null);
+    }
+
+    public static void applyAccountTone(Node node, Role role){
         node.getStyleClass().removeAll(List.of(
             "account-admin",
             "account-pl",
@@ -54,7 +67,7 @@ public class UI {
             "account-tester",
             "account-unknown"
         ));
-        node.getStyleClass().add(accountToneClass(a));
+        node.getStyleClass().add(accountToneClass(role));
     }
 
     public static String accountInitial(Account a){
@@ -64,15 +77,19 @@ public class UI {
 
     //── 아바타 (원형 색상 이니셜) ─────────────────────────
     public static StackPane avatar(Account a, double size){
+        return avatar(a, a!=null && a.isAdmin() ? Role.ADMIN : null, size);
+    }
+
+    public static StackPane avatar(Account a, Role role, double size){
         StackPane p=new StackPane();
         p.setMinSize(size, size); p.setMaxSize(size, size);
         Circle c=new Circle(size / 2);
         c.getStyleClass().add("avatar-circle");
-        applyAccountTone(c, a);
+        applyAccountTone(c, role);
         c.setStrokeWidth(1.4);
         Label lbl=new Label(accountInitial(a));
         lbl.getStyleClass().add("avatar-initial");
-        applyAccountTone(lbl, a);
+        applyAccountTone(lbl, role);
         lbl.setStyle("-fx-font-size: "+avatarInitialFontSize(size)+"px;");
         p.getChildren().addAll(c, lbl);
         return p;

@@ -19,12 +19,12 @@
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
             <HBox spacing="8">
-                <Button fx:id="createAccountButton" text="+ Sign up" styleClass="btn-primary" onAction="#handleCreateAccount"/>
+                <Button fx:id="createAccountButton" text="+ Create account" styleClass="btn-default" onAction="#handleCreateAccount"/>
                 <Button fx:id="addMemberButton" text="+ Add member" styleClass="btn-primary" onAction="#handleAddMember"/>
             </HBox>
         </HBox>
         <Line fx:id="divider"/>
-        <Label text="프로젝트 멤버와 역할을 관리한다. ADMIN만 계정 생성과 멤버 추가 가능"
+        <Label text="프로젝트 멤버와 프로젝트별 역할을 관리한다."
                wrapText="true">
             <styleClass>
                 <String fx:value="hand"/>

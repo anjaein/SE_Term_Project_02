@@ -266,11 +266,17 @@ public class IssueDetailDialog extends JDialog {
     }
 
     private void recommendAssignees(Issue issue) {
-        List<Account> recommendedAssignees = recommendController.getRecommendedAssignees(
+        Response<List<Account>> resp = recommendController.getRecommendedAssignees(
                 issue.getProjectId(),
                 issue.getTitle(),
                 issue.getDescription()
         );
+        if (!resp.isSuccess()) {
+            JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        List<Account> recommendedAssignees = resp.getData();
 
         if (recommendedAssignees == null || recommendedAssignees.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No recommendations available.", "Info", JOptionPane.INFORMATION_MESSAGE);
