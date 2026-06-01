@@ -1,34 +1,114 @@
 [
   {
+    "commentId": 1,
+    "issueId": 12,
+    "authorId": 7,
+    "content": "로그인 후 하루가 지나면 세션이 끊어지는 현상이 하루에 3번 이상 발생하고 있습니다. 재현 단계: 로그인 후 24시간 방치 후 화면 전환 시 세션 만료 오류 발생.",
+    "createdDate": "2026-02-03T09:30",
+    "updatedDate": "2026-02-03T09:30"
+  },
+  {
     "commentId": 2,
-    "issueId": 1,
-    "authorId": 1,
-    "content": "aaaaa",
-    "createdDate": "2026-05-31T21:28:36.569795",
-    "updatedDate": "2026-05-31T21:29:50.750906"
+    "issueId": 12,
+    "authorId": 10,
+    "content": "dev2에게 할당합니다. 토큰 갱신 로직을 우선 확인해주세요. 세션 만료 시 자동 갱신이 되지 않는 원인 파악 부탁드립니다.",
+    "createdDate": "2026-02-04T09:00",
+    "updatedDate": "2026-02-04T09:00"
   },
   {
     "commentId": 3,
-    "issueId": 1,
-    "authorId": 1,
-    "content": "ffff",
-    "createdDate": "2026-05-31T21:28:38.802728700",
-    "updatedDate": "2026-05-31T21:28:38.802728700"
+    "issueId": 12,
+    "authorId": 3,
+    "content": "토큰 만료 시간 계산 로직에서 오류를 확인했습니다. 갱신 요청이 만료 직후에 누락되는 버그입니다. 수정 완료 후 fixed 처리 예정입니다.",
+    "createdDate": "2026-02-10T13:00",
+    "updatedDate": "2026-02-10T13:00"
   },
   {
     "commentId": 4,
-    "issueId": 1,
-    "authorId": 1,
-    "content": "aaaa",
-    "createdDate": "2026-05-31T21:28:40.902832100",
-    "updatedDate": "2026-05-31T21:28:40.902832100"
+    "issueId": 16,
+    "authorId": 10,
+    "content": "BLOCKER 이슈입니다. 현재 서비스 전체에서 로그인이 불가능한 상태입니다. dev2 최우선 처리 요청드립니다. JWT 갱신 엔드포인트 즉시 점검 바랍니다.",
+    "createdDate": "2026-04-05T09:30",
+    "updatedDate": "2026-04-05T09:30"
   },
   {
     "commentId": 5,
-    "issueId": 1,
+    "issueId": 16,
+    "authorId": 3,
+    "content": "JWT 갱신 엔드포인트 확인 중입니다. 원인은 토큰 만료 시간 오프셋 계산 버그로 파악됩니다. 수정 작업 진행 중입니다.",
+    "createdDate": "2026-04-07T11:00",
+    "updatedDate": "2026-04-07T11:00"
+  },
+  {
+    "commentId": 6,
+    "issueId": 16,
+    "authorId": 7,
+    "content": "수정 후 재테스트 완료했습니다. 로그인 및 세션 갱신이 정상 동작함을 확인했습니다.",
+    "createdDate": "2026-04-11T09:00",
+    "updatedDate": "2026-04-11T09:00"
+  },
+  {
+    "commentId": 7,
+    "issueId": 22,
     "authorId": 10,
-    "content": "eee",
-    "createdDate": "2026-05-31T21:29:28.191906700",
-    "updatedDate": "2026-05-31T21:29:28.191906700"
+    "content": "결제 모듈 담당 dev3에게 할당합니다. PG사 연동 API 점검 및 응답 타임아웃 설정을 확인해주세요.",
+    "createdDate": "2026-02-06T09:00",
+    "updatedDate": "2026-02-06T09:00"
+  },
+  {
+    "commentId": 8,
+    "issueId": 22,
+    "authorId": 4,
+    "content": "테스트 환경에서 재현 확인했습니다. PG사 응답 대기 중 타임아웃이 발생하는 로직 오류입니다. 수정 작업 진행 중입니다.",
+    "createdDate": "2026-02-09T14:00",
+    "updatedDate": "2026-02-09T14:00"
+  },
+  {
+    "commentId": 9,
+    "issueId": 24,
+    "authorId": 10,
+    "content": "BLOCKER입니다. 포인트 결제가 전면 중단 상태입니다. dev3 즉시 처리 요청드립니다. PG사 연동 분기 로직을 확인해주세요.",
+    "createdDate": "2026-04-02T09:30",
+    "updatedDate": "2026-04-02T09:30"
+  },
+  {
+    "commentId": 10,
+    "issueId": 35,
+    "authorId": 10,
+    "content": "dev2에게 할당합니다. 로그인 페이지 캐시 설정 및 응답 속도 최적화를 확인해주세요.",
+    "createdDate": "2026-05-26T10:30",
+    "updatedDate": "2026-05-26T10:30"
+  },
+  {
+    "commentId": 11,
+    "issueId": 39,
+    "authorId": 9,
+    "content": "비밀번호 변경 후 다른 기기에서 기존 세션이 그대로 유지되는 것을 확인했습니다. 보안 취약점입니다. 즉시 조치가 필요합니다.",
+    "createdDate": "2026-05-30T10:30",
+    "updatedDate": "2026-05-30T10:30"
+  },
+  {
+    "commentId": 12,
+    "issueId": 39,
+    "authorId": 10,
+    "content": "dev2 긴급 할당합니다. 비밀번호 변경 시 기존 세션 무효화 로직 즉시 패치 요청드립니다.",
+    "createdDate": "2026-05-30T11:00",
+    "updatedDate": "2026-05-30T11:00"
+  },
+  {
+    "commentId": 13,
+    "issueId": 40,
+    "authorId": 22,
+    "content": "크롬 탭 3개에서 동시 로그인 시 재현됩니다. 각 탭에서 서로 다른 세션 상태가 표시되며 인증 오류가 발생합니다. BLOCKER 수준으로 판단됩니다.",
+    "createdDate": "2026-05-31T10:30",
+    "updatedDate": "2026-05-31T10:30"
+  },
+  {
+    "commentId": 14,
+    "issueId": 40,
+    "authorId": 11,
+    "content": "상세 내용 확인했습니다. 담당자 배정 전 개발자 추천 기능을 통해 이 유형의 이슈에 가장 적합한 개발자를 검토하겠습니다.",
+    "createdDate": "2026-05-31T11:00",
+    "updatedDate": "2026-05-31T11:00"
   }
 ]

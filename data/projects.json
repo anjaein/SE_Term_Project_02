@@ -3,18 +3,6 @@
     "projectId": 1,
     "name": "project1",
     "createdBy": 1,
-    "createdDate": "2026-05-28T20:49:04.081288"
-  },
-  {
-    "projectId": 2,
-    "name": "project2",
-    "createdBy": 1,
-    "createdDate": "2026-05-28T20:49:07.728042100"
-  },
-  {
-    "projectId": 3,
-    "name": "project1-1",
-    "createdBy": 1,
-    "createdDate": "2026-05-31T22:13:57.808745800"
+    "createdDate": "2026-02-01T09:00:00.000000"
   }
 ]
