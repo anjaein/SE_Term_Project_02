@@ -101,7 +101,7 @@ public class BackendFacade {
             account.getAccountId(),
             account.getUsername(),
             account.getPassword(),
-            toUiRole(account.getRole())
+            account.isAdmin() ? Role.ADMIN : null
         );
     }
 
@@ -129,11 +129,11 @@ public class BackendFacade {
         comments.clear();
     }
 
-    private com.issuetracker.domain.account.enums.Role toDomainRole(Role role){
-        return com.issuetracker.domain.account.enums.Role.valueOf(role.name());
+    private com.issuetracker.domain.project.enums.Role toDomainRole(Role role){
+        return com.issuetracker.domain.project.enums.Role.valueOf(role.name());
     }
 
-    private Role toUiRole(com.issuetracker.domain.account.enums.Role role){
+    private Role toUiRole(com.issuetracker.domain.project.enums.Role role){
         return Role.valueOf(role.name());
     }
 
@@ -356,7 +356,7 @@ public class BackendFacade {
 
     public Account createAccount(String username, String password, Role role){
         Response<com.issuetracker.domain.account.entity.Account> result=
-            accountController.createAccount(username, password, toDomainRole(role));
+            accountController.createAccount(username, password, role == Role.ADMIN);
         if (!result.isSuccess()) {
             throw new IllegalStateException(result.getMessage());
         }
@@ -412,8 +412,8 @@ public class BackendFacade {
     }
 
     public List<Recommendation> recommendAssignees(Issue target){
-        return recommendController
-            .getRecommendedAssignees(target.getProjectId(), target.getTitle(), target.getDescription())
+        return dataOrThrow(recommendController
+            .getRecommendedAssignees(target.getProjectId(), target.getTitle(), target.getDescription()))
             .stream()
             .map(account -> toUiAccount(account))
             .map(account -> new Recommendation(account, 0, 0))
