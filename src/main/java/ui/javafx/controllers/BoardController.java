@@ -233,7 +233,7 @@ public class BoardController {
         bottom.setAlignment(Pos.CENTER_LEFT);
         Account assignee=facade.accountById(i.getAssigneeId());
         if (assignee!=null) {
-            bottom.getChildren().add(UI.avatar(assignee, 22));
+            bottom.getChildren().add(UI.avatar(assignee, facade.roleOf(assignee, i.getProjectId()), 22));
         } else {
             Label u=new Label("unassigned");
             u.getStyleClass().addAll("hand", "dim", "small");

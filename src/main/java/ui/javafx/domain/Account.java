@@ -14,11 +14,11 @@ public class Account {
     private Long accountId;
     private String username;
     private String password;
-    private Role role;
+    private boolean admin;
 
-    public Account(String username, String password, Role role){
+    public Account(String username, String password, boolean admin){
         this.username=username;
         this.password=password;
-        this.role=role;
+        this.admin=admin;
     }
 }

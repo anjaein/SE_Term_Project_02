@@ -13,6 +13,4 @@
     <TextField fx:id="usernameField" promptText="아이디" styleClass="input"/>
     <Label text="PASSWORD" styleClass="eyebrow"/>
     <PasswordField fx:id="passwordField" promptText="비밀번호" styleClass="input"/>
-    <Label text="ROLE" styleClass="eyebrow"/>
-    <ComboBox fx:id="roleCombo" maxWidth="Infinity"/>
 </VBox>

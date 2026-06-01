@@ -4,7 +4,10 @@ import ui.javafx.App;
 import ui.javafx.BackendFacade;
 import ui.javafx.UI;
 import ui.javafx.domain.Account;
+import ui.javafx.domain.ProjectMember;
+import ui.javafx.domain.Role;
 import javafx.beans.binding.Bindings;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -54,6 +57,16 @@ public class AppController {
         }, facade.currentProjectId));
 
         switchUserMenu.setOnShowing(e -> refreshSwitchUserItems());
+        facade.currentProjectId.addListener((o, was, now) -> {
+            refreshUserMenuLabel();
+            refreshSwitchUserItems();
+            applyPermissions();
+        });
+        facade.members.addListener((ListChangeListener<ProjectMember>) c -> {
+            refreshUserMenuLabel();
+            refreshSwitchUserItems();
+            applyPermissions();
+        });
         refreshUserMenuLabel();
         refreshSwitchUserItems();
         applyPermissions();
@@ -83,15 +96,16 @@ public class AppController {
 
     private void refreshUserMenuLabel(){
         Account me=facade.currentUser.get();
-        usernameLabel.setText(UI.accountName(me));
-        roleChipLabel.setText(me==null ? "" : me.getRole().name());
+        Role role=facade.currentProjectRole();
+        usernameLabel.setText(me==null ? "" : UI.accountRoleName(me, role));
+        roleChipLabel.setText(UI.accountHandle(me));
         avatarInitial.setText(UI.accountInitial(me));
         avatarInitial.setStyle("-fx-font-size: "+UI.avatarInitialFontSize(USER_MENU_AVATAR_SIZE)+"px;");
         if (!avatarCircle.getStyleClass().contains("avatar-circle")) {
             avatarCircle.getStyleClass().add("avatar-circle");
         }
-        UI.applyAccountTone(avatarCircle, me);
-        UI.applyAccountTone(avatarInitial, me);
+        UI.applyAccountTone(avatarCircle, role);
+        UI.applyAccountTone(avatarInitial, role);
     }
 
     private void refreshSwitchUserItems(){
@@ -99,7 +113,7 @@ public class AppController {
         for (var mem : facade.membersOf(facade.currentProjectId.get())) {
             Account a=facade.accountById(mem.getAccountId());
             if (a==null) continue;
-            MenuItem item=new MenuItem(UI.accountName(a)+" ("+a.getRole()+")");
+            MenuItem item=new MenuItem(UI.accountRoleName(a, mem.getRole())+" "+UI.accountHandle(a));
             item.getStyleClass().add("user-menu-item");
             item.setOnAction(e -> UI.runWithErrorSticker(contentHost, () ->
                 facade.login(a.getUsername(), a.getPassword())));

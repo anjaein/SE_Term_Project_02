@@ -80,7 +80,7 @@ public class IssueDetailController {
         flowHead.getStyleClass().add("h3");
         HBox flow=buildStatusFlow(issue);
 
-        Role role=me.getRole();
+        Role role=facade.currentProjectRole();
         VBox actionsBox=UI.cardTinted();
         Label ah=UI.eyebrow("YOUR ACTIONS · "+role);
         FlowPane btnRow=new FlowPane(8, 8);
@@ -152,7 +152,7 @@ public class IssueDetailController {
         HBox sendRow=new HBox(send);
         sendRow.setAlignment(Pos.CENTER_RIGHT);
         composeRight.getChildren().add(sendRow);
-        compose.getChildren().addAll(UI.avatar(me, 36), composeRight);
+        compose.getChildren().addAll(UI.avatar(me, facade.currentProjectRole(), 36), composeRight);
 
         commentsBox.getChildren().addAll(chHead, cmtList, compose);
         return commentsBox;
@@ -171,38 +171,39 @@ public class IssueDetailController {
         if (assignee!=null) {
             HBox row=new HBox(10);
             row.setAlignment(Pos.CENTER_LEFT);
-            Label name=new Label(UI.accountRoleName(assignee));
+            Role assigneeRole=facade.roleOf(assignee, issue.getProjectId());
+            Label name=new Label(UI.accountRoleName(assignee, assigneeRole));
             name.getStyleClass().add("hand");
             Label r=new Label(UI.accountHandle(assignee));
             r.getStyleClass().addAll("mono", "small", "dim");
             VBox txt=new VBox(2, name, r);
-            row.getChildren().addAll(UI.avatar(assignee, 34), txt);
+            row.getChildren().addAll(UI.avatar(assignee, assigneeRole, 34), txt);
             v.getChildren().add(row);
         } else {
             Label none=UI.hand("unassigned");
             none.getStyleClass().add("dim");
             v.getChildren().add(none);
         }
-        List<Account> candidates=facade.membersOf(facade.currentProjectId.get()).stream()
-            .map(m -> facade.accountById(m.getAccountId()))
-            .filter(a -> a!=null && (a.getRole()==Role.DEV || a.getRole()==Role.PL))
+        List<ProjectMember> candidates=facade.membersOf(issue.getProjectId()).stream()
+            .filter(m -> m.getRole()==Role.DEV || m.getRole()==Role.PL)
             .toList();
 
-        ComboBox<Account> picker=new ComboBox<>();
+        ComboBox<ProjectMember> picker=new ComboBox<>();
         picker.getItems().addAll(candidates);
         picker.setPromptText("담당자 선택...");
         picker.setMaxWidth(Double.MAX_VALUE);
         picker.setConverter(new StringConverter<>() {
-            @Override public String toString(Account a){
-                return a==null ? "" : UI.accountName(a)+" ("+a.getRole()+")";
+            @Override public String toString(ProjectMember member){
+                Account account=member==null ? null : facade.accountById(member.getAccountId());
+                return account==null ? "" : UI.accountRoleName(account, member.getRole())+" "+UI.accountHandle(account);
             }
-            @Override public Account fromString(String s){ return null; }
+            @Override public ProjectMember fromString(String s){ return null; }
         });
 
         Button assignBtn=new Button("Assign");
         assignBtn.getStyleClass().add("btn-default");
         assignBtn.setOnAction(e -> {
-            Account chosen=picker.getValue();
+            ProjectMember chosen=picker.getValue();
             if (chosen!=null) {
                 UI.runWithErrorSticker(root, () ->
                     facade.assignIssue(issue.getIssueId(), chosen.getAccountId()));
@@ -222,14 +223,15 @@ public class IssueDetailController {
 
     private javafx.scene.Node buildPersonBlock(Account a, String ago){
         if (a==null) return new Label("—");
+        Role role=facade.roleOf(a, facade.currentProjectId.get());
         HBox row=new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);
-        Label name=new Label(UI.accountRoleName(a));
+        Label name=new Label(UI.accountRoleName(a, role));
         name.getStyleClass().add("hand");
         Label time=new Label(UI.accountHandle(a)+" · "+ago);
         time.getStyleClass().addAll("mono", "small", "dim");
         VBox txt=new VBox(2, name, time);
-        row.getChildren().addAll(UI.avatar(a, 28), txt);
+        row.getChildren().addAll(UI.avatar(a, role, 28), txt);
         return row;
     }
 
@@ -327,7 +329,8 @@ public class IssueDetailController {
         Account author=facade.accountById(c.getAuthorId());
         Account me=facade.currentUser.get();
         boolean canEdit=me!=null && me.getAccountId().equals(c.getAuthorId());
-        boolean canDelete=me!=null && (me.getAccountId().equals(c.getAuthorId()) || me.getRole()==Role.ADMIN);
+        boolean canDelete=me!=null && (me.getAccountId().equals(c.getAuthorId()) || facade.isCurrentUserAdmin());
+        Role authorRole=facade.roleOf(author, facade.currentProjectId.get());
 
         HBox row=new HBox(10);
         row.setAlignment(Pos.TOP_LEFT);
@@ -335,7 +338,7 @@ public class IssueDetailController {
         VBox right=new VBox(4);
         HBox meta=new HBox(8);
         meta.setAlignment(Pos.BASELINE_LEFT);
-        Label name=new Label(UI.accountRoleName(author));
+        Label name=new Label(UI.accountRoleName(author, authorRole));
         name.getStyleClass().add("hand");
         Label r=new Label(UI.accountHandle(author));
         r.getStyleClass().addAll("mono", "small", "dim");
@@ -370,7 +373,7 @@ public class IssueDetailController {
 
         right.getChildren().addAll(meta, bubble);
         HBox.setHgrow(right, javafx.scene.layout.Priority.ALWAYS);
-        row.getChildren().addAll(UI.avatar(author, 36), right);
+        row.getChildren().addAll(UI.avatar(author, authorRole, 36), right);
         return row;
     }
 
@@ -425,6 +428,7 @@ public class IssueDetailController {
         List<BackendFacade.Recommendation> recs=facade.recommendAssignees(issue);
         for (int idx=0; idx<recs.size(); idx++) {
             BackendFacade.Recommendation r=recs.get(idx);
+            Role devRole=facade.roleOf(r.dev(), issue.getProjectId());
             boolean top=idx==0 && r.score()>0;
             VBox card=top ? UI.cardTinted() : UI.card();
             HBox row=new HBox(12);
@@ -432,7 +436,7 @@ public class IssueDetailController {
             VBox info=new VBox(4);
             HBox name=new HBox(8);
             name.setAlignment(Pos.BASELINE_LEFT);
-            Label nm=new Label(UI.accountRoleName(r.dev()));
+            Label nm=new Label(UI.accountRoleName(r.dev(), devRole));
             nm.getStyleClass().add("hand");
             Label rl=new Label(UI.accountHandle(r.dev()));
             rl.getStyleClass().addAll("mono", "small", "dim");
@@ -456,7 +460,7 @@ public class IssueDetailController {
                     d.close();
                 });
             });
-            row.getChildren().addAll(UI.avatar(r.dev(), 42), info, sp, assign);
+            row.getChildren().addAll(UI.avatar(r.dev(), devRole, 42), info, sp, assign);
             card.getChildren().add(row);
             list.getChildren().add(card);
         }
