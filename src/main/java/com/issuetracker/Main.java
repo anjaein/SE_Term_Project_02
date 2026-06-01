@@ -31,7 +31,9 @@ import com.issuetracker.global.common.Backend;
 import com.issuetracker.global.common.SessionManager;
 
 public class Main {
+    public static void main(String[] args){
 
+    }
 
     public static Backend createBackend() {
         AccountRepository accountRepository = new JsonAccountRepository();

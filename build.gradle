@@ -44,11 +44,10 @@ application {
     mainClass = 'ui.javafx.App'
 }
 
-tasks.register('runFx', JavaExec) {
+tasks.register('runFx') {
     group = 'application'
     description = 'Runs the JavaFX UI.'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'ui.javafx.App'
+    dependsOn 'run'
 }
 
 tasks.register('runSwing', JavaExec) {
