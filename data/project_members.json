@@ -98,5 +98,40 @@
     "projectId": 1,
     "accountId": 4,
     "role": "DEV"
+  },
+  {
+    "projectId": 3,
+    "accountId": 1,
+    "role": "ADMIN"
+  },
+  {
+    "projectId": 3,
+    "accountId": 2,
+    "role": "PL"
+  },
+  {
+    "projectId": 3,
+    "accountId": 3,
+    "role": "PL"
+  },
+  {
+    "projectId": 3,
+    "accountId": 10,
+    "role": "TESTER"
+  },
+  {
+    "projectId": 3,
+    "accountId": 11,
+    "role": "TESTER"
+  },
+  {
+    "projectId": 3,
+    "accountId": 6,
+    "role": "DEV"
+  },
+  {
+    "projectId": 3,
+    "accountId": 7,
+    "role": "DEV"
   }
 ]

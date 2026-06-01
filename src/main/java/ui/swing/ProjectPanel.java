@@ -2,7 +2,7 @@ package ui.swing;
 
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
+import com.issuetracker.domain.project.enums.Role;
 import com.issuetracker.domain.project.controller.ProjectController;
 import com.issuetracker.domain.project.entity.Project;
 import com.issuetracker.domain.project.entity.ProjectMember;
@@ -73,7 +73,7 @@ public class ProjectPanel extends JPanel {
         add(refresh, BorderLayout.NORTH);
         add(split, BorderLayout.CENTER);
 
-        if (sessionManager.getLoggedInAccount().getRole() == Role.ADMIN) {
+        if (sessionManager.getLoggedInAccount().isAdmin()) {
             add(createAddMemberPanel(), BorderLayout.SOUTH);
         }
     }

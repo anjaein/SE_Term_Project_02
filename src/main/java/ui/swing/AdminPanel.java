@@ -2,7 +2,6 @@ package ui.swing;
 
 import com.issuetracker.domain.account.controller.AccountController;
 import com.issuetracker.domain.account.entity.Account;
-import com.issuetracker.domain.account.enums.Role;
 import com.issuetracker.domain.project.controller.ProjectController;
 import com.issuetracker.domain.project.entity.Project;
 import com.issuetracker.global.common.Response;
@@ -33,11 +32,13 @@ public class AdminPanel extends JPanel {
         JComboBox<Role> rolebox = new JComboBox<>(Role.values());
         JButton createAccountBtn = new JButton("Create Account");
 
+
         createAccountBtn.addActionListener(e -> {
+            boolean isAdmin = (rolebox.getSelectedItem() == Role.Admin);
             Response<Account> resp = accountController.createAccount(
                     usernameField.getText(),
                     passwordField.getText(),
-                    (Role) rolebox.getSelectedItem()
+                    isAdmin
             );
             showResponse(resp);
         });
@@ -76,5 +77,9 @@ public class AdminPanel extends JPanel {
         } else {
             JOptionPane.showMessageDialog(this, resp.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private enum Role {
+        Admin, User
     }
 }
