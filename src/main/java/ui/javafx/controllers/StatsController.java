@@ -6,28 +6,65 @@ import ui.javafx.domain.*;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.chart.*;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Line;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.YearMonth;
 import java.util.*;
 
 public class StatsController {
+    private static final String PERIOD_MONTHLY="Monthly";
+    private static final String PERIOD_DAILY="Daily";
+
     @FXML private GridPane kpis;
     @FXML private GridPane charts;
     @FXML private Line divider;
+    @FXML private Button monthlyPeriodButton;
+    @FXML private Button dailyPeriodButton;
 
     private BackendFacade facade;
+    private String selectedPeriod=PERIOD_MONTHLY;
 
     public void init(BackendFacade facade){
         this.facade=facade;
         divider.setEndX(900);
         divider.getStyleClass().add("scribble-divider");
         divider.getStrokeDashArray().setAll(4d, 4d);
+        updatePeriodChipStyles();
         rebuild();
         facade.issues.addListener((ListChangeListener<Issue>) c -> rebuild());
+    }
+
+    @FXML
+    private void handleMonthlyPeriod(){
+        selectPeriod(PERIOD_MONTHLY);
+    }
+
+    @FXML
+    private void handleDailyPeriod(){
+        selectPeriod(PERIOD_DAILY);
+    }
+
+    private void selectPeriod(String period){
+        selectedPeriod=period;
+        updatePeriodChipStyles();
+        rebuild();
+    }
+
+    private void updatePeriodChipStyles(){
+        setPeriodChipSelected(monthlyPeriodButton, PERIOD_MONTHLY.equals(selectedPeriod));
+        setPeriodChipSelected(dailyPeriodButton, PERIOD_DAILY.equals(selectedPeriod));
+    }
+
+    private void setPeriodChipSelected(Button button, boolean selected){
+        button.getStyleClass().remove("box-button-active");
+        if (selected) {
+            button.getStyleClass().add("box-button-active");
+        }
     }
 
     private void rebuild(){
@@ -44,17 +81,34 @@ public class StatsController {
 
         charts.getChildren().clear();
         charts.getColumnConstraints().clear();
-        charts.add(chartCard("Monthly reports", "월별 신규 이슈 등록 추이", buildMonthlyReportedChart(projectId)), 0, 0, 1, 1);
-        charts.add(chartCard("Monthly resolved", "월별 해결 이슈 추이", buildMonthlyResolvedChart(projectId)), 1, 0, 1, 1);
-        charts.add(chartCard("Priority by month", "월별 우선순위 분포", buildMonthlyPriorityChart(projectId)), 0, 1, 1, 1);
-        charts.add(chartCard("Monthly close time", "월별 평균 종료 소요일", buildMonthlyAverageClosedDaysChart(projectId)), 1, 1, 1, 1);
+        charts.getRowConstraints().clear();
+
         for (int i=0; i<2; i++) {
             ColumnConstraints cc=new ColumnConstraints();
             cc.setPercentWidth(50);
             charts.getColumnConstraints().add(cc);
         }
 
+        if (PERIOD_DAILY.equals(selectedPeriod)) {
+            buildDailyCharts(projectId);
+        } else {
+            buildMonthlyCharts(projectId);
+        }
+
         UI.fadeUp(charts, 100);
+    }
+
+    private void buildMonthlyCharts(long projectId){
+        charts.add(chartCard("Monthly reports", "월별 신규 이슈 등록 추이", buildMonthlyReportedChart(projectId)), 0, 0, 1, 1);
+        charts.add(chartCard("Monthly resolved", "월별 해결 이슈 추이", buildMonthlyResolvedChart(projectId)), 1, 0, 1, 1);
+        charts.add(chartCard("Priority by month", "월별 우선순위 분포", buildMonthlyPriorityChart(projectId)), 0, 1, 1, 1);
+        charts.add(chartCard("Monthly close time", "월별 평균 종료 소요일", buildMonthlyAverageClosedDaysChart(projectId)), 1, 1, 1, 1);
+    }
+
+    private void buildDailyCharts(long projectId){
+        charts.add(chartCard("Daily reports", "최근 7일 신규 이슈 등록 추이", buildDailyReportedChart(projectId)), 0, 0, 1, 1);
+        charts.add(chartCard("Daily resolved", "최근 7일 해결 이슈 추이", buildDailyResolvedChart(projectId)), 1, 0, 1, 1);
+        charts.add(chartCard("Priority by day", "최근 7일 우선순위 분포", buildDailyPriorityChart(projectId)), 0, 1, 2, 1);
     }
 
     private VBox chartCard(String title, String subtitle, javafx.scene.Node body){
@@ -87,6 +141,25 @@ public class StatsController {
         return ch;
     }
 
+    private LineChart<String, Number> buildDailyReportedChart(long projectId){
+        CategoryAxis x=new CategoryAxis();
+        NumberAxis y=new NumberAxis();
+        x.setTickLabelRotation(-30);
+        LineChart<String, Number> ch=new LineChart<>(x, y);
+        ch.setLegendVisible(false);
+        ch.setAnimated(false);
+        ch.setPrefHeight(240);
+        ch.setCreateSymbols(true);
+
+        XYChart.Series<String, Number> s=new XYChart.Series<>();
+        DateTimeFormatter f=DateTimeFormatter.ofPattern("MM-dd");
+        facade.dailyReportedTrend(projectId).entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> s.getData().add(new XYChart.Data<>(entry.getKey().format(f), entry.getValue())));
+        ch.getData().add(s);
+        return ch;
+    }
+
     private LineChart<String, Number> buildMonthlyResolvedChart(long projectId){
         CategoryAxis x=new CategoryAxis();
         NumberAxis y=new NumberAxis();
@@ -106,6 +179,25 @@ public class StatsController {
         return ch;
     }
 
+    private LineChart<String, Number> buildDailyResolvedChart(long projectId){
+        CategoryAxis x=new CategoryAxis();
+        NumberAxis y=new NumberAxis();
+        x.setTickLabelRotation(-30);
+        LineChart<String, Number> ch=new LineChart<>(x, y);
+        ch.setLegendVisible(false);
+        ch.setAnimated(false);
+        ch.setPrefHeight(240);
+        ch.setCreateSymbols(true);
+
+        XYChart.Series<String, Number> s=new XYChart.Series<>();
+        DateTimeFormatter f=DateTimeFormatter.ofPattern("MM-dd");
+        facade.dailyResolvedTrend(projectId).entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> s.getData().add(new XYChart.Data<>(entry.getKey().format(f), entry.getValue())));
+        ch.getData().add(s);
+        return ch;
+    }
+
     private StackedBarChart<String, Number> buildMonthlyPriorityChart(long projectId){
         CategoryAxis x=new CategoryAxis();
         NumberAxis y=new NumberAxis();
@@ -118,6 +210,30 @@ public class StatsController {
         Map<YearMonth, Map<ui.javafx.domain.Priority, Long>> distribution=
             facade.monthlyPriorityDistribution(projectId, 6);
         DateTimeFormatter f=DateTimeFormatter.ofPattern("yyyy-MM");
+        for (ui.javafx.domain.Priority priority : ui.javafx.domain.Priority.values()) {
+            XYChart.Series<String, Number> series=new XYChart.Series<>();
+            series.setName(priority.name());
+            distribution.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> series.getData().add(
+                    new XYChart.Data<>(entry.getKey().format(f), entry.getValue().getOrDefault(priority, 0L))));
+            ch.getData().add(series);
+        }
+        return ch;
+    }
+
+    private StackedBarChart<String, Number> buildDailyPriorityChart(long projectId){
+        CategoryAxis x=new CategoryAxis();
+        NumberAxis y=new NumberAxis();
+        x.setTickLabelRotation(-30);
+        StackedBarChart<String, Number> ch=new StackedBarChart<>(x, y);
+        ch.setAnimated(false);
+        ch.setPrefHeight(260);
+        ch.setLegendVisible(true);
+
+        Map<LocalDate, Map<ui.javafx.domain.Priority, Long>> distribution=
+            facade.dailyPriorityDistribution(projectId);
+        DateTimeFormatter f=DateTimeFormatter.ofPattern("MM-dd");
         for (ui.javafx.domain.Priority priority : ui.javafx.domain.Priority.values()) {
             XYChart.Series<String, Number> series=new XYChart.Series<>();
             series.setName(priority.name());

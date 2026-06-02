@@ -4,6 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
+<?import java.lang.String?>
 
 <ScrollPane fx:id="root" fitToWidth="true" styleClass="scroll-clean" xmlns:fx="http://javafx.com/fxml"
             fx:controller="ui.javafx.controllers.StatsController">
@@ -11,11 +12,24 @@
         <padding>
             <Insets top="24" right="32" bottom="80" left="32"/>
         </padding>
-        <HBox fx:id="header">
+        <HBox fx:id="header" styleClass="page-header">
             <VBox spacing="4">
                 <Label text="DASHBOARD" styleClass="eyebrow"/>
                 <Label text="Statistics" styleClass="h1"/>
             </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox spacing="6" styleClass="page-actions">
+                <Button fx:id="monthlyPeriodButton" text="Monthly" onAction="#handleMonthlyPeriod">
+                    <styleClass>
+                        <String fx:value="box-button"/>
+                    </styleClass>
+                </Button>
+                <Button fx:id="dailyPeriodButton" text="Daily" onAction="#handleDailyPeriod">
+                    <styleClass>
+                        <String fx:value="box-button"/>
+                    </styleClass>
+                </Button>
+            </HBox>
         </HBox>
         <Line fx:id="divider"/>
         <GridPane fx:id="kpis" hgap="16"/>

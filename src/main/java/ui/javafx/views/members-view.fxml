@@ -12,15 +12,24 @@
         <padding>
             <Insets top="24" right="32" bottom="80" left="32"/>
         </padding>
-        <HBox fx:id="header">
+        <HBox fx:id="header" styleClass="page-header">
             <VBox spacing="4">
                 <Label text="PROJECT · MEMBERS" styleClass="eyebrow"/>
                 <Label text="Team" styleClass="h1"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <HBox spacing="8">
-                <Button fx:id="createAccountButton" text="+ Create account" styleClass="btn-default" onAction="#handleCreateAccount"/>
-                <Button fx:id="addMemberButton" text="+ Add member" styleClass="btn-primary" onAction="#handleAddMember"/>
+            <HBox spacing="8" styleClass="page-actions">
+                <Button fx:id="createAccountButton" text="+ Create account" onAction="#handleCreateAccount">
+                    <styleClass>
+                        <String fx:value="box-button"/>
+                    </styleClass>
+                </Button>
+                <Button fx:id="addMemberButton" text="+ Add member" onAction="#handleAddMember">
+                    <styleClass>
+                        <String fx:value="box-button"/>
+                        <String fx:value="box-button-primary"/>
+                    </styleClass>
+                </Button>
             </HBox>
         </HBox>
         <Line fx:id="divider"/>
