@@ -75,7 +75,7 @@ public class UI {
         return n.isEmpty() ? "?" : n.substring(0, 1);
     }
 
-    //── 아바타 (원형 색상 이니셜) ─────────────────────────
+    //아바타 (원형 색상 이니셜) 
     public static StackPane avatar(Account a, double size){
         return avatar(a, a!=null && a.isAdmin() ? Role.ADMIN : null, size);
     }
@@ -95,7 +95,7 @@ public class UI {
         return p;
     }
 
-    //── 뱃지 (Status / Priority) ─────────────────────────────
+    //뱃지 (Status/Priority)
     public static Label statusBadge(Status s){
         Label l=new Label(s.name());
         l.getStyleClass().addAll("badge", "badge-status-"+s.name().toLowerCase());
@@ -107,7 +107,7 @@ public class UI {
         return l;
     }
 
-    //── 카드 (살짝 그림자+종이톤 배경) ─────────────────
+    //카드 (그림자+종이톤 배경)
     public static VBox card(){
         VBox v=new VBox();
         v.getStyleClass().add("card");
@@ -122,7 +122,7 @@ public class UI {
         return v;
     }
 
-    //── 헤딩 ────────────────────────────
+    //헤딩
     public static Label h1(String s){
         Label l=new Label(s);
         l.getStyleClass().add("h1");
@@ -145,7 +145,7 @@ public class UI {
         return l;
     }
 
-    //── 절취선 (대시 라인) ─────────────────────────────
+    //절취선 (대시 라인) 
     public static Line scribbleLine(double width){
         Line l=new Line(0, 0, width, 0);
         l.getStyleClass().add("scribble-divider");
@@ -154,7 +154,7 @@ public class UI {
         return l;
     }
 
-    //── 시간 포매팅 ───────────────────────────────────
+    //시간 포매팅
     private static final DateTimeFormatter DAY_FMT=DateTimeFormatter.ofPattern("M월 d일");
     public static String timeAgo(LocalDateTime t){
         if (t==null) return "";
@@ -169,7 +169,7 @@ public class UI {
         return t.format(DAY_FMT);
     }
 
-    //── fade-up 애니메이션 ────────────────────────────
+    //fade-up 애니메이션
     public static void fadeUp(Node n, double delayMs){
         n.setOpacity(0);
         n.setTranslateY(8);
@@ -182,7 +182,7 @@ public class UI {
         pt.play();
     }
 
-    //── pop-in 애니메이션 ─────────────────────────────
+    //pop-in 애니메이션
     public static void popIn(Node n){
         n.setScaleX(0.6); n.setScaleY(0.6); n.setOpacity(0);
         ScaleTransition st=new ScaleTransition(Duration.millis(300), n);
@@ -192,7 +192,7 @@ public class UI {
         new ParallelTransition(st, ft).play();
     }
 
-    //── 호버 살짝 떠오르는 효과 ────────────────────
+    //호버 살짝 떠오르는 효과
     public static <T extends Node> T hoverLift(T n){
         n.setOnMouseEntered(e -> {
             TranslateTransition t=new TranslateTransition(Duration.millis(120), n);

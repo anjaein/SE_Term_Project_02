@@ -12,13 +12,18 @@
         <padding>
             <Insets top="40" right="32" bottom="80" left="32"/>
         </padding>
-        <HBox fx:id="header" alignment="BOTTOM_LEFT">
+        <HBox fx:id="header" styleClass="page-header">
             <VBox spacing="4">
                 <Label text="WORKSPACE" styleClass="eyebrow"/>
                 <Label text="Projects" styleClass="h1"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="newProjectButton" text="+ New project" styleClass="btn-primary" onAction="#handleCreateProject"/>
+            <Button fx:id="newProjectButton" text="+ New project" onAction="#handleCreateProject">
+                <styleClass>
+                    <String fx:value="box-button"/>
+                    <String fx:value="box-button-primary"/>
+                </styleClass>
+            </Button>
         </HBox>
         <Line fx:id="divider"/>
         <Label text="참여 중인 프로젝트를 선택하면 이슈 보드로 이동합니다." wrapText="true">

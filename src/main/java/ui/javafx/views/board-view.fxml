@@ -11,13 +11,18 @@
     <padding>
         <Insets top="24" right="32" bottom="80" left="32"/>
     </padding>
-    <HBox fx:id="header">
+    <HBox fx:id="header" styleClass="page-header">
         <VBox spacing="4">
             <Label fx:id="eyebrowLabel" styleClass="eyebrow"/>
             <Label fx:id="titleLabel" styleClass="h1"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="newIssueButton" text="+ New issue" styleClass="btn-primary" onAction="#handleCreateIssue"/>
+        <Button fx:id="newIssueButton" text="+ New issue" onAction="#handleCreateIssue">
+            <styleClass>
+                <String fx:value="box-button"/>
+                <String fx:value="box-button-primary"/>
+            </styleClass>
+        </Button>
     </HBox>
     <Line fx:id="divider"/>
     <VBox spacing="4">
